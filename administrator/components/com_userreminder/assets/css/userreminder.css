@@ -1,0 +1,37 @@
+/** userreminder icons **/
+.icon-regconfig {
+	background-image: url(../../../../components/com_userreminder/assets/images/config32.png);
+}
+.icon-reghome   { 
+        background-image: url(../../../../components/com_userreminder/assets/images/home32.png);
+}
+.icon-reguser1    { 
+        background-image: url(../../../../components/com_userreminder/assets/images/user132.png);
+}
+.icon-reguser2    { 
+        background-image: url(../../../../components/com_userreminder/assets/images/user232.png);
+}
+.icon-go    { 
+        background-image: url(../../../../components/com_userreminder/assets/images/go32.png);
+}
+.icon-email    { 
+        background-image: url(../../../../components/com_userreminder/assets/images/email32.png);
+}
+
+.icon-log    {
+        background-image: url(../../../../components/com_userreminder/assets/images/log32.png);
+}
+
+
+div.btnicon{
+height: 125px;	
+}
+div.btncontainer {
+float:left;
+padding: 4px;
+width: 108px;
+}
+
+div.btncontainer a {
+	text-decoration: none;
+}

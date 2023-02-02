@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <fieldset name="main" label="Main" addfieldpath="/administrator/components/com_userreminder/models/fields">
+
+        <field type="list" default="1" class="form-select" id="paramsnumberOfDays" name="numberOfDays"
+               label="USERREMINDER_DAYS" description="USERREMINDER_DAYS_TEXT">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="60">60</option>
+            <option value="90">90</option>
+        </field>
+
+        <field
+                name="enabledSendImed"
+                type="radio"
+                label="USERREMINDER_EMAIL_IMED"
+                description="USERREMINDER_EMAIL_IMED_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+
+        <field type="list" default="1" class="form-select" id="paramsnumberOfReminders" name="numberOfReminders"
+               label="USERREMINDER_NUMBER_REMINDERS" description="USERREMINDER_NUMBER_REMINDERS_TEXT">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="1000">1000</option>
+        </field>
+
+        <field
+                name="enabledBccToAdmin"
+                type="radio"
+                label="USERREMINDER_EMAIL_ADMIN"
+                description="USERREMINDER_EMAIL_ADMIN_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+
+        <field name="bccEmailAddress" type="text" label="USERREMINDER_BCC_EMAIL_ADDRESS"
+               description="USERREMINDER_BCC_EMAIL_ADDRESS_TEXT" default=""/>
+
+        <field name="maxemailstosend" type="number" label="USERREMINDER_MAXEMAILS"
+               description="USERREMINDER_MAXEMAILS_TEXT" default="20"/>
+
+        <field name="number_email" type="number" label="USERREMINDER_NUMBER_EMAIL_IN_A_RECORDSET"
+               description="USERREMINDER_NUMBER_EMAIL_IN_A_RECORDSET_TEXT" default="50"/>
+
+        <field name="passwordReset" type="text" label="USERREMINDER_PSSWORD_RESET"
+               description="USERREMINDER_PSSWORD_RESET_TEXT" default=""/>
+
+        <field name="activateURL" type="text" label="USERREMINDER_ACTIVATION_LINK_TEXT"
+               description="USERREMINDER_ACTIVATION_LINK_TEXT_HELP" default=""/>
+
+        <field
+                name="enabledScheduledExecution"
+                type="radio"
+                label="USERREMINDER_SCHEDULED_ENABLE"
+                description="USERREMINDER_SCHEDULED_ENABLE_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field type="list" showon="enabledScheduledExecution:1" default="0" class="form-select"
+               id="paramsscheduledExecutionType" name="scheduledExecutionType" label="USERREMINDER_SCHEDULED_TYPE"
+               description="USERREMINDER_SCHEDULED_TYPE_TEXT">
+            <option value="0">USERREMINDER_SELECT_TYPE</option>
+            <option value="1">USERREMINDER_TYPE1</option>
+            <option value="2">USERREMINDER_TYPE2</option>
+            <option value="3">USERREMINDER_TYPE3</option>
+        </field>
+
+        <field label="USERREMINDER_SCHEDULED_TIME" description="USERREMINDER_SCHEDULED_TIME_TEXT"
+               showon="enabledScheduledExecution:1" name="scheduledExecutionTime" type="scheduleron" default="0">
+        </field>
+
+        <field
+                name="enabledScheduledActivationReminders"
+                type="radio"
+                label="USERREMINDER_SCHEDULED_ACTIVATION_REMINDERS_ENABLE"
+                description="USERREMINDER_SCHEDULED_ACTIVATION_REMINDERS_ENABLE_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+                showon="enabledScheduledExecution:1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="enabledScheduledUserReminders"
+                type="radio"
+                label="USERREMINDER_SCHEDULED_USER_REMINDERS_ENABLE"
+                description="USERREMINDER_SCHEDULED_USER_REMINDERS_ENABLE_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+                showon="enabledScheduledExecution:1"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+
+        <field
+                name="debugUserReminder"
+                type="radio"
+                label="USERREMINDER_DEBUG"
+                description="USERREMINDER_DEBUG_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+
+    </fieldset>
+
+    <fieldset name="nonreg" label="USERREMINDER_NONREG">
+
+        <field
+                name="enableActivateReminder"
+                type="radio"
+                label="USERREMINDER_LOGIN_ENABLED"
+                description="USERREMINDER_LOGIN_ENABLED_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                showon="enableActivateReminder:1"
+                name="enableDeleteUsers"
+                type="radio"
+                label="USERREMINDER_ACTIONDELETE"
+                description="USERREMINDER_DELETEUSERS_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                showon="enableActivateReminder:1"
+                name="useCBActivation"
+                type="radio"
+                label="USERREMINDER_CB_REG"
+                description="USERREMINDER_CB_REG_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field showon="enableActivateReminder:1" type="text" name="regActivationEmailSubject"
+               label="USERREMINDER_REG_EMAIL_SUBJECT" default="Please complete registration for [NAME] at [SITE_NAME]"
+               description="USERREMINDER_REG_EMAIL_SUBJECT_TEXT"/>
+
+
+        <field showon="enableActivateReminder:1" type="editor" name="regActivationEmailBodyHTML"
+               label="USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
+               default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have not completed registering at [SITE_NAME].&lt;br /&gt;&lt;br /&gt;Your account is created and must be activated before you can use it.&lt;br /&gt;&lt;br /&gt;To activate the account click on the following link or copy-paste it in your browser:&lt;br /&gt;[ACTIVATE_URL]&lt;br /&gt;&lt;br /&gt;After activation you may login to [SITE_URL] using the following username and password:&lt;br /&gt;&lt;br /&gt;Username: [USERNAME]&lt;br /&gt;Forgot your Password? : [PASSWORD_RESET]&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"
+               description="USERREMINDER_REG_EMAIL_TEXT_BODY"/>
+
+
+    </fieldset>
+
+    <fieldset name="nonlogin" label="USERREMINDER_NONLOGIN_DET">
+
+        <field
+                name="enableLoginReminder"
+                type="radio"
+                label="USERREMINDER_LOGIN_ENABLED"
+                description="USERREMINDER_LOGIN_ENABLED_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                showon="enableLoginReminder:1"
+                name="enableDeleteUsersLogin"
+                type="radio"
+                label="USERREMINDER_DELETEUSERS_LOGIN"
+                description="USERREMINDER_DELETEUSERS_LOGIN_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field showon="enableLoginReminder:1" type="text" name="regLoginEmailSubject"
+               label="USERREMINDER_LOGIN_EMAIL_SUBJECT" default="You have successfully activated your account at [SITE_NAME]"
+               description="USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>
+
+        <field showon="enableLoginReminder:1" type="editor" name="regLoginEmailBodyHTML"
+               label="USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
+               default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have successfully registered you account at [SITE_NAME].&lt;br /&gt;&lt;br /&gt;However you have not logged in since activating your account.&lt;br /&gt;&lt;br /&gt;To access the website click on the following link or copy-paste it in your browser:&lt;br /&gt;[SITE_URL]&lt;br /&gt;&lt;br /&gt;You may login using the following username and password:&lt;br /&gt;&lt;br /&gt;Username: [USERNAME]&lt;br /&gt;Forgot your Password? : [PASSWORD_RESET]&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"
+               description="USERREMINDER_REG_EMAIL_TEXT_BODY"/>
+
+    </fieldset>
+
+    <fieldset name="existinguserdet" label="USERREMINDER_EXISTINGUSER_DET">
+
+        <field type="select" label="USERREMINDER_DAYS_EXISTINGUSER" description="USERREMINDER_DAYS_EXISTINGUSER_TEXT"
+               class="form-select" name="numberOfDaysExistingUser" default="180">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="60">60</option>
+            <option value="90">90</option>
+            <option value="180">180</option>
+            <option value="360">360</option>
+            <option value="720">720</option>
+        </field>
+
+        <field
+                name="enableDeleteExistingUsers"
+                type="radio"
+                label="USERREMINDER_DELETEUSERS"
+                description="USERREMINDER_DELETEUSERS_TEXT"
+                layout="joomla.form.field.radio.switcher"
+                default="0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field type="text" name="regLoginEmailSubject"
+               label="USERREMINDER_LOGIN_EMAIL_SUBJECT" default="We have missed you at [SITE_NAME]"
+               description="USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>
+
+        <field type="editor" name="regExistingUserEmailBodyHTML"
+               label="USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
+               default="Hello [NAME],&lt;br&gt;&lt;br&gt;We have noticed that you have not visited [SITE_NAME] for a while.&lt;br&gt;&lt;br&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"
+        />
+
+
+    </fieldset>
+
+    <fieldset
+            name="permissions"
+            label="JCONFIG_PERMISSIONS_LABEL"
+            description="JCONFIG_PERMISSIONS_DESC"
+    >
+
+        <field
+                name="rules"
+                type="rules"
+                label="JCONFIG_PERMISSIONS_LABEL"
+                validate="rules"
+                filter="rules"
+                component="com_userreminder"
+                section="component"/>
+
+
+    </fieldset>
+
+
+</config>
