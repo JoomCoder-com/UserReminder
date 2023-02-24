@@ -9,6 +9,8 @@
  * @website		www.joomcoder.com
  */
 // no direct access
+use Joomla\CMS\Factory;
+
 defined('_JEXEC') or die('Restricted access');
   // get the request details
   $task = JFactory::getApplication()->input->get('task','','default','cmd');
@@ -40,14 +42,11 @@ defined('_JEXEC') or die('Restricted access');
   function optoutnow(){
   	global $mainframe;
   	$db = JFactory::getDBO();
-  	//$user = JFactory::getUser()	;
+  	//$user = JFactory::getUser();
  	
     // double check that the user logged in is the one being opted out
-    $optoutcode = JRequest::getString('uid');
+    $optoutcode = Factory::getApplication()->input->get('uid','','string');
 
-//    if($uid != $user->id){
-//    		$mainframe->redirect(JURI::base()."index.php",JText::_('USERREMINDER_PERMISSION'));
-//    }
   
     // find the user
     //$optoutcode = JFactory::getApplication()->input->get('uid',0,'','int');

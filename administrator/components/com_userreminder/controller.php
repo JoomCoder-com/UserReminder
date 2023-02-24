@@ -9,6 +9,8 @@
  * @website		www.joomcoder.com
  */
 // no direct access
+use Joomla\CMS\Factory;
+
 defined('_JEXEC') or die('Restricted access');
 jimport('joomla.application.component.controller');
 jimport( 'joomla.application.component.helper' );
@@ -124,20 +126,14 @@ class userreminderController extends JControllerLegacy {
         $view->_display();
     }
     function sendreminder() {
-		$db = JFactory::getDBO();
-		// modifiled by Nam Thai on 23may2012
-		$query = "SELECT params FROM #__extensions WHERE `element`='com_userreminder'";
-        $db->setQuery($query);
-        $result = $db->loadRow();
-        $tableParam = str_replace("\r\n", "<br />", $result[0]);
-        $usersConfig = json_decode($tableParam, TRUE);
 
-        $input = \Joomla\CMS\Factory::getApplication()->input;
+
+        $input = Factory::getApplication()->input;
 		
 		// get number email send this time
 		$email_number_old = $input->get('email_number_old',0,'int');
 		$email_number_new = $input->get('email_number_new',0,'int');
-		$email_number = $this->getParamData( $usersConfig,'number_email', 200);
+		$email_number = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('number_email',200);
 		
 		if($email_number_new == 0) $email_number_new = $email_number;
 		
@@ -150,20 +146,15 @@ class userreminderController extends JControllerLegacy {
     }
     function sendUserReminder() {
 
-        $input = \Joomla\CMS\Factory::getApplication()->input;
+        $input = Factory::getApplication()->input;
 
 		$db = JFactory::getDBO();
-		// modifiled by Nam Thai on 23may2012
-		$query = "SELECT params FROM #__extensions WHERE `element`='com_userreminder'";
-        $db->setQuery($query);
-        $result = $db->loadRow();
-        $tableParam = str_replace("\r\n", "<br />", $result[0]);
-        $usersConfig = json_decode($tableParam, TRUE);
+
 		
 		// get number email send this time
         $email_number_old = $input->get('email_number_old',0,'int');
         $email_number_new = $input->get('email_number_new',0,'int');
-		$number_email 		= $this->getParamData( $usersConfig,'number_email',200);
+		$number_email 		= \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('number_email',200);
 				
         //$model = &$this->getModel('senduserreminder');
         $model = $this->getModel('senduserreminder');
@@ -172,58 +163,15 @@ class userreminderController extends JControllerLegacy {
         $view->_display();
 		// end modifiled by Nam Thai on 23may2012
     }
-    function configuration() { 
-        //$model = &$this->getModel('configuration');
-        $model = $this->getModel('configuration');
-        $view = $this->getView ( 'configuration','html');
-        $view->display();
-    }
-    
-	
-	function saveconfiguration() {
-        // Check for request forgeries
-        $this->checkToken();
-        $post = JRequest::get('post');
-//        $postRaw = $post['params'];
-//        $count = sizeof($postRaw);
-//        $counter = 0;
-//        $jsondata = "{";
-		
-//        foreach (array_keys($postRaw) as $key) {
-//            $counter++;
-//            if ($counter == $count) {
-//                $jsondata .= '"' . $key . '":"' . htmlentities($postRaw[$key]) . '"';
-//            } else {
-//                $jsondata .= '"' . $key . '":"' . htmlentities($postRaw[$key]) . '",';
-//            }
-//        }
 
-//        $jsondata .= "}";
 
-        $registry = new JRegistry();
-        $registry->loadArray($post['params']);
-        $jsondata = $registry->toString();
-
-        $db = JFactory::getDbo();
-        $jsondata = $db->getEscaped($jsondata);
-        $query = "update #__extensions set params='" . $jsondata . "' WHERE element='com_userreminder'";
-        $db->setQuery($query);
-        if (!$db->query()) {
-            //throw new Exception($db->getErrorMsg());
-            JError::raiseWarning(500, $db->getErrorMsg());
-            return false;
-        }
-		    // now return to the main page
-		    $view = $this->getView ( 'cpanel','html');
-        $view->_display();
-    }
     
     /**
      * Function that will load all the information needed for the opt-out panel
      */
     function optuserPanel(){
 
-        $input = \Joomla\CMS\Factory::getApplication()->input;
+        $input = Factory::getApplication()->input;
 
 
     	$sortColumn = $input->getString('filter_order','');
@@ -255,11 +203,13 @@ class userreminderController extends JControllerLegacy {
     }
     
     function removeOptuser(){
-    	$post = JRequest::get('post');
+
+		$cid = Factory::getApplication()->input->get('cid','','string');
+
     	$model = $this->getModel('optusers');
     	$app = JFactory::getApplication();
     	 
-    	if($model->removeOptUsers($post['cid'])){
+    	if($model->removeOptUsers($cid)){
     		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_REMOVE'));
     	} else {
     		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_FAILED'));
@@ -269,8 +219,9 @@ class userreminderController extends JControllerLegacy {
     }
 	
     function userlist(){
-    	$sortColumn = JRequest::getVar('filter_order');
-    	$sortDirection =  JRequest::getVar('filter_order_Dir');
+
+    	$sortColumn = Factory::getApplication()->input->get('filter_order','');
+    	$sortDirection =  Factory::getApplication()->input->get('filter_order_Dir','');
     
     	// get the data
     	$model = $this->getModel('optusers');
@@ -280,18 +231,21 @@ class userreminderController extends JControllerLegacy {
     	// get the view and set the layout
     	$view = $this->getView ('optoutusers','html');
     	$view->setLayout('userlist');
-    	JRequest::setVar('task', 'userlist');
-    	//assign variables to be used for the layout
-    	$view->assignRef('sortColumn', $sortColumn);
-    	$view->assignRef('sortDirection', $sortDirection);
-    	$view->assignRef('userlist', $userList);
-    	$view->assignRef('userPagination', $userPagination);
+		Factory::getApplication()->input->set('task','userlist');
+
+    	// assign variables to be used for the layout
+    	$view->sortColumn = $sortColumn;
+    	$view->sortDirection = $sortDirection;
+    	$view->userlist = $userList;
+    	$view->userPagination = $userPagination;
     
     	$view->_display();
     }
     
     function usergroup(){
-    	JRequest::setVar('filter_search', '');
+
+		Factory::getApplication()->input->set('filter_search','');
+
     	JModelLegacy::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
     	$groupsModel = JModelLegacy::getInstance('groups', 'usersModel');
     	//$groupsModel->setState('filter.search', '');
@@ -303,21 +257,23 @@ class userreminderController extends JControllerLegacy {
     
     	// set the view and layout
     	$view = $this->getView ('optoutusers','html');
-    	JRequest::setVar('task', 'usergroup');
+
+	    Factory::getApplication()->input->set('task','usergroup');
+
     	$view->setLayout('usergroup');
-    	$view->assignRef('optgroups', $optGroups);
-    	$view->assignRef('groupList', $groupList);
+    	$view->optgroups = $optGroups;
+    	$view->groupList = $groupList;
     	$view->_display();
     }
     
     public function saveList()
     {
-    
-    	$post = JRequest::get('post');
+
+		$cid = Factory::getApplication()->input->get('cid','');
     	$model = $this->getModel('optusers');
     	$app = JFactory::getApplication();
     
-    	if($model->addOptUsers($post['cid'])){
+    	if($model->addOptUsers($cid)){
     		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_ADDED'));
     	} else {
     		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_FAILED'));
@@ -337,14 +293,13 @@ class userreminderController extends JControllerLegacy {
     }
     
     public function saveGroup(){
-    
-    	$post = JRequest::get('post');
+
+	    $cid = Factory::getApplication()->input->get('cid','none');
     
     	$model = $this->getModel('optusers');
     	$app = JFactory::getApplication();
-    	$ids = isset($post['cid']) ? $post['cid'] : "none";
     		
-    	if($model->saveUserGroup($ids)){
+    	if($model->saveUserGroup($cid)){
     		$app->enqueueMessage(JText::_('USERREMINDER_OPTGROUP_ADDED'));
     	} else {
     		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_FAILED'));
@@ -362,32 +317,7 @@ class userreminderController extends JControllerLegacy {
     			break;
     	}
     }
-    
-	/**************************************************************************/
-	//Masum: newly added
-    function getParamData($dataInputArray, $arrayIndex, $defaultValue) {
 
-        $returnValue = "";
-
-        if (isset($dataInputArray['' . $arrayIndex])) {
-            if ($dataInputArray[$arrayIndex] == '' || $dataInputArray[$arrayIndex] == NULL) {
-                $returnValue = $defaultValue;
-            } else {
-                if (is_numeric($dataInputArray[$arrayIndex])) {
-                    $returnValue =  intval($dataInputArray[$arrayIndex]);
-                } else {
-                    $returnValue = $dataInputArray[$arrayIndex];
-                }
-            }
-        } else {
-            $returnValue = $defaultValue;
-        }
-
-        $returnValue = str_replace( "<br />","\r\n", $returnValue);
-        return $returnValue;
-
-    }
 	
 }
-?>
 

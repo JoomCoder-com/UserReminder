@@ -57,8 +57,6 @@ class userreminderModelActionLog extends JModelLegacy {
 
     function showActionLog() {
         // get the parameter for this component
-        //$usersConfig = &JComponentHelper::getParams( 'com_userreminder' );
-        $usersConfig = JComponentHelper::getParams( 'com_userreminder' );
 
         $list = array();
 
@@ -66,7 +64,7 @@ class userreminderModelActionLog extends JModelLegacy {
         $db	= JFactory::getDBO();
 
         // find users who have not logged in for x number of days
-        $days= $usersConfig->get( 'numberOfDaysExistingUser',180 );
+        $days= \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDaysExistingUser',180);
         $sql = "SELECT SQL_CALC_FOUND_ROWS `id`, `userId`, `username`, `description`, `date` FROM #__userreminder_log order by `id` desc";
 
         $rows = $this->_getList($sql, $this->getState('log_limitstart'), $this->getState('log_limit'));

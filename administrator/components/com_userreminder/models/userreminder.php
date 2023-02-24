@@ -62,18 +62,10 @@ class userreminderModelUserReminder extends JModelLegacy {
 		//$db	=& JFactory::getDBO();
 		$db	= JFactory::getDBO();
 
-		// get the parameter for this component
-    $query = "SELECT params FROM #__extensions WHERE `element`='com_userreminder'";
-    $db->setQuery($query);
-    $result = $db->loadRow();
-  
-    $tableParam = str_replace("\r\n", "<br />", $result[0]);
-    $usersConfig = json_decode($tableParam, TRUE);
-
 		$list = array();
     
     // Changes 2.5.9.13.
-     if ($this->getParamData( $usersConfig,'debugUserReminder',0 )==1) {
+     if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('debugUserReminder',0)==1) {
         ?>
   			<tr>
   				<td colspan=3><font color="red"><H1><?php print JText::_('USERREMINDER_DEBUG'); ?></H1><?php print JText::_('USERREMINDER_DEBUG_TEXT'); ?></font><br /></td>
@@ -84,7 +76,7 @@ class userreminderModelUserReminder extends JModelLegacy {
 		// find users who have not logged in for x number of days
 		// added the sql below to exclude useres that are in the user group
 		// AND #__users.id IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id NOT IN (SELECT group_id FROM #__userreminder_optout_usergroups))
-		$days= $this->getParamData( $usersConfig,'numberOfDaysExistingUser',180 );
+		$days= \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDaysExistingUser',180);
     $sql = "SELECT SQL_CALC_FOUND_ROWS id, email, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber, (TO_DAYS(NOW()) - TO_DAYS(lastvisitDate)) as nodays 
 				FROM #__users 
 				LEFT JOIN #__userreminder on id=userid
@@ -113,11 +105,11 @@ class userreminderModelUserReminder extends JModelLegacy {
 				  $user	= JFactory::getUser($row->id);
 				  $name 	= $user->name . " [". $user->username."]"; 
 			  // check to see if another reminder needs to be sent
-			  if ($row->nodays < $this->getParamData( $usersConfig,'numberOfDays',0 ))
+			  if ($row->nodays < \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDays',1))
 			  {
 				$action=JText::_('USERREMINDER_USER_HASLOGGEDIN');
 			  }
-			  elseif ($this->getParamData( $usersConfig,'numberOfReminders',1 ) > $row->remindernumber)
+			  elseif (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfReminders',1) > $row->remindernumber)
 			  {
 				   // check to see if the maximum number of emails is going to be exceeded
 				   //if ($iMaxRecords > $usersConfig->get( 'maxemailstosend',20 )){
@@ -126,7 +118,7 @@ class userreminderModelUserReminder extends JModelLegacy {
 				   //else
 				   //{
 					  $check_date = strtotime($row->datesent); 
-					  $d9 = strtotime('-'.$this->getParamData( $usersConfig,'numberOfDays',1 ).' days',time());  
+					  $d9 = strtotime('-'. \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDays',1).' days',time());
 					  if($check_date < $d9)
 					  { 
 						  $action=JText::_('USERREMINDER_ACTIONSEND');
@@ -142,10 +134,10 @@ class userreminderModelUserReminder extends JModelLegacy {
 			   { 
 				  // delete the user              
 				  $check_date = strtotime($row->datesent); 
-				  $d9 = strtotime('-'.$this->getParamData( $usersConfig,'numberOfDays',1 ).' days',time());  
+				  $d9 = strtotime('-'. \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDays',1).' days',time());
 				  if($check_date < $d9)
 				  { 
-					  if ($this->getParamData( $usersConfig,'enableDeleteExistingUsers',1 ) == 0)
+					  if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers',1) == 0)
 					  {
 						 $action=JText::_('USERREMINDER_ACTIONDELETE'); 
 					  }
@@ -208,14 +200,6 @@ class userreminderModelUserReminder extends JModelLegacy {
 			$fromname 		= $mainframe->getCfg( 'fromname' );
 			$siteURL		= JURI::root();
 
-		// get the parameter for this component
-		//$regConfig = &JComponentHelper::getParams( 'com_userreminder' );
-		$query = "SELECT params FROM #__extensions WHERE `element`='com_userreminder'";
-        $db->setQuery($query);
-        $result = $db->loadRow();
-
-        $tableParam = str_replace("\r\n", "<br />", $result[0]);
-        $regConfig = json_decode($tableParam, TRUE);
 
 		// Check and Set sender details
 			if ( ! $mailfrom  || ! $fromname ) {
@@ -226,11 +210,12 @@ class userreminderModelUserReminder extends JModelLegacy {
 		// ********************************************************************************
 		// Create and send TEST email for users who have not logged in for x number of days
 		// ********************************************************************************
-		if ($this->getParamData( $regConfig,'regExistingUserEmailSubject',"" )==""){ 
+
+		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailSubject','') == ""){
 		  $subject = JText::_('USERREMINDER_EXISTINGUSERREMINDER_DETAILS_FOR');
 		}
 		else{
-		  $subject = $this->getParamData( $regConfig,'regExistingUserEmailSubject',"" );
+		  $subject = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailSubject','');
 		}
 		
 		$subject 	= userreminderModelUserReminder::replaceParams($subject,"[NAME]",$name);
@@ -239,23 +224,27 @@ class userreminderModelUserReminder extends JModelLegacy {
 
 		// Get email body
 		// check send body html or plain text
-		if($this->getParamData( $regConfig,'chkEmailHTML_Remider',0 )==0){			$mode = 0;
+
+		if(\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('chkEmailHTML_Remider',0) == 0){			$mode = 0;
 			// send body email plain text
-			if ($this->getParamData( $regConfig,'regExistingUserEmailBody',"" )==""){
+
+			if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailBody','') == ""){
 			  $message = JText::_('USERREMINDER_SEND_MSG_EXISTINGUSERREMINDER');
 			}
 			else{
-			  $message = $this->getParamData( $regConfig,'regExistingUserEmailBody',"" );
+
+			  $message = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailBody','');
 			}
 		}
 		else {			$mode = 1;
 			// send mail with html body
-			if ($this->getParamData( $regConfig,'regExistingUserEmailBodyHTML',"" )==""){
+
+			if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailBodyHTML','') == ""){
 				$message = JText::_('USERREMINDER_SEND_MSG_EXISTINGUSERREMINDER');
 				$message	= preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 			}
 			else{
-				$message = $this->getParamData( $regConfig,'regExistingUserEmailBodyHTML',"" );
+				$message = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailBodyHTML','');
 			}
 		}
 		
@@ -273,7 +262,8 @@ class userreminderModelUserReminder extends JModelLegacy {
 		//  $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_comprofiler&task=lostpassword');
 		//}
 		// Reset Passowrd link
-    $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.$this->getParamData( $regConfig,'passwordReset',"" ));
+
+    $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('passwordReset',''));
         
     $message 	= userreminderModelUserReminder::replaceParams($message,"[OPTOUT]",$siteURL.'index.php?option=com_userreminder&task=optout&uid='.$user->id);
 		$message = html_entity_decode($message, ENT_QUOTES);
