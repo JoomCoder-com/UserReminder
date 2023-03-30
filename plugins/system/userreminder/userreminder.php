@@ -22,6 +22,10 @@ class plgSystemUserreminder extends JPlugin
 	public function onAfterRender()
 	{
 
+		// some inits
+		$params = ComponentHelper::getParams('com_userreminder');
+
+
 		$db = JFactory::getDBO();
 
 		// get the current time parameters
@@ -32,23 +36,22 @@ class plgSystemUserreminder extends JPlugin
 		$hour      = intval(date("h", time())); // Bug Fix 4-9-2013
 
 		// get other parameters
-		$number_email           = ComponentHelper::getParams('com_userreminder')->get('number_email', 1);
-		$runUserReminders       = ComponentHelper::getParams('com_userreminder')->get('enabledScheduledUserReminders', 1);
-		$runActivationReminders = ComponentHelper::getParams('com_userreminder')->get('enabledScheduledActivationReminders', 1);
+		$number_email           = $params->get('number_email', 1);
+		$runUserReminders       = $params->get('enabledScheduledUserReminders', 1);
+		$runActivationReminders = $params->get('enabledScheduledActivationReminders', 1);
+		$schedulerEnabled = $params->get('enabledScheduledUserReminders', 1);
+		$activationEnabled = $params->get('enabledScheduledActivationReminders', 1);
 
 		// check to see id any of the reminders are enabled
-		if (
-			!ComponentHelper::getParams('com_userreminder')->get('enabledScheduledUserReminders', 1) ||
-			!ComponentHelper::getParams('com_userreminder')->get('enabledScheduledActivationReminders', 1)
-		)
+		if (!$schedulerEnabled || !$activationEnabled)
 		{
 			// check to see if the scheduler has been enabled
-			if (ComponentHelper::getParams('com_userreminder')->get('enabledScheduledExecution', 1) == 0)
+			if ($params->get('enabledScheduledExecution', 1) == 0)
 			{
 
 				// get the parameters
-				$scheduleExecutionType = ComponentHelper::getParams('com_userreminder')->get('scheduledExecutionType', 1);
-				$scheduleExecutionTime = ComponentHelper::getParams('com_userreminder')->get('scheduledExecutionTime', 1);
+				$scheduleExecutionType = $params->get('scheduledExecutionType', 1);
+				$scheduleExecutionTime = $params->get('scheduledExecutionTime', 1);
 
 				// setup variables
 				$date = date('Y-m-d H:i:s');
@@ -111,7 +114,7 @@ class plgSystemUserreminder extends JPlugin
 
 		//insert into the schedule table
 		$db->setQuery("INSERT into #__userreminder_sch (id,daysent,monthsent,yearsent,timesent) values (NULL,'$day','$month','$year','" . time() . "')");
-		$db->query();
+		$db->execute();
 
 		// get number email send this time
 		$email_number_old = Factory::getApplication()->input->get('email_number_old', 0, 'int');
@@ -126,7 +129,7 @@ class plgSystemUserreminder extends JPlugin
 		$date        = date('Y-m-d H:i:s');
 		$q2          = "INSERT INTO #__userreminder_log (userId, username, description, date) VALUES ('0', 'System', '" . $description . "', '" . $date . "');";
 		$db->setQuery($q2);
-		$db->query();
+		$db->execute();
 
 		if ($runActivationReminders == 0)
 		{
@@ -136,7 +139,7 @@ class plgSystemUserreminder extends JPlugin
 			$date        = date('Y-m-d H:i:s');
 			$q2          = "INSERT INTO #__userreminder_log (userId, username, description, date) VALUES ('0', 'System', '" . $description . "', '" . $date . "');";
 			$db->setQuery($q2);
-			$db->query();
+			$db->execute();
 
 			// activation reminders
 			$reminders = new userreminderModelSendReminder();
@@ -147,7 +150,7 @@ class plgSystemUserreminder extends JPlugin
 			$date        = date('Y-m-d H:i:s');
 			$q2          = "INSERT INTO #__userreminder_log (userId, username, description, date) VALUES ('0', 'System', '" . $description . "', '" . $date . "');";
 			$db->setQuery($q2);
-			$db->query();
+			$db->execute();
 
 		}
 
@@ -158,7 +161,7 @@ class plgSystemUserreminder extends JPlugin
 			$date        = date('Y-m-d H:i:s');
 			$q2          = "INSERT INTO #__userreminder_log (userId, username, description, date) VALUES ('0', 'System', '" . $description . "', '" . $date . "');";
 			$db->setQuery($q2);
-			$db->query();
+			$db->execute();
 
 			// user reminders
 			$reminders = new userreminderModelSendUserReminder();
@@ -168,7 +171,7 @@ class plgSystemUserreminder extends JPlugin
 			$date        = date('Y-m-d H:i:s');
 			$q2          = "INSERT INTO #__userreminder_log (userId, username, description, date) VALUES ('0', 'System', '" . $description . "', '" . $date . "');";
 			$db->setQuery($q2);
-			$db->query();
+			$db->execute();
 
 		}
 
@@ -177,7 +180,7 @@ class plgSystemUserreminder extends JPlugin
 		$date        = date('Y-m-d H:i:s');
 		$q2          = "INSERT INTO #__userreminder_log (userId, username, description, date) VALUES ('0', 'System', '" . $description . "', '" . $date . "');";
 		$db->setQuery($q2);
-		$db->query();
+		$db->execute();
 
 	}
 

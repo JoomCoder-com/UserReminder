@@ -119,7 +119,7 @@ class userreminderModelOptUsers extends JModelList {
     	$db	= JFactory::getDBO();
     	$sql = "DELETE FROM `#__userreminder_optout` WHERE user_id IN ({$ids})";
     	$db->setQuery($sql);
-    	return $db->query();
+    	return $db->execute();
     }
     
     /**
@@ -132,7 +132,7 @@ class userreminderModelOptUsers extends JModelList {
     	$db	= JFactory::getDBO();
     	$sql = "INSERT INTO `#__userreminder_optout` VALUES ({$ids})";
     	$db->setQuery($sql);
-    	return $db->query();
+    	return $db->execute();
     }
     
     /**
@@ -144,20 +144,22 @@ class userreminderModelOptUsers extends JModelList {
     	// clear the table first
     	$sql = "TRUNCATE TABLE `#__userreminder_optout_usergroups`";
     	$db->setQuery($sql);
-    	if(!$db->query()){
+    	if(!$db->execute()){
     		return false;
     	}
+
     	
-    	if($list == "none"){
+    	if(empty($list)){
     		return true;
     	}
     	
     	// get the ids to be remove from the opt list
+
     	$ids = implode("),(", $list);
     	// add all that is checked
     	$sql = "INSERT INTO `#__userreminder_optout_usergroups` VALUES ({$ids})";
     	$db->setQuery($sql);
-    	return $db->query();
+    	return $db->execute();
     }
 /**    
     public function getListQuery($ordering = '', $direction = '') {
@@ -222,7 +224,7 @@ class userreminderModelOptUsers extends JModelList {
     	$db = JFactory::getDbo();
     	$query = $db->getQuery(true);
     
-    	$query->select('SQL_CALC_FOUND_ROWS *');
+    	$query->select('COUNT(*)');
     	$query->from($db->quoteName('#__users'));
    	
     	$where = 'id IN (SELECT user_id FROM #__userreminder_optout)';
@@ -246,7 +248,7 @@ class userreminderModelOptUsers extends JModelList {
     	$db = JFactory::getDbo();
     	$query = $db->getQuery(true);
     
-    	$query->select('SQL_CALC_FOUND_ROWS *');
+    	$query->select('COUNT(*)');
     	$query->from($db->quoteName('#__users'));
     	
     	$where = 'id NOT IN (SELECT user_id FROM #__userreminder_optout)';

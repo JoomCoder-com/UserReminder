@@ -77,7 +77,7 @@ class userreminderModelUserReminder extends JModelLegacy {
 		// added the sql below to exclude useres that are in the user group
 		// AND #__users.id IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id NOT IN (SELECT group_id FROM #__userreminder_optout_usergroups))
 		$days= \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDaysExistingUser',180);
-    $sql = "SELECT SQL_CALC_FOUND_ROWS id, email, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber, (TO_DAYS(NOW()) - TO_DAYS(lastvisitDate)) as nodays 
+    $sql = "SELECT id, email, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber, (TO_DAYS(NOW()) - TO_DAYS(lastvisitDate)) as nodays 
 				FROM #__users 
 				LEFT JOIN #__userreminder on id=userid
 				LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id  

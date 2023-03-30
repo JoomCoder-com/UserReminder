@@ -120,13 +120,13 @@ class UserreminderControllerOptoutUsers extends JControllerLegacy
 	 */
 	public function saveGroup(){
 
-        $cid = Factory::getApplication()->input->get('cid','','string');
+        $cid = Factory::getApplication()->input->get('cid',[],'array');
 	
 		$model = $this->getModel('optusers');
 		$message = null;
-		$ids = isset($cid) ? $cid : "none";
+
 		 
-		if($model->saveUserGroup($ids)){
+		if($model->saveUserGroup($cid)){
 			$message = JText::_('USERREMINDER_OPTGROUP_ADDED');
 		} else {
 			$message = JText::_('USERREMINDER_OPTUSER_FAILED');

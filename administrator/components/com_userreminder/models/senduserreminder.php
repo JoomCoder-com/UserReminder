@@ -81,23 +81,19 @@ class userreminderModelSendUserReminder extends JModelLegacy {
     // Clean up any records in the userreminder table where the user has now loged back in
     $q = "DELETE #__userreminder FROM #__userreminder INNER JOIN #__users ON  #__userreminder.userid=#__users.id WHERE lastvisitDate <> '0000-00-00 00:00:00' and type=3 and (TO_DAYS(NOW()) - TO_DAYS(lastvisitDate)) <= ".$days."";
     $db->setQuery($q);
-    $db->query();
-    if ($db->getErrorNum()) {
-        printf ("<br><font color=\"red\">MySQL error %d: %s</font><br>\n", $db->getErrorNum(), $db->getErrorMsg());
-    }
+    $db->execute();
+
 
     // Clean up any records in the userreminder table where the user no longer exists in the user table
     $q = "DELETE FROM #__userreminder where  #__userreminder.userid not in (Select #__users.id from #__users)";
     $db->setQuery($q);
-    $db->query();
-    if ($db->getErrorNum()) {
-        printf ("<br><font color=\"red\">MySQL error %d: %s</font><br>\n", $db->getErrorNum(), $db->getErrorMsg());
-    }
+    $db->execute();
+
 
     // find users who have not logged in for x number of days
     // added the sql below to exclude useres that are in the user group
     // AND #__users.id IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id NOT IN (SELECT group_id FROM #__userreminder_optout_usergroups))
-		$sql = "SELECT SQL_CALC_FOUND_ROWS id, email, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber, (TO_DAYS(NOW()) - TO_DAYS(lastvisitDate)) as nodays, optoutcode, username, name  
+		$sql = "SELECT id, email, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber, (TO_DAYS(NOW()) - TO_DAYS(lastvisitDate)) as nodays, optoutcode, username, name  
             FROM #__users 
             LEFT JOIN #__userreminder on id=userid
             LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id  
@@ -109,7 +105,7 @@ class userreminderModelSendUserReminder extends JModelLegacy {
             )
     		AND (#__users.id NOT IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id IN (SELECT group_id FROM #__userreminder_optout_usergroups)))";
 		
-		$sql_count = "SELECT SQL_CALC_FOUND_ROWS COUNT(*) 
+		$sql_count = "SELECT COUNT(*) 
             FROM #__users 
             LEFT JOIN #__userreminder on id=userid
             LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id  
@@ -149,11 +145,7 @@ class userreminderModelSendUserReminder extends JModelLegacy {
 		$db->setQuery($sql_count);
 		$countAll = $db->loadResult(); 
 
-    if ($displayHTML==true){
-      if ($db->getErrorNum()) {
-          printf ("<br><font color=\"red\">MySQL error %d: %s</font><br>\n", $db->getErrorNum(), $db->getErrorMsg());
-      }
-    }
+
 		
     // set the flag for total number of records
 		if($countAll){
@@ -329,10 +321,8 @@ class userreminderModelSendUserReminder extends JModelLegacy {
       										$q = "INSERT INTO #__userreminder(userid, datesent, remindernumber, type,optoutcode) values (".$user->id." , NOW(), 1, 3,'".$userOptOutCode."')";
                         }
       									$db->setQuery($q);
-      									$db->query();
-      									if ($db->getErrorNum()) {
-      										printf ("<br><font color=\"red\">MySQL error %d: %s</font><br>\n", $db->getErrorNum(), $db->getErrorMsg());
-      									}
+      									$db->execute();
+
       								}
       							}
       							if ($action==JText::_('USERREMINDER_ACTIONSEND')) { 
@@ -346,7 +336,7 @@ class userreminderModelSendUserReminder extends JModelLegacy {
       								$date = date('Y-m-d H:i:s');
       								$q2 = "INSERT INTO #__userreminder_log (`userId`, `username`, `description`, `date`) VALUES ('".$user->id."', '".$user->username."', '".$description."', '".$date."');";
       								$db->setQuery($q2);
-      								$db->query();
+      								$db->execute();
       
       							} else { 
                       if ($displayHTML==true){

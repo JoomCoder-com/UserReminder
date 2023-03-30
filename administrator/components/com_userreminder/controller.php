@@ -38,6 +38,7 @@ class userreminderController extends JControllerLegacy {
         // Get the incomplete registrations
         $results = $model->showuserReminder();
 
+
         $view->itemlist = $results;
         // Get the registered user who have never logged in, but have activated their registration
         $resultslogin = $model->showloginReminder();
@@ -294,7 +295,7 @@ class userreminderController extends JControllerLegacy {
     
     public function saveGroup(){
 
-	    $cid = Factory::getApplication()->input->get('cid','none');
+	    $cid = Factory::getApplication()->input->get('cid',[],'array');
     
     	$model = $this->getModel('optusers');
     	$app = JFactory::getApplication();
