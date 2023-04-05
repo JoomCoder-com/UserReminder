@@ -77,32 +77,29 @@ function optoutnow()
 		}
 	}
 
-	if ($notexist == 1)
+	if ($notexist)
 	{ ?>
-        <div id="system-message">
-            <div class="alert alert-warning" style="padding: 0;">
-                <h4 class="alert-heading">Message</h4>
-                <div><p>Error encountered - Please contact the website administrator to unsubscribe.</p></div>
-            </div>
+
+        <div id="system-message" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h4 class="alert-heading">Message</h4>
+            <p>Error encountered - Please contact the website administrator to unsubscribe.</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+
 	<?php }
 	else
 	{
 
 		?>
-        <table cellpadding="0" cellspacing="0" width="100%">
-            <tr>
-                <td width="100%" align="center" style="padding:10px;">
-                    <div id="system-message" style="padding: 0;">
-                        <div class="alert alert-warning"><a data-dismiss="alert" class="close"
-                                                            style="right: 8px;top: 2px;">&times;</a>
-                            <h4 class="alert-heading">Message</h4>
-                            <div><p><?php echo JText::_('USERREMINDER_OPTOUT_SUCCESS') ?></p></div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        </table>
+
+        <div id="system-message" class="alert alert-success alert-dismissible fade show" role="alert">
+            <h4 class="alert-heading">Message</h4>
+            <p><?php echo JText::_('USERREMINDER_OPTOUT_SUCCESS') ?></p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+
+
 		<?php
 	}
 
@@ -112,20 +109,12 @@ function optoutnow()
 // process the op-out request
 function optout()
 { ?>
-    <table cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td width="100%" align="center" style="padding:10px;">
-                <div id="system-message">
-                    <div class="alert alert-warning" style="padding: 0;"><a data-dismiss="alert" class="close"
-                                                                            style="right: 8px;top: 2px;">&times;</a>
-                        <h4 class="alert-heading">Message</h4>
-                        <div><p><?php echo JText::_('USERREMINDER_CONFIRMATION'); ?></p></div>
-                    </div>
-                </div>
-                <a href="<?php echo JURI::base() ?>index.php?option=com_userreminder&task=optoutnow&uid=<?php echo JFactory::getApplication()->input->get('uid') ?>"><?php echo JText::_('USERREMINDER_YES') ?></a>
-                &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-                <a href="<?php echo JURI::base() ?>index.php"><?php echo JText::_('USERREMINDER_NO') ?></a>
-            </td>
-        </tr>
-    </table>
+    <div id="system-message" class="alert alert-warning alert-dismissible fade show" role="alert">
+        <h4 class="alert-heading">Message</h4>
+        <p><?php echo JText::_('USERREMINDER_CONFIRMATION') ?></p>
+        <hr>
+        <a class="btn btn-sm btn-outline-success bg-white text-success" href="<?php echo JURI::base() ?>index.php?option=com_userreminder&task=optoutnow&uid=<?php echo JFactory::getApplication()->input->get('uid') ?>"><?php echo JText::_('USERREMINDER_YES') ?></a>
+        <a class="btn btn-sm btn-outline-warning bg-white text-warning" href="<?php echo JURI::base() ?>index.php"><?php echo JText::_('USERREMINDER_NO') ?></a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 <?php } ?>

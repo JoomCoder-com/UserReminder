@@ -19,7 +19,7 @@ class userreminderViewSenduserreminder extends JViewLegacy
 	function _display($tpl = null){
 		
 		JToolBarHelper::title( JText::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
-		JHTML::stylesheet(JURI::root().'administrator/components/com_userreminder/assets/css/userreminder.css', false, true, false);
+//		JHTML::stylesheet(JURI::root().'administrator/components/com_userreminder/assets/css/userreminder.css', false, true, false);
 
 		JToolBarHelper::custom( 'cpanel', 'home.png', 'home.png', JText::_( 'USERREMINDER_BACK' ), false, false );
 

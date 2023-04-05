@@ -224,7 +224,7 @@ class userreminderModelOptUsers extends JModelList {
     	$db = JFactory::getDbo();
     	$query = $db->getQuery(true);
     
-    	$query->select('COUNT(*)');
+    	$query->select('*');
     	$query->from($db->quoteName('#__users'));
    	
     	$where = 'id IN (SELECT user_id FROM #__userreminder_optout)';
@@ -248,7 +248,7 @@ class userreminderModelOptUsers extends JModelList {
     	$db = JFactory::getDbo();
     	$query = $db->getQuery(true);
     
-    	$query->select('COUNT(*)');
+    	$query->select('*');
     	$query->from($db->quoteName('#__users'));
     	
     	$where = 'id NOT IN (SELECT user_id FROM #__userreminder_optout)';
@@ -272,12 +272,13 @@ class userreminderModelOptUsers extends JModelList {
     */
     function getOptUsers($ordering = '', $direction = '',$debug = ''){
       if(empty($this->_data)){
-        $sql = $this->getListQuery($ordering, $direction);
+            $sql = $this->getListQuery($ordering, $direction);
 	    	$db = $this->getDbo();
 	    	$this->_data = $this->_getList($sql, $this->getState('limitstart'), $this->getState('limit'));
         $db->setQuery( "SELECT FOUND_ROWS();" );
 	    	$this->_total = $db->loadResult();
     	}
+
     	return $this->_data;
     }
   

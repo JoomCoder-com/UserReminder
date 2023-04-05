@@ -49,8 +49,7 @@ class userreminderModelSendReminder extends JModelLegacy
 		$nullDate = $db->getNullDate();
 		$sql      = "";
 
-		//$selectfields1 = "SELECT #__users.id, datesent, 1 as type, remindernumber, type as savedtype, optoutcode ";
-		//$selectfields2 = "SELECT #__users.id, datesent, 2 as type, remindernumber, type as savedtype, optoutcode ";
+
 		$selectfields1 = "SELECT #__users.id, datesent, 1 as type, remindernumber, type as savedtype, optoutcode, #__users.username as username, #__users.name as name, #__users.email as email , #__users.activation as activation ";
 		$selectfields2 = "SELECT #__users.id, datesent, 2 as type, remindernumber, type as savedtype, optoutcode, #__users.username as username, #__users.name as name, #__users.email as email , #__users.activation as activation ";
 
@@ -64,9 +63,9 @@ class userreminderModelSendReminder extends JModelLegacy
 			// check to see if we should check CB table or Joomla users table
 			// added the sql below to exclude useres that are in the user group
 			// AND #__users.id IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id NOT IN (SELECT group_id FROM #__userreminder_optout_usergroups))
-			if ($params->get('useCBActivation', 0) == 1)
+			if ($params->get('useCBActivation', 0))
 			{
-				if ($params->get('enabledSendImed', 0) == 0)
+				if (!$params->get('enabledSendImed', 0))
 				{
 					$sql = "{SELECT} 
                           FROM #__users 
@@ -99,7 +98,7 @@ class userreminderModelSendReminder extends JModelLegacy
 			}
 			else
 			{
-				if ($params->get('enabledSendImed', 0) == 0)
+				if (!$params->get('enabledSendImed', 0))
 				{
 					$sql = "{SELECT} 
                           FROM #__users 
@@ -137,7 +136,7 @@ class userreminderModelSendReminder extends JModelLegacy
 				$sql = $sql . " UNION ";
 			}
 
-			if ($params->get('enabledSendImed', 0) == 0)
+			if (!$params->get('enabledSendImed', 0))
 			{
 				$sql = $sql . " ({SELECT2} 
                               FROM #__users 
@@ -224,8 +223,8 @@ class userreminderModelSendReminder extends JModelLegacy
                 </tr>
 				<?php
 
-				// Changes 2.5.9.13 debug for memory usage
-				if ($params->get('debugUserReminder', 0) == 1)
+
+				if ($params->get('debugUserReminder', 0))
 				{
 					?>
                     <tr>
@@ -265,7 +264,7 @@ class userreminderModelSendReminder extends JModelLegacy
 				$progressmessage = JText::_('USERREMINDER_PROCESS_MESSAGE3') . ' ' . $i . '. ' . JText::_('USERREMINDER_PROCESS_MESSAGE4') . ' ' . $display_email_number_new . ' to ' . $maxrecordnumber . '. ';
 
 				$progressmessage = $progressmessage . ' ' . JText::_('USERREMINDER_PROCESS_MESSAGE5');
-				if ($params->get('debugUserReminder', 0) == 1)
+				if ($params->get('debugUserReminder', 0))
 				{
 					$progressmessage = $progressmessage . ' (' . memory_get_usage(true) . ')';
 				}
@@ -371,33 +370,33 @@ class userreminderModelSendReminder extends JModelLegacy
 			// if requested delete users who have been notifed and have not completed registration
 			if ($type == 2)
 			{
-				if ($params->get('enableDeleteUsersLogin', 1) == 0 & $action == JText::_('USERREMINDER_ACTIONDELETED'))
+				if (!$params->get('enableDeleteUsersLogin', 1) && $action == JText::_('USERREMINDER_ACTIONDELETED'))
 				{
 					$user2 = JFactory::getUser($user->id);
 					$user2->delete(false);
 					unset($user2);
 				}
-                elseif ($params->get('enableDeleteUsersLogin', 1) != 0 & $action == JText::_('USERREMINDER_ACTIONDELETED'))
+                elseif ($params->get('enableDeleteUsersLogin', 1) && $action == JText::_('USERREMINDER_ACTIONDELETED'))
 				{
 					$action = JText::_('USERREMINDER_ACTIONNOTDELETED');
 				}
 			}
 			else
 			{
-				if ($params->get('enableDeleteUsers', 1) == 0 & $action == JText::_('USERREMINDER_ACTIONDELETED'))
+				if (!$params->get('enableDeleteUsers', 1) && $action == JText::_('USERREMINDER_ACTIONDELETED'))
 				{
 					$user2 = JFactory::getUser($user->id);
 					$user2->delete(false);
 					unset($user2);
 				}
-                elseif ($params->get('enableDeleteUsers', 1) != 0 & $action == JText::_('USERREMINDER_ACTIONDELETED'))
+                elseif ($params->get('enableDeleteUsers', 1)  && $action == JText::_('USERREMINDER_ACTIONDELETED'))
 				{
 					$action = JText::_('USERREMINDER_ACTIONNOTDELETED');
 				}
 			}
 
 			// Changes 2.5.9.13 skip displaying this is no action is to be performed
-			if ($action != JText::_('USERREMINDER_ACTION_NONE') & $action != JText::_('USERREMINDER_ACTION_LOGINNONE'))
+			if ($action != JText::_('USERREMINDER_ACTION_NONE') && $action != JText::_('USERREMINDER_ACTION_LOGINNONE'))
 			{
 
 			if ($displayHTML == true)
@@ -529,7 +528,7 @@ class userreminderModelSendReminder extends JModelLegacy
 		$usersConfig = json_decode($tableParam, true);
 
 		// check to see if Joomla or CB activation link should be used
-		if ($params->get('useCBActivation', 0) == 1)
+		if ($params->get('useCBActivation', 0))
 		{
 			// Find the activation code for community builder
 			$q = "Select cbactivation FROM #__comprofiler where  #__comprofiler.user_id =" . $user->id;
@@ -572,59 +571,28 @@ class userreminderModelSendReminder extends JModelLegacy
 			$subject = userreminderModelSendReminder::replaceParams($subject, "[SITE_NAME]", $sitename);
 			$subject = html_entity_decode($subject, ENT_QUOTES);
 
-			// Get email body
-			// get config send mail html or plain text
-			$mail_html = $params->get('chkEmailHTML_Login', 0);
-			if ($mail_html == 0)
+			// get email html if $mail_html = 1
+			$mode = 1;
+
+			if ($params->get('regLoginEmailBodyHTML', '') == "")
 			{
-				$mode = 0;
-				// get mail plain text (default of component)
-
-				if ($params->get('regLoginEmailBody', '') == "")
-				{
-					$message = JText::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
-				}
-				else
-				{
-
-					$message = $params->get('regLoginEmailBody', '');
-				}
+				$message = JText::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
+				$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 			}
 			else
 			{
-				// get email html if $mail_html = 1
-				$mode = 1;
 
-				if ($params->get('regLoginEmailBodyHTML', '') == "")
-				{
-					$message = JText::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
-					$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
-				}
-				else
-				{
-
-					$message = $params->get('regLoginEmailBodyHTML', '');
-				}
+				$message = $params->get('regLoginEmailBodyHTML', '');
 			}
 
 			$message = userreminderModelSendReminder::replaceParams($message, "[NAME]", $name);
 			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_NAME]", $sitename);
 			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_URL]", $siteURL);
 			$message = userreminderModelSendReminder::replaceParams($message, "[USERNAME]", $username);
-			//$message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-
-			//if (\Joomla\CMS\Component\$params->get('useCBActivation',0)==0) {
-			//  $message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-			//}
-			//else
-			//{
-			//  $message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_comprofiler&task=lostpassword');
-			//}
-
-			// Reset Passowrd link
+			//$message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index
 
 
-			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . $params->get('passwordReset', ''));
+			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . $params->get('passwordReset', 'index.php?option=com_users&view=reset'));
 
 			$message = userreminderModelSendReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $optoutcode);
 			$message = html_entity_decode($message, ENT_QUOTES);
@@ -651,61 +619,29 @@ class userreminderModelSendReminder extends JModelLegacy
 			$subject = userreminderModelSendReminder::replaceParams($subject, "[SITE_NAME]", $sitename);
 			$subject = html_entity_decode($subject, ENT_QUOTES);
 
-			// Get email body
-			// check send mail html
-			$mail_html = $params->get('chkEmailHTML', 0);
-			if ($mail_html == 0)
-			{
-				$mode = 0;
-				// send plain text email (default of component)
 
-				if ($params->get('regActivationEmailBody', '') == "")
-				{
-					$message = JText::_('USERREMINDER_SEND_MSG_REMINDER');
-					$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
-				}
-				else
-				{
 
-					$message = $params->get('regActivationEmailBody', '');
-				}
-			}
+			$mode = 1;
+
+			// send email html (custom)
+			if ($params->get('regActivationEmailBodyHTML', '') == "")
+				$message = JText::_('USERREMINDER_SEND_MSG_REMINDER');
 			else
-			{
-				$mode = 1;
+				$message = $params->get('regActivationEmailBodyHTML', '');
 
-				// send email html (custom)
-				if ($params->get('regActivationEmailBodyHTML', '') == "")
-					$message = JText::_('USERREMINDER_SEND_MSG_REMINDER');
-				else
-					$message = $params->get('regActivationEmailBodyHTML', '');
-			}
-
-
-			//$message = sprintf ( $message, $name, $sitename, $activationURL, $siteURL, $username, $siteURL.'index.php?option=com_user&view=reset');
 			$message = userreminderModelSendReminder::replaceParams($message, "[NAME]", $name);
 			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_NAME]", $sitename);
 			$message = userreminderModelSendReminder::replaceParams($message, "[ACTIVATE_URL]", $activationURL);
 			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_URL]", $siteURL);
 			$message = userreminderModelSendReminder::replaceParams($message, "[USERNAME]", $username);
-			//$message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-			//if (\Joomla\CMS\Component\$params->get('useCBActivation',0)==0) {
-			//  $message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-			//}
-			//else
-			//{
-			//  $message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_comprofiler&task=lostpassword');
-			//}
-			// Reset Passowrd link
 
-			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . $params->get('passwordReset', ''));
+
+			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . $params->get('passwordReset', 'index.php?option=com_users&view=reset'));
 
 
 			$message = userreminderModelSendReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $optoutcode);
 			$message = html_entity_decode($message, ENT_QUOTES);
 
-			// if($chkEmailHTML_Login == 0)
-			// $message	= preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 		}
 
 		// Send email to user
@@ -720,19 +656,19 @@ class userreminderModelSendReminder extends JModelLegacy
 		$successmail = false;
 		// if debug is set to on then do not send emails
 		// Changes 2.5.9.13
-		if ($params->get('debugUserReminder', 0) == 1)
+		if ($params->get('debugUserReminder', 0))
 		{
 			return true;
 		}
 		else
 		{
-			if ($params->get('enabledBccToAdmin', 1) == 0)
+			if (!$params->get('enabledBccToAdmin', 1))
 			{
-				$successmail = JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, $mode, null, $adminemails);
+				$successmail = JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null, $adminemails);
 			}
 			else
 			{
-				$successmail = JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, $mode, null);
+				$successmail = JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null);
 			}
 
 			return $successmail;
@@ -742,7 +678,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
     public function cleanUpRegisteredUsers(){
         $db = \Joomla\CMS\Factory::getDbo();
-	    $q = "DELETE #__userreminder FROM #__userreminder INNER JOIN #__users ON  #__userreminder.userid=#__users.id WHERE (lastvisitDate <> '0000-00-00 00:00:00' and type=2) or (block=0 and type=1)";
+	    $q = "DELETE #__userreminder FROM #__userreminder INNER JOIN #__users ON  #__userreminder.userid=#__users.id WHERE (lastvisitDate <> '0000-00-00 00:00:00' AND !ISNULL(lastvisitDate) AND type=2) or (block=0 and type=1)";
 	    $db->setQuery($q);
 	    $result = $db->execute();
 

@@ -136,7 +136,7 @@ class userreminderController extends JControllerLegacy {
 		$email_number_new = $input->get('email_number_new',0,'int');
 		$email_number = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('number_email',200);
 		
-		if($email_number_new == 0) $email_number_new = $email_number;
+		if(!$email_number_new) $email_number_new = $email_number;
 		
         $model = $this->getModel('sendreminder');
         //$model = &$this->getModel('sendreminder');

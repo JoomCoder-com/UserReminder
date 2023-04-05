@@ -46,7 +46,7 @@ class plgSystemUserreminder extends JPlugin
 		if (!$schedulerEnabled || !$activationEnabled)
 		{
 			// check to see if the scheduler has been enabled
-			if ($params->get('enabledScheduledExecution', 1) == 0)
+			if (!$params->get('enabledScheduledExecution', 1))
 			{
 
 				// get the parameters
@@ -57,7 +57,7 @@ class plgSystemUserreminder extends JPlugin
 				$date = date('Y-m-d H:i:s');
 
 				// ---- Check to see if Daily , Weekly or Monthly should be run -------------------------------------------------
-				if ($scheduleExecutionType == 1)
+				if ($scheduleExecutionType)
 				{
 					//send daily
 					if ($scheduleExecutionTime <= $hour)
@@ -131,7 +131,7 @@ class plgSystemUserreminder extends JPlugin
 		$db->setQuery($q2);
 		$db->execute();
 
-		if ($runActivationReminders == 0)
+		if (!$runActivationReminders)
 		{
 			// log the event into the log table
 			//$description = 'User Activation and Login DEBUG: Reminders sendReminder(false,'.$email_number_old.','.$email_number_new.','.$number_email.')' ;
@@ -154,7 +154,7 @@ class plgSystemUserreminder extends JPlugin
 
 		}
 
-		if ($runUserReminders == 0)
+		if (!$runUserReminders)
 		{
 			// log the event into the log table
 			$description = 'START - Scheduled User Reminders now running....';
