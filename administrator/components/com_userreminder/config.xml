@@ -193,7 +193,7 @@
                description="USERREMINDER_REG_EMAIL_SUBJECT_TEXT"/>
 
 
-        <field showon="enableActivateReminder:1" type="editor" name="regActivationEmailBodyHTML"
+        <field showon="enableActivateReminder:1" type="editor" name="regActivationEmailBodyHTML"  filter="raw"
                label="USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
                default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have not completed registering at [SITE_NAME].&lt;br /&gt;&lt;br /&gt;Your account is created and must be activated before you can use it.&lt;br /&gt;&lt;br /&gt;To activate the account click on the following link or copy-paste it in your browser:&lt;br /&gt;[ACTIVATE_URL]&lt;br /&gt;&lt;br /&gt;After activation you may login to [SITE_URL] using the following username and password:&lt;br /&gt;&lt;br /&gt;Username: [USERNAME]&lt;br /&gt;Forgot your Password? : [PASSWORD_RESET]&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"
                description="USERREMINDER_REG_EMAIL_TEXT_BODY"/>
@@ -232,7 +232,7 @@
                label="USERREMINDER_LOGIN_EMAIL_SUBJECT" default="You have successfully activated your account at [SITE_NAME]"
                description="USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>
 
-        <field showon="enableLoginReminder:1" type="editor" name="regLoginEmailBodyHTML"
+        <field showon="enableLoginReminder:1" type="editor" filter="raw" name="regLoginEmailBodyHTML"
                label="USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
                default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have successfully registered you account at [SITE_NAME].&lt;br /&gt;&lt;br /&gt;However you have not logged in since activating your account.&lt;br /&gt;&lt;br /&gt;To access the website click on the following link or copy-paste it in your browser:&lt;br /&gt;[SITE_URL]&lt;br /&gt;&lt;br /&gt;You may login using the following username and password:&lt;br /&gt;&lt;br /&gt;Username: [USERNAME]&lt;br /&gt;Forgot your Password? : [PASSWORD_RESET]&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"
                description="USERREMINDER_REG_EMAIL_TEXT_BODY"/>
@@ -279,7 +279,7 @@
                label="USERREMINDER_LOGIN_EMAIL_SUBJECT" default="We have missed you at [SITE_NAME]"
                description="USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>
 
-        <field type="editor" name="regExistingUserEmailBodyHTML"
+        <field type="editor" name="regExistingUserEmailBodyHTML"  filter="raw"
                label="USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
                default="Hello [NAME],&lt;br&gt;&lt;br&gt;We have noticed that you have not visited [SITE_NAME] for a while.&lt;br&gt;&lt;br&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"
         />

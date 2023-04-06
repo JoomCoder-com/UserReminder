@@ -228,25 +228,20 @@ class userreminderModelUserReminder extends JModelLegacy {
 		else{
 			$message = ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailBodyHTML','');
 		}
+
+		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
+		$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
+		$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
+		$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
+		$websiteURL = "<a href='$siteURL'>$siteURL</a>";
 		
 		$message =  JText::_( 'USERREMINDER_REMINDER_DETAILS_FOR_TEST' ).chr(10).chr(10).$message;
 		$message 	= userreminderModelUserReminder::replaceParams($message,"[NAME]",$name);
 		$message 	= userreminderModelUserReminder::replaceParams($message,"[SITE_NAME]",$sitename);
-		$message 	= userreminderModelUserReminder::replaceParams($message,"[SITE_URL]",$siteURL);
+		$message 	= userreminderModelUserReminder::replaceParams($message,"[SITE_URL]",$websiteURL);
 		$message 	= userreminderModelUserReminder::replaceParams($message,"[USERNAME]",$username);
-		//$message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-		//if ($this->getParamData( $regConfig,'useCBActivation',0 )==0) {
-		//  $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-		//}
-		//else
-		//{
-		//  $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_comprofiler&task=lostpassword');
-		//}
-		// Reset Passowrd link
-
-    $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL. ComponentHelper::getParams('com_userreminder')->get('passwordReset','index.php?option=com_users&view=reset'));
-        
-    $message 	= userreminderModelUserReminder::replaceParams($message,"[OPTOUT]",$siteURL.'index.php?option=com_userreminder&task=optout&uid='.$user->id);
+    $message 	= userreminderModelUserReminder::replaceParams($message,"[PASSWORD_RESET]",$passwordReset);
+    $message 	= userreminderModelUserReminder::replaceParams($message,"[OPTOUT]",$optOutUrl);
 		$message = html_entity_decode($message, ENT_QUOTES);
 		// if($chkEmailHTML_Remider == 0)			// $message	= preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n			
 		// send email

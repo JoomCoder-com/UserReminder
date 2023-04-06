@@ -478,16 +478,18 @@ class userreminderModelSendUserReminder extends JModelLegacy
 			$message = ComponentHelper::getParams('com_userreminder')->get('regExistingUserEmailBodyHTML', '');
 		}
 
+		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
+		$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
+		$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $userOptOutCode;
+		$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
+		$websiteURL = "<a href='$siteURL'>$siteURL</a>";
+
 		$message = userreminderModelSendUserReminder::replaceParams($message, "[NAME]", $name);
 		$message = userreminderModelSendUserReminder::replaceParams($message, "[SITE_NAME]", $sitename);
-		$message = userreminderModelSendUserReminder::replaceParams($message, "[SITE_URL]", $siteURL);
+		$message = userreminderModelSendUserReminder::replaceParams($message, "[SITE_URL]", $websiteURL);
 		$message = userreminderModelSendUserReminder::replaceParams($message, "[USERNAME]", $username);
-
-		// Reset Passowrd link
-
-		$message = userreminderModelSendUserReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset'));
-
-		$message = userreminderModelSendUserReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $userOptOutCode);
+		$message = userreminderModelSendUserReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
+		$message = userreminderModelSendUserReminder::replaceParams($message, "[OPTOUT]", $optOutUrl);
 		$message = html_entity_decode($message, ENT_QUOTES);
 
 		// if($chkEmailHTML_Remider == 0)
@@ -500,11 +502,6 @@ class userreminderModelSendUserReminder extends JModelLegacy
 			$mailfrom = $rows[0]->email;
 		}
 
-		//  COMMENT OUT while IN TESTING MODE
-		//$successmail = true;
-		$successmail = false;
-		// if debug is set to on then do not send emails
-		// Changes 2.5.9.13
 
 		if (ComponentHelper::getParams('com_userreminder')->get('debugUserReminder', 0))
 		{

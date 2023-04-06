@@ -585,16 +585,18 @@ class userreminderModelSendReminder extends JModelLegacy
 				$message = $params->get('regLoginEmailBodyHTML', '');
 			}
 
+			$passwordReset = $siteURL . $params->get('passwordReset', 'index.php?option=com_users&view=reset');
+			$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
+            $optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $optoutcode;
+			$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
+			$websiteURL = "<a href='$siteURL'>$siteURL</a>";
+
 			$message = userreminderModelSendReminder::replaceParams($message, "[NAME]", $name);
 			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_NAME]", $sitename);
-			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_URL]", $siteURL);
+			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_URL]", $websiteURL);
 			$message = userreminderModelSendReminder::replaceParams($message, "[USERNAME]", $username);
-			//$message 	= userreminderModelSendReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index
-
-
-			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . $params->get('passwordReset', 'index.php?option=com_users&view=reset'));
-
-			$message = userreminderModelSendReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $optoutcode);
+			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
+			$message = userreminderModelSendReminder::replaceParams($message, "[OPTOUT]", $optOutUrl);
 			$message = html_entity_decode($message, ENT_QUOTES);
 
 			// if($chkEmailHTML_Login == 0)
@@ -629,17 +631,22 @@ class userreminderModelSendReminder extends JModelLegacy
 			else
 				$message = $params->get('regActivationEmailBodyHTML', '');
 
+
+			$passwordReset = $siteURL . $params->get('passwordReset', 'index.php?option=com_users&view=reset');
+			$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
+			$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $optoutcode;
+			$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
+			$websiteURL = "<a href='$siteURL'>$siteURL</a>";
+			$activationURL = "<a href='$activationURL'>$activationURL</a>";
+
+
 			$message = userreminderModelSendReminder::replaceParams($message, "[NAME]", $name);
 			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_NAME]", $sitename);
 			$message = userreminderModelSendReminder::replaceParams($message, "[ACTIVATE_URL]", $activationURL);
-			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_URL]", $siteURL);
+			$message = userreminderModelSendReminder::replaceParams($message, "[SITE_URL]", $websiteURL);
 			$message = userreminderModelSendReminder::replaceParams($message, "[USERNAME]", $username);
-
-
-			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . $params->get('passwordReset', 'index.php?option=com_users&view=reset'));
-
-
-			$message = userreminderModelSendReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $optoutcode);
+			$message = userreminderModelSendReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
+			$message = userreminderModelSendReminder::replaceParams($message, "[OPTOUT]", $optOutUrl);
 			$message = html_entity_decode($message, ENT_QUOTES);
 
 		}

@@ -581,19 +581,25 @@ class userreminderModelReminder extends JModelLegacy
 			$message = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailBodyHTML', "");
 		}
 
-		//$message = sprintf ( JText::_( 'USERREMINDER_REMINDER_DETAILS_FOR_TEST' ).chr(10).chr(10).$message, $name, $sitename, $activationURL, $siteURL, $username, $siteURL.'index.php?option=com_user&view=reset');
+		$activationURL = "<a href='$activationURL'>$activationURL</a>";
+		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
+		$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
+		$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
+		$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
+		$websiteURL = "<a href='$siteURL'>$siteURL</a>";
+
 		$message = JText::_('USERREMINDER_REMINDER_DETAILS_FOR_TEST') . chr(10) . chr(10) . $message;
 		$message = userreminderModelReminder::replaceParams($message, "[NAME]", $name);
 		$message = userreminderModelReminder::replaceParams($message, "[SITE_NAME]", $sitename);
 		$message = userreminderModelReminder::replaceParams($message, "[ACTIVATE_URL]", $activationURL);
-		$message = userreminderModelReminder::replaceParams($message, "[SITE_URL]", $siteURL);
+		$message = userreminderModelReminder::replaceParams($message, "[SITE_URL]", $websiteURL);
 		$message = userreminderModelReminder::replaceParams($message, "[USERNAME]", $username);
 
 		// Reset Passowrd link
 
-		$message = userreminderModelReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('passwordReset', "index.php?option=com_users&view=reset"));
+		$message = userreminderModelReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
 
-		$message = userreminderModelReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id);
+		$message = userreminderModelReminder::replaceParams($message, "[OPTOUT]", $optOutUrl);
 		$message = html_entity_decode($message, ENT_QUOTES);
 		// send email
 		JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true);
@@ -631,24 +637,20 @@ class userreminderModelReminder extends JModelLegacy
 			$message = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailBodyHTML', '');
 		}
 
+		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
+		$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
+		$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
+		$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
+		$websiteUrl = "<a href='$siteURL'>$siteURL</a>";
+
 		//$message = sprintf ( JText::_( 'USERREMINDER_REMINDER_DETAILS_FOR_TEST' ).chr(10).chr(10).$message, $name, $sitename, $siteURL, $username, $siteURL.'index.php?option=com_user&view=reset');
 		$message = JText::_('USERREMINDER_REMINDER_DETAILS_FOR_TEST') . chr(10) . chr(10) . $message;
 		$message = userreminderModelReminder::replaceParams($message, "[NAME]", $name);
 		$message = userreminderModelReminder::replaceParams($message, "[SITE_NAME]", $sitename);
-		$message = userreminderModelReminder::replaceParams($message, "[SITE_URL]", $siteURL);
+		$message = userreminderModelReminder::replaceParams($message, "[SITE_URL]", $websiteUrl);
 		$message = userreminderModelReminder::replaceParams($message, "[USERNAME]", $username);
-		//if ($this->getParamData( $regConfig,'useCBActivation',0 )==0) {
-		//  $message 	= userreminderModelReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_user&view=reset');
-		//}
-		//else
-		//{
-		//  $message 	= userreminderModelReminder::replaceParams($message,"[PASSWORD_RESET]",$siteURL.'index.php?option=com_comprofiler&task=lostpassword');
-		//}
-		// Reset Passowrd link
-
-		$message = userreminderModelReminder::replaceParams($message, "[PASSWORD_RESET]", $siteURL . \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset'));
-
-		$message = userreminderModelReminder::replaceParams($message, "[OPTOUT]", $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id);
+			$message = userreminderModelReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
+		$message = userreminderModelReminder::replaceParams($message, "[OPTOUT]", $optOutUrl);
 		$message = html_entity_decode($message, ENT_QUOTES);
 		//$message	= preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 
