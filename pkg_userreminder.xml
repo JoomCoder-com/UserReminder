@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="package" version="4.0.0" method="upgrade">
+    <name>UserReminder Pro</name>
+    <packagename>UserReminder</packagename>
+    <version>##VERSION##</version>
+    <url>https://www.joomcoder.com</url>
+    <creationDate>28-10-2021</creationDate>
+    <copyright>(C) 2013 - 2023 JoomCoder. All rights reserved.</copyright>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>support@joomcoder.com</authorEmail>
+    <authorUrl>https://www.joomcoder.com</authorUrl>
+    <author>JoomCoder</author>
+    <packager>JoomCoder</packager>
+    <packagerurl>https://www.joomcoder.com</packagerurl>
+    <description>UserReminder package used to install all extensions related to UserReminder component at one time</description>
+    <blockChildUninstall>true</blockChildUninstall>
+
+    <scriptfile>pkg_script.php</scriptfile>
+
+    <files folder="packages">
+        <!-- Install components -->
+        <folder type="component" id="com_userreminder">components/com_userreminder</folder>
+        <folder enable="1" type="plugin" id="plg_userreminder" group="system">plugins/system/userreminder</folder>
+    </files>
+
+
+    <updateservers>
+        <server type="extension" priority="1" name="User Reminder Update">
+            <![CDATA[https://www.joomcoder.com/index.php?option=com_mediastore&task=pluginTask&plugin=joomla&subtask=server&id=9]]>
+        </server>
+    </updateservers>
+
+    <dlid/>
+
+</extension>

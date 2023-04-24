@@ -5,9 +5,9 @@
 	<author>JoomCoder</author>
 	<authorEmail>www.joomcoder.com</authorEmail>
 	<authorUrl>www.joomcoder.com</authorUrl>
-	<copyright>Copyright © 2020 - 2021 JoomCoder - All rights reserved.</copyright>
+	<copyright>Copyright © 2020 - 2023 JoomCoder - All rights reserved.</copyright>
 	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
-	<version>1.0</version>
+	<version>##VERSION##</version>
 	<description>Manage Users who have not completed the registration process, never logged in or who have not visited your site for a period of time.</description>
 	<install>
 		<sql>
@@ -21,7 +21,7 @@
 	</uninstall>
   
 	<languages folder="site">
-			<language tag="en-GB">language/en-GB/en-GB.com_userreminder.ini</language>
+			<language tag="en-GB">language/en-GB/com_userreminder.ini</language>
 	</languages>
 	
 	<files folder="site">
@@ -46,15 +46,12 @@
 		</files>
 		
 		<languages folder="admin">
-			<language tag="en-GB">language/en-GB/en-GB.com_userreminder.ini</language>
-			<language tag="en-GB">language/en-GB/en-GB.com_userreminder.sys.ini</language>
+			<language tag="en-GB">language/en-GB/com_userreminder.ini</language>
+			<language tag="en-GB">language/en-GB/com_userreminder.sys.ini</language>
 		</languages>
 		
 	</administration>
 
-	<updateservers>
-		<server type="extension" priority="1" name="User Reminder Update">
-			<![CDATA[https://www.joomcoder.com/index.php?option=com_mediastore&task=pluginTask&plugin=joomla&subtask=server&id=9]]>
-		</server>
-	</updateservers>
+
+
 </extension>
