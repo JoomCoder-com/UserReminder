@@ -17,15 +17,17 @@
 
     <scriptfile>pkg_script.php</scriptfile>
 
-    <files folder="packages">
+    <files>
         <!-- Install components -->
         <folder type="component" id="com_userreminder">components/com_userreminder</folder>
-        <folder enable="1" type="plugin" id="plg_userreminder" group="system">plugins/system/userreminder</folder>
+
+        <!-- Install Plugins -->
+        <folder enable="1" type="plugin" id="userreminder" group="system">plugins/system/plg_system_userreminder</folder>
     </files>
 
 
     <updateservers>
-        <server type="extension" priority="1" name="User Reminder Update">
+        <server type="extension" priority="1" name="UserReminder Update">
             <![CDATA[https://www.joomcoder.com/index.php?option=com_mediastore&task=pluginTask&plugin=joomla&subtask=server&id=9]]>
         </server>
     </updateservers>

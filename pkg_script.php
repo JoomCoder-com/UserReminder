@@ -7,7 +7,7 @@
 defined('_JEXEC') or die('Restricted access');
 
 
-class pkg_joomticketsInstallerScript
+class pkg_userreminderInstallerScript
 {
 
 	public function preflight($type, $parent)
@@ -57,12 +57,10 @@ class pkg_joomticketsInstallerScript
 		// Enable Plugins and set Default plugin
 		$plugins = array();
 
-		foreach ($manifest->files->folder as $file)
-		{
+		foreach ($manifest->files->folder as $file) {
 			$attributes = $file->attributes();
 
-			if ($attributes['enable'] && $attributes['type'] == 'plugin' && $attributes['enable'] == '1')
-			{
+			if ($attributes['enable'] && $attributes['type'] == 'plugin' && $attributes['enable'] == '1') {
 				$plugins[] = $db->quote($attributes['id']);
 			}
 		}
@@ -71,10 +69,10 @@ class pkg_joomticketsInstallerScript
 			. ' SET enabled = 1'
 			. ' WHERE element IN (' . implode(', ', $plugins) . ') AND type =' . $db->q("plugin");
 		$db->setQuery($query);
-		if (!$db->execute())
-		{
+
+		if (!$db->execute()) {
 			$application = JFactory::getApplication();
-			$application->enqueueMessage('Failed to Enable plugins ' . $db->getError(), 'error');
+			$application->enqueueMessage('Failed to Enable some plugins', 'error');
 		}
 
 	}

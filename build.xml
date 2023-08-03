@@ -3,23 +3,23 @@
     <target name="dirbuild">
 
         <!-- Main component -->
-        <copy file="./language/en-GB/com_userreminder.ini" todir="${releasespath}/build/site/language" />
-        <copy file="./administrator/language/en-GB/com_userreminder.ini" todir="${releasespath}/build/admin/language" />
-        <copy file="./administrator/language/en-GB/com_userreminder.sys.ini" todir="${releasespath}/build/admin/language" />
-        <copy todir="${releasespath}/build/admin">
+        <copy file="./language/en-GB/com_userreminder.ini" todir="${releasespath}/build/components/com_userreminder/site/language" />
+        <copy file="./administrator/language/en-GB/com_userreminder.ini" todir="${releasespath}/build/components/com_userreminder/admin/language" />
+        <copy file="./administrator/language/en-GB/com_userreminder.sys.ini" todir="${releasespath}/build/components/com_userreminder/admin/language" />
+        <copy todir="${releasespath}/build/components/com_userreminder/admin">
             <fileset dir="./administrator/components/com_userreminder">
                 <exclude name="userreminder.xml"></exclude>
             </fileset>
         </copy>
         <echo msg="3 - Copying site files" />
-        <copy todir="${releasespath}/build/site">
+        <copy todir="${releasespath}/build/components/com_userreminder/site">
             <fileset dir="./components/com_userreminder">
             </fileset>
         </copy>
-        <copy file="./administrator/components/com_userreminder/userreminder.xml" todir="${releasespath}/build/" />
+        <copy file="./administrator/components/com_userreminder/userreminder.xml" todir="${releasespath}/build/components/com_userreminder" />
 
         <!-- Plugins -->
-        <copy todir="${releasespath}/build/plugins/plg_system_userreminder">
+        <copy todir="${releasespath}/build/plugins/system/plg_system_userreminder">
             <fileset dir="./plugins/system/userreminder"></fileset>
         </copy>
 
@@ -48,7 +48,8 @@
 
 
         <echo msg="Creating archive..." />
-        <zip destfile="${releasespath}/com_userreminder_v${version}.zip" basedir="${releasespath}/build/"/>
+        <delete file="${releasespath}/com_userreminder_v${version}_j4.zip" verbose="true"/>
+        <zip destfile="${releasespath}/com_userreminder_v${version}_j4.zip" basedir="${releasespath}/build/"/>
         <echo msg="Files copied and compressed in build directory OK!" />
         <delete dir="${releasespath}/build/" verbose="true" failonerror="true" />
         <echo msg="Build File removed" />

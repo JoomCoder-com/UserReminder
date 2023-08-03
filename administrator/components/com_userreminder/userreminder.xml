@@ -21,7 +21,7 @@
 	</uninstall>
   
 	<languages folder="site">
-			<language tag="en-GB">language/en-GB/com_userreminder.ini</language>
+			<language tag="en-GB">language/com_userreminder.ini</language>
 	</languages>
 	
 	<files folder="site">
@@ -46,8 +46,8 @@
 		</files>
 		
 		<languages folder="admin">
-			<language tag="en-GB">language/en-GB/com_userreminder.ini</language>
-			<language tag="en-GB">language/en-GB/com_userreminder.sys.ini</language>
+			<language tag="en-GB">language/com_userreminder.ini</language>
+			<language tag="en-GB">language/com_userreminder.sys.ini</language>
 		</languages>
 		
 	</administration>
