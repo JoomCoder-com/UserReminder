@@ -41,6 +41,8 @@
 			<folder>models</folder>			
 			<folder>views</folder>
 			<folder>assets</folder>
+			<filename>access.xml</filename>
+			<filename>config.xml</filename>
 			<filename>install.sql</filename>
 			<filename>uninstall.sql</filename>		
 		</files>

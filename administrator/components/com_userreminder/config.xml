@@ -146,7 +146,6 @@
 
 
     </fieldset>
-
     <fieldset name="nonreg" label="USERREMINDER_NONREG">
 
         <field
@@ -200,7 +199,6 @@
 
 
     </fieldset>
-
     <fieldset name="nonlogin" label="USERREMINDER_NONLOGIN_DET">
 
         <field
@@ -238,7 +236,6 @@
                description="USERREMINDER_REG_EMAIL_TEXT_BODY"/>
 
     </fieldset>
-
     <fieldset name="existinguserdet" label="USERREMINDER_EXISTINGUSER_DET">
 
         <field type="select" label="USERREMINDER_DAYS_EXISTINGUSER" description="USERREMINDER_DAYS_EXISTINGUSER_TEXT"
@@ -286,7 +283,6 @@
 
 
     </fieldset>
-
     <fieldset
             name="permissions"
             label="JCONFIG_PERMISSIONS_LABEL"
@@ -304,6 +300,4 @@
 
 
     </fieldset>
-
-
 </config>
