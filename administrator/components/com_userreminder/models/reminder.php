@@ -301,7 +301,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 						else
 						{
 							// delete the user
-							if (!$params->get('enableDeleteUsers', 1))
+							if ($params->get('enableDeleteUsers', 0))
 							{
 								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE');
 							}
@@ -457,7 +457,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 						else
 						{
 							// delete the user
-							if (!ComponentHelper::getParams('com_userreminder')->get('enableDeleteUsersLogin', 1))
+							if (ComponentHelper::getParams('com_userreminder')->get('enableDeleteUsersLogin', 0))
 							{
 								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE');
 							}

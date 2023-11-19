@@ -370,26 +370,26 @@ class userreminderModelSendReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseMo
 			// if requested delete users who have been notifed and have not completed registration
 			if ($type == 2)
 			{
-				if (!$params->get('enableDeleteUsersLogin', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
+				if ($params->get('enableDeleteUsersLogin', 0) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE'))
 				{
 					$user2 = \Joomla\CMS\Factory::getUser($user->id);
 					$user2->delete(false);
 					unset($user2);
 				}
-                elseif ($params->get('enableDeleteUsersLogin', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
+                elseif ($action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 				{
 					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTDELETED');
 				}
 			}
 			else
 			{
-				if (!$params->get('enableDeleteUsers', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
+				if ($params->get('enableDeleteUsers', 0) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE'))
 				{
 					$user2 = \Joomla\CMS\Factory::getUser($user->id);
 					$user2->delete(false);
 					unset($user2);
 				}
-                elseif ($params->get('enableDeleteUsers', 1)  && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
+                elseif ($action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 				{
 					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTDELETED');
 				}
