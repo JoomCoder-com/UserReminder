@@ -13,7 +13,7 @@
 defined('_JEXEC') or die('Restricted access');
 
 
-class userreminderViewoptoutusers extends JViewLegacy
+class userreminderViewoptoutusers extends \Joomla\CMS\MVC\View\HtmlView
 {
 	public $items;
 	
@@ -29,20 +29,20 @@ class userreminderViewoptoutusers extends JViewLegacy
 		
 		if($this->getLayout() == 'userlist'){
 			// toolbar button for user list
-			JToolBarHelper::title( JText::_( 'USERREMINDER_TOOLBAR_USER_LIST' ), 'cpanel' );
-			JToolbarHelper::publishList('optoutusers.apply',  JText::_('USERREMINDER_OPTUSER_ADD'));
-			JToolbarHelper::publishList('optoutusers.save', JText::_('USERREMINDER_OPTUSER_ADD_CLOSE'));
+			\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR_USER_LIST' ), 'cpanel' );
+			\Joomla\CMS\Toolbar\ToolbarHelper::publishList('optoutusers.apply',  \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_ADD'));
+			\Joomla\CMS\Toolbar\ToolbarHelper::publishList('optoutusers.save', \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_ADD_CLOSE'));
 		} else if($this->getLayout() == 'usergroup') {
-			JToolBarHelper::title( JText::_( 'USERREMINDER_TOOLBAR_USER_GROUPS' ), 'cpanel' );
-			JToolbarHelper::apply('optoutusers.applyGroup',  JText::_('USERREMINDER_SAVE'));
-			JToolbarHelper::save('optoutusers.saveGroup', JText::_('USERREMINDER_SAVE_CLOSE'));
+			\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR_USER_GROUPS' ), 'cpanel' );
+			\Joomla\CMS\Toolbar\ToolbarHelper::apply('optoutusers.applyGroup',  \Joomla\CMS\Language\Text::_('USERREMINDER_SAVE'));
+			\Joomla\CMS\Toolbar\ToolbarHelper::save('optoutusers.saveGroup', \Joomla\CMS\Language\Text::_('USERREMINDER_SAVE_CLOSE'));
 		} else {
-			JToolBarHelper::title( JText::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
-			JToolbarHelper::deleteList('', 'removeoptuser',  JText::_('USERREMINDER_OPTUSER_REMOVE_BUTTON'));
+			\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
+			\Joomla\CMS\Toolbar\ToolbarHelper::deleteList('', 'removeoptuser',  \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_REMOVE_BUTTON'));
 		}
 		
-		JToolBarHelper::custom( 'cpanel', 'home.png', 'home.png', JText::_( 'USERREMINDER_BACK' ), false, false );
-		JToolBarHelper::custom( 'configuration.help', 'help.png', 'help.png', 'Help', false, false );
+		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'cpanel', 'home.png', 'home.png', \Joomla\CMS\Language\Text::_( 'USERREMINDER_BACK' ), false, false );
+		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'configuration.help', 'help.png', 'help.png', 'Help', false, false );
 		
 		parent::display($tpl);
 	}

@@ -11,12 +11,13 @@
 // no direct access
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Plugin\CMSPlugin;
 
 defined('JPATH_BASE') or die;
 
 jimport('joomla.plugin.plugin');
 
-class plgSystemUserreminder extends JPlugin
+class plgSystemUserreminder extends CMSPlugin
 {
 
 	public function onAfterRender()
@@ -26,14 +27,14 @@ class plgSystemUserreminder extends JPlugin
 		$params = ComponentHelper::getParams('com_userreminder');
 
 
-		$db = JFactory::getDBO();
+		$db = Factory::getDBO();
 
 		// get the current time parameters
 		$day       = intval(date("d", time()));
 		$month     = intval(date("m", time()));
 		$year      = intval(date("Y", time()));
 		$dayOfWeek = intval(date("N", time()));
-		$hour      = intval(date("h", time())); // Bug Fix 4-9-2013
+		$hour      = intval(date("h", time()));
 
 		// get other parameters
 		$number_email           = $params->get('number_email', 1);
@@ -110,7 +111,7 @@ class plgSystemUserreminder extends JPlugin
 		require_once(JPATH_ADMINISTRATOR . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_userreminder' . DIRECTORY_SEPARATOR . 'models' . DIRECTORY_SEPARATOR . 'sendreminder.php');
 		require_once(JPATH_ADMINISTRATOR . DIRECTORY_SEPARATOR . 'components' . DIRECTORY_SEPARATOR . 'com_userreminder' . DIRECTORY_SEPARATOR . 'models' . DIRECTORY_SEPARATOR . 'senduserreminder.php');
 
-		$db = JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDBO();
 
 		//insert into the schedule table
 		$db->setQuery("INSERT into #__userreminder_sch (id,daysent,monthsent,yearsent,timesent) values (NULL,'$day','$month','$year','" . time() . "')");
@@ -183,7 +184,5 @@ class plgSystemUserreminder extends JPlugin
 		$db->execute();
 
 	}
-
-
 
 }

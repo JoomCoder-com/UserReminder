@@ -35,32 +35,32 @@ $path = JURI::base(true)."/";
 
                                     <a class="btn btn-success border me-3" href="index.php?option=com_userreminder&task=displayReminders">
                                         <i class="fas fa-users fa-3x mb-1"></i><br>
-                                        <?php echo JText::_('USERREMINDER_INCOMPLETE_REGS'); ?>
+                                        <?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_INCOMPLETE_REGS'); ?>
                                     </a>
 
                                     <a class="btn btn-warning border me-3" href="index.php?option=com_userreminder&task=displayUserReminders">
                                         <i class="fas fa-user-check fa-3x mb-1"></i><br>
-                                        <?php echo JText::_('USERREMINDER_USER_REM'); ?>
+                                        <?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USER_REM'); ?>
                                     </a>
 
                                     <a class="btn btn-primary border me-3" href="index.php?option=com_userreminder&task=optuserPanel">
                                         <i class="fas fa-user-clock fa-3x mb-1"></i><br>
-                                        <?php echo JText::_('USERREMINDER_OPTOUT_USERS'); ?>
+                                        <?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_USERS'); ?>
                                     </a>
 
                                     <a class="btn btn-dark border me-3" href="index.php?option=com_userreminder&task=displayActionLog">
                                         <i class="fas fa-clipboard-list fa-3x mb-1"></i><br>
-                                        <?php echo JText::_('USERREMINDER_ACTION_LOG'); ?>
+                                        <?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_LOG'); ?>
                                     </a>
 
                                     <a class="btn btn-light border me-3" href="index.php?option=com_config&view=component&component=com_userreminder">
                                         <i class="fas fa-cog fa-3x mb-1"></i><br>
-                                        <?php echo JText::_('USERREMINDER_PARA'); ?>
+                                        <?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_PARA'); ?>
                                     </a>
 
                                     <a class="btn btn-info border me-3" href="index.php?option=com_userreminder&task=help">
                                         <i class="fas fa-info-circle fa-3x mb-1"></i><br>
-                                        <?php echo JText::_('USERREMINDER_HELP'); ?>
+                                        <?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_HELP'); ?>
                                     </a>
 
                                 </div>

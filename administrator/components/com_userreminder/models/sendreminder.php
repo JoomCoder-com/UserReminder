@@ -17,7 +17,7 @@ defined('_JEXEC') or die('Restricted access');
 jimport('joomla.application.component.model');
 jimport('joomla.application.component.helper');
 
-class userreminderModelSendReminder extends JModelLegacy
+class userreminderModelSendReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 {
 
 //function showuserReminder( $option )
@@ -29,13 +29,13 @@ class userreminderModelSendReminder extends JModelLegacy
 		jimport('joomla.language.helper');
 
 		// init some vars
-		$db = JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDBO();
         $params = ComponentHelper::getParams('com_usereminder');
 		$adminemails = $params->get('bccEmailAddress', '');
 
 
         // force language reload again
-		$lang = JFactory::getLanguage();
+		$lang = \Joomla\CMS\Factory::getLanguage();
 		$lang->load('com_userreminder', JPATH_ROOT . "/administrator");
 
 
@@ -182,9 +182,9 @@ class userreminderModelSendReminder extends JModelLegacy
         <table class="table table-striped" id="articleList">
             <thead>
             <tr>
-                <th width="30%"><?php print JText::_('USERREMINDER_NAME'); ?></th>
-                <th width="30%"><?php print JText::_('USERREMINDER_EMAIL'); ?></th>
-                <th align="left"><?php print JText::_('USERREMINDER_DATESENT'); ?></th>
+                <th width="30%"><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NAME'); ?></th>
+                <th width="30%"><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_EMAIL'); ?></th>
+                <th align="left"><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_DATESENT'); ?></th>
             </tr>
             </thead>
             <tbody>
@@ -215,11 +215,11 @@ class userreminderModelSendReminder extends JModelLegacy
 			{
 				//$progressmessage = 'Total number of Records to Process = '.$recordcount.'<br />';
 				//$progressmessage = $progressmessage.'Records in each batch = '.$email_number.'<br />';
-				$progressmessage = JText::_('USERREMINDER_PROCESS_MESSAGE1') . ' = ' . $recordcount . '<br />';
-				$progressmessage = $progressmessage . JText::_('USERREMINDER_PROCESS_MESSAGE2') . ' = ' . $email_number . '<br />';
+				$progressmessage = \Joomla\CMS\Language\Text::_('USERREMINDER_PROCESS_MESSAGE1') . ' = ' . $recordcount . '<br />';
+				$progressmessage = $progressmessage . \Joomla\CMS\Language\Text::_('USERREMINDER_PROCESS_MESSAGE2') . ' = ' . $email_number . '<br />';
 				?>
                 <tr>
-                    <td colspan=3><?php print JText::_($progressmessage); ?></td>
+                    <td colspan=3><?php print \Joomla\CMS\Language\Text::_($progressmessage); ?></td>
                 </tr>
 				<?php
 
@@ -229,8 +229,8 @@ class userreminderModelSendReminder extends JModelLegacy
 					?>
                     <tr>
                         <td colspan=3><font color="red">
-                                <h1><?php print JText::_('USERREMINDER_DEBUG'); ?></h1>
-								<?php print JText::_('USERREMINDER_DEBUG_TEXT'); ?></font><br/>
+                                <h1><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_DEBUG'); ?></h1>
+								<?php print \Joomla\CMS\Language\Text::_('USERREMINDER_DEBUG_TEXT'); ?></font><br/>
                         </td>
                     </tr>
 					<?php
@@ -261,9 +261,9 @@ class userreminderModelSendReminder extends JModelLegacy
 				$maxrecordnumber          = $email_number + $email_number_new;
 				$display_email_number_new = $email_number_new + 1;
 
-				$progressmessage = JText::_('USERREMINDER_PROCESS_MESSAGE3') . ' ' . $i . '. ' . JText::_('USERREMINDER_PROCESS_MESSAGE4') . ' ' . $display_email_number_new . ' to ' . $maxrecordnumber . '. ';
+				$progressmessage = \Joomla\CMS\Language\Text::_('USERREMINDER_PROCESS_MESSAGE3') . ' ' . $i . '. ' . \Joomla\CMS\Language\Text::_('USERREMINDER_PROCESS_MESSAGE4') . ' ' . $display_email_number_new . ' to ' . $maxrecordnumber . '. ';
 
-				$progressmessage = $progressmessage . ' ' . JText::_('USERREMINDER_PROCESS_MESSAGE5');
+				$progressmessage = $progressmessage . ' ' . \Joomla\CMS\Language\Text::_('USERREMINDER_PROCESS_MESSAGE5');
 				if ($params->get('debugUserReminder', 0))
 				{
 					$progressmessage = $progressmessage . ' (' . memory_get_usage(true) . ')';
@@ -271,7 +271,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
 				?>
                 <tr>
-                    <td colspan=3><?php print JText::_($progressmessage); ?></td>
+                    <td colspan=3><?php print \Joomla\CMS\Language\Text::_($progressmessage); ?></td>
                 </tr>
 				<?php
 			}
@@ -299,18 +299,18 @@ class userreminderModelSendReminder extends JModelLegacy
 					{
 						?>
                         <tr>
-                            <td colspan=3><?php print JText::_('MAXIMUM_EMAILS_REACHED'); ?></td>
+                            <td colspan=3><?php print \Joomla\CMS\Language\Text::_('MAXIMUM_EMAILS_REACHED'); ?></td>
                         </tr>
 						<?php
 					}
 					//set recordcount to 0 so that we exit the while loop
 					$recordsetcount = 0;
 					break;
-					//$action=JText::_('USERREMINDER_ACTIONMAXEMAILS2');
+					//$action=\Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONMAXEMAILS2');
 				}
 				else
 				{
-					$action      = JText::_('USERREMINDER_ACTIONSEND');
+					$action      = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
 					$iMaxRecords = $iMaxRecords + 1;
 				}
 			}
@@ -330,7 +330,7 @@ class userreminderModelSendReminder extends JModelLegacy
 							{
 								?>
                                 <tr>
-                                    <td colspan=3><?php print JText::_('MAXIMUM_EMAILS_REACHED'); ?></td>
+                                    <td colspan=3><?php print \Joomla\CMS\Language\Text::_('MAXIMUM_EMAILS_REACHED'); ?></td>
                                 </tr>
 								<?php
 							}
@@ -340,24 +340,24 @@ class userreminderModelSendReminder extends JModelLegacy
 						}
 						else
 						{
-							$action      = JText::_('USERREMINDER_ACTIONSEND');
+							$action      = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
 							$iMaxRecords = $iMaxRecords + 1;
 						}
 					}
 					else
 					{
-						$action = JText::_('USERREMINDER_ACTIONDELETED');
+						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED');
 					}
 				}
 				else
 				{
 					if ($user->type == 2)
 					{
-						$action = JText::_('USERREMINDER_ACTION_LOGINNONE');
+						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_LOGINNONE');
 					}
 					else
 					{
-						$action = JText::_('USERREMINDER_ACTION_NONE');
+						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_NONE');
 					}
 				}
 			}
@@ -365,38 +365,38 @@ class userreminderModelSendReminder extends JModelLegacy
 			$reminderNumber = $user->remindernumber;
 			$userOptOutCode = $user->optoutcode;
 			$type           = $user->type;
-			//$user = JFactory::getUser($user->id);
+			//$user = \Joomla\CMS\Factory::getUser($user->id);
 
 			// if requested delete users who have been notifed and have not completed registration
 			if ($type == 2)
 			{
-				if (!$params->get('enableDeleteUsersLogin', 1) && $action == JText::_('USERREMINDER_ACTIONDELETED'))
+				if (!$params->get('enableDeleteUsersLogin', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 				{
-					$user2 = JFactory::getUser($user->id);
+					$user2 = \Joomla\CMS\Factory::getUser($user->id);
 					$user2->delete(false);
 					unset($user2);
 				}
-                elseif ($params->get('enableDeleteUsersLogin', 1) && $action == JText::_('USERREMINDER_ACTIONDELETED'))
+                elseif ($params->get('enableDeleteUsersLogin', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 				{
-					$action = JText::_('USERREMINDER_ACTIONNOTDELETED');
+					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTDELETED');
 				}
 			}
 			else
 			{
-				if (!$params->get('enableDeleteUsers', 1) && $action == JText::_('USERREMINDER_ACTIONDELETED'))
+				if (!$params->get('enableDeleteUsers', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 				{
-					$user2 = JFactory::getUser($user->id);
+					$user2 = \Joomla\CMS\Factory::getUser($user->id);
 					$user2->delete(false);
 					unset($user2);
 				}
-                elseif ($params->get('enableDeleteUsers', 1)  && $action == JText::_('USERREMINDER_ACTIONDELETED'))
+                elseif ($params->get('enableDeleteUsers', 1)  && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 				{
-					$action = JText::_('USERREMINDER_ACTIONNOTDELETED');
+					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTDELETED');
 				}
 			}
 
 			// Changes 2.5.9.13 skip displaying this is no action is to be performed
-			if ($action != JText::_('USERREMINDER_ACTION_NONE') && $action != JText::_('USERREMINDER_ACTION_LOGINNONE'))
+			if ($action != \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_NONE') && $action != \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_LOGINNONE'))
 			{
 
 			if ($displayHTML == true)
@@ -410,7 +410,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
 		$sourceimg = "images/publish_x.png";
 
-		if ($action == JText::_('USERREMINDER_ACTIONSEND'))
+		if ($action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND'))
 		{
 			// check to see if the user has an optout code
 			if ($userOptOutCode == "")
@@ -438,16 +438,16 @@ class userreminderModelSendReminder extends JModelLegacy
 			}
 		}
 
-		if ($action == JText::_('USERREMINDER_ACTIONSEND'))
+		if ($action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND'))
 		{
 			if ($type == 2)
 			{
 				if ($displayHTML == true)
 				{
-					echo '<td  align="left">' . JText::_('USERREMINDER_LOGIN_REMINDER_SENT') . '</td>';
+					echo '<td  align="left">' . \Joomla\CMS\Language\Text::_('USERREMINDER_LOGIN_REMINDER_SENT') . '</td>';
 				}
 				//insert log
-				$description = "Reminders Run: " . JText::_('USERREMINDER_LOGIN_REMINDER_SENT');
+				$description = "Reminders Run: " . \Joomla\CMS\Language\Text::_('USERREMINDER_LOGIN_REMINDER_SENT');
 				$date        = date('Y-m-d H:i:s');
 				$q2          = "INSERT INTO #__userreminder_log (`userId`, `username`, `description`, `date`) VALUES ('" . $user->id . "', '" . $user->username . "', '" . $description . "', '" . $date . "');";
 				$db->setQuery($q2);
@@ -458,10 +458,10 @@ class userreminderModelSendReminder extends JModelLegacy
 			{
 				if ($displayHTML == true)
 				{
-					echo '<td  align="left">' . JText::_('USERREMINDER_ACTIVATE_REMINDER_SENT') . '</td>';
+					echo '<td  align="left">' . \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIVATE_REMINDER_SENT') . '</td>';
 				}
 				//insert log
-				$description = "Reminders Run: " . JText::_('USERREMINDER_ACTIVATE_REMINDER_SENT');
+				$description = "Reminders Run: " . \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIVATE_REMINDER_SENT');
 				$date        = date('Y-m-d H:i:s');
 				$q2          = "INSERT INTO #__userreminder_log (`userId`, `username`, `description`, `date`) VALUES ('" . $user->id . "', '" . $user->username . "', '" . $description . "', '" . $date . "');";
 				$db->setQuery($q2);
@@ -475,7 +475,7 @@ class userreminderModelSendReminder extends JModelLegacy
 				echo '<td  align="left">' . $action . '</td>';
 			}
 			//insert log // BETAFIXES
-			if ($action == JText::_('USERREMINDER_ACTIONDELETED'))
+			if ($action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETED'))
 			{
 				$description = "Reminders Run: " . $action;
 				$date        = date('Y-m-d H:i:s');
@@ -506,20 +506,20 @@ class userreminderModelSendReminder extends JModelLegacy
 	{
 
         // init some vars
-		$mainframe = JFactory::getApplication();
+		$mainframe = \Joomla\CMS\Factory::getApplication();
 		$params = ComponentHelper::getParams('com_usereminder');
-		$db = JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDBO();
 		$name     = $user->name;
 		$email    = $user->email;
 		$username = $user->username;
-		$usersConfig = JComponentHelper::getParams('com_users');
+		$usersConfig = \Joomla\CMS\Component\ComponentHelper::getParams('com_users');
 		$sitename    = $mainframe->getCfg('sitename');
 		$mailfrom    = $mainframe->getCfg('mailfrom');
 		$fromname    = $mainframe->getCfg('fromname');
 		$siteURL     = JURI::root();
 
 		// get the parameter for this component
-		//$regConfig = &JComponentHelper::getParams( 'com_userreminder' );
+		//$regConfig = &\Joomla\CMS\Component\ComponentHelper::getParams( 'com_userreminder' );
 		$query = "SELECT params FROM #__extensions WHERE `element`='com_userreminder'";
 		$db->setQuery($query);
 		$result = $db->loadRow();
@@ -559,7 +559,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
 			if ($params->get('regLoginEmailSubject', '') == "")
 			{
-				$subject = JText::_('USERREMINDER_LOGINREMINDER_DETAILS_FOR');
+				$subject = \Joomla\CMS\Language\Text::_('USERREMINDER_LOGINREMINDER_DETAILS_FOR');
 			}
 			else
 			{
@@ -576,7 +576,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
 			if ($params->get('regLoginEmailBodyHTML', '') == "")
 			{
-				$message = JText::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
+				$message = \Joomla\CMS\Language\Text::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
 				$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 			}
 			else
@@ -609,7 +609,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
 			if ($params->get('regActivationEmailSubject', '') == "")
 			{
-				$subject = JText::_('USERREMINDER_REMINDER_DETAILS_FOR');
+				$subject = \Joomla\CMS\Language\Text::_('USERREMINDER_REMINDER_DETAILS_FOR');
 			}
 			else
 			{
@@ -627,7 +627,7 @@ class userreminderModelSendReminder extends JModelLegacy
 
 			// send email html (custom)
 			if ($params->get('regActivationEmailBodyHTML', '') == "")
-				$message = JText::_('USERREMINDER_SEND_MSG_REMINDER');
+				$message = \Joomla\CMS\Language\Text::_('USERREMINDER_SEND_MSG_REMINDER');
 			else
 				$message = $params->get('regActivationEmailBodyHTML', '');
 
@@ -671,11 +671,11 @@ class userreminderModelSendReminder extends JModelLegacy
 		{
 			if (!$params->get('enabledBccToAdmin', 1))
 			{
-				$successmail = JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null, $adminemails);
+				$successmail = \Joomla\CMS\Factory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null, $adminemails);
 			}
 			else
 			{
-				$successmail = JFactory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null);
+				$successmail = \Joomla\CMS\Factory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null);
 			}
 
 			return $successmail;

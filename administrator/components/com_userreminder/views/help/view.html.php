@@ -18,17 +18,17 @@ defined('_JEXEC') or die('Restricted access');
 
 jimport( 'joomla.application.component.view' );
 
-class userreminderViewHelp extends JViewLegacy
+class userreminderViewHelp extends \Joomla\CMS\MVC\View\HtmlView
 {
 	function _display($tpl = null){
-		JToolBarHelper::title( JText::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
+		\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
 
 		$bar = JToolBar::getInstance('toolbar');
-		JToolBarHelper::custom( 'displayReminders', 'users', '', JText::_( 'USERREMINDER_INCOMPLETE_REGS' ), false, false );
+		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'displayReminders', 'users', '', \Joomla\CMS\Language\Text::_( 'USERREMINDER_INCOMPLETE_REGS' ), false, false );
 
-		JToolBarHelper::custom( 'displayUserReminders', 'user', '', JText::_( 'USERREMINDER_USER_REM' ), false, false );
+		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'displayUserReminders', 'user', '', \Joomla\CMS\Language\Text::_( 'USERREMINDER_USER_REM' ), false, false );
 
-		JToolBarHelper::custom( 'displayActionLog', 'clipboard', '', JText::_( 'USERREMINDER_ACTION_LOG' ), false, false );
+		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'displayActionLog', 'clipboard', '', \Joomla\CMS\Language\Text::_( 'USERREMINDER_ACTION_LOG' ), false, false );
 
 
 		$canDo   = ContentHelper::getActions('com_userreminder');

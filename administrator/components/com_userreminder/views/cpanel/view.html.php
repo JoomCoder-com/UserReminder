@@ -12,10 +12,10 @@
 defined('_JEXEC') or die('Restricted access');
 
 
-class userreminderViewCpanel extends JViewLegacy
+class userreminderViewCpanel extends \Joomla\CMS\MVC\View\HtmlView
 {
 	function _display($tpl = null){
-		JToolBarHelper::title( JText::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
+		\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
 		
 
 

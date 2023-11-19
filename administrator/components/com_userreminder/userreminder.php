@@ -19,6 +19,6 @@ require_once (JPATH_COMPONENT.'/controller.php');
 // Create the controller
 $controller	= JControllerLegacy::getInstance('userreminder');
 // Perform the Request task
-$controller->execute(JFactory::getApplication()->input->get('task', 'cpanel', 'default', 'cmd'));
+$controller->execute(\Joomla\CMS\Factory::getApplication()->input->get('task', 'cpanel', 'default', 'cmd'));
 $controller->redirect();
 ?>

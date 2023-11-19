@@ -39,8 +39,8 @@ class UserreminderControllerOptoutUsers extends JControllerLegacy
 	}
 	
 	function userlist($message = null){
-		$sortColumn = JFactory::getApplication()->input->get('filter_order','');
-		$sortDirection =  JFactory::getApplication()->input->get('filter_order_Dir','');
+		$sortColumn = \Joomla\CMS\Factory::getApplication()->input->get('filter_order','');
+		$sortDirection =  \Joomla\CMS\Factory::getApplication()->input->get('filter_order_Dir','');
 		
 		// get the data
 		$model = $this->getModel('optusers');
@@ -67,8 +67,8 @@ class UserreminderControllerOptoutUsers extends JControllerLegacy
         $input = Factory::getApplication()->input;
 
         $input->set('filter_search', '');
-		JModelLegacy::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
-		$groupsModel = JModelLegacy::getInstance('groups', 'usersModel');
+		\Joomla\CMS\MVC\Model\BaseDatabaseModel::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
+		$groupsModel = \Joomla\CMS\MVC\Model\BaseDatabaseModel::getInstance('groups', 'usersModel');
 		$groupList = $groupsModel->getItems();
 		
 		// get the data
@@ -97,9 +97,9 @@ class UserreminderControllerOptoutUsers extends JControllerLegacy
 		$message = null;
 		
 		if($model->addOptUsers($cid)){
-			$message = JText::_('USERREMINDER_OPTUSER_ADDED');
+			$message = \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_ADDED');
 		} else {
-			$message = JText::_('USERREMINDER_OPTUSER_FAILED');
+			$message = \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_FAILED');
 		}
 		
         switch ($this->getTask())
@@ -127,9 +127,9 @@ class UserreminderControllerOptoutUsers extends JControllerLegacy
 
 		 
 		if($model->saveUserGroup($cid)){
-			$message = JText::_('USERREMINDER_OPTGROUP_ADDED');
+			$message = \Joomla\CMS\Language\Text::_('USERREMINDER_OPTGROUP_ADDED');
 		} else {
-			$message = JText::_('USERREMINDER_OPTUSER_FAILED');
+			$message = \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_FAILED');
 		}
 	
 		switch ($this->getTask())

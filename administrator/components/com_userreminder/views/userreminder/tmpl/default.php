@@ -15,7 +15,7 @@ use Joomla\CMS\Language\Text;
 defined('_JEXEC') or die('Restricted access');
 
 HTMLHelper::_('bootstrap.tooltip', '.hasTooltip');
-JHtml::_('formbehavior.chosen', 'select');
+\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
   $itemlist = $this->itemlistexistinglogin;
 ?>
@@ -28,12 +28,12 @@ JHtml::_('formbehavior.chosen', 'select');
         <table class="table table-striped" id="articleList">
             <thead>
             <tr>
-                <th><?php print JText::_('USERREMINDER_NAME'); ?></th>
-                <th><?php print JText::_('USERREMINDER_EMAIL'); ?></th>
-                <th><?php print JText::_('USERREMINDER_LASTLOGINDATE'); ?></th>
-                <th><?php print JText::_('USERREMINDER_TIMESINCEREG'); ?></th>
-                <th><?php print JText::_('USERREMINDER_NUMBER'); ?></th>
-                <th><?php print JText::_('USERREMINDER_REGREMACTION'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NAME'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_EMAIL'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_LASTLOGINDATE'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_TIMESINCEREG'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NUMBER'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_REGREMACTION'); ?></th>
             </tr>
             </thead>
             <tbody>

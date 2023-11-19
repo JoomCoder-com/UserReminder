@@ -13,7 +13,7 @@
 defined('_JEXEC') or die('Restricted access');
 jimport('joomla.html.pagination');
 
-class userreminderModelOptUsers extends JModelList {
+class userreminderModelOptUsers extends \Joomla\CMS\MVC\Model\ListModel {
 	
     var $_pagination = null;
     var $_pagination2 = null;
@@ -30,11 +30,11 @@ class userreminderModelOptUsers extends JModelList {
     	parent::__construct($config);
 
         global $option;
-		    //$mainframe = & JFactory::getApplication();
-        $mainframe = JFactory::getApplication();
+		    //$mainframe = & \Joomla\CMS\Factory::getApplication();
+        $mainframe = \Joomla\CMS\Factory::getApplication();
         // Get pagination request variables
         $limit = $mainframe->getUserStateFromRequest('global.list.limit', 'limit', $mainframe->getCfg('list_limit'), 'int');
-        $limitstart = JFactory::getApplication()->input->get('limitstart', 0, '', 'int');
+        $limitstart = \Joomla\CMS\Factory::getApplication()->input->get('limitstart', 0, '', 'int');
 
         // In case limit has been changed, adjust it
         $limitstart = ($limit != 0 ? (floor($limitstart / $limit) * $limit) : 0);
@@ -44,7 +44,7 @@ class userreminderModelOptUsers extends JModelList {
         
         // Get pagination request variables2
         $limit2 = $mainframe->getUserStateFromRequest('global.list.limit', 'limit', $mainframe->getCfg('list_limit'), 'int');
-        $limitstart2 = JFactory::getApplication()->input->get('user_limitstart', 0, '', 'int');
+        $limitstart2 = \Joomla\CMS\Factory::getApplication()->input->get('user_limitstart', 0, '', 'int');
         
         // In case limit has been changed, adjust it
         $limitstart2 = ($limit2 != 0 ? (floor($limitstart2 / $limit2) * $limit2) : 0);
@@ -56,7 +56,7 @@ class userreminderModelOptUsers extends JModelList {
     function getPagination() {
     	// Load the content if it doesn't already exist
     	if (empty($this->_pagination)) {
-    		$this->_pagination = new JPagination($this->getTotal(), $this->getState('limitstart'), $this->getState('limit'));
+    		$this->_pagination = new  \Joomla\CMS\Pagination\Pagination($this->getTotal(), $this->getState('limitstart'), $this->getState('limit'));
     	}
     	return $this->_pagination;
     }
@@ -72,7 +72,7 @@ class userreminderModelOptUsers extends JModelList {
     function getPaginationForUser() {
     	// Load the content if it doesn't already exist
     	if (empty($this->_pagination2)) {
-    		$this->_pagination2 = new JPagination($this->getTotalForUser(), $this->getState('limitstart2'), $this->getState('limit2'), 'user_');
+    		$this->_pagination2 = new  \Joomla\CMS\Pagination\Pagination($this->getTotalForUser(), $this->getState('limitstart2'), $this->getState('limit2'), 'user_');
     	}
     	return $this->_pagination2;
     }
@@ -116,7 +116,7 @@ class userreminderModelOptUsers extends JModelList {
     	$ids = implode(",", $list);
     	
     	// execute the delete query
-    	$db	= JFactory::getDBO();
+    	$db	= \Joomla\CMS\Factory::getDBO();
     	$sql = "DELETE FROM `#__userreminder_optout` WHERE user_id IN ({$ids})";
     	$db->setQuery($sql);
     	return $db->execute();
@@ -129,7 +129,7 @@ class userreminderModelOptUsers extends JModelList {
     	// get the ids to be remove from the opt list
     	$ids = implode("),(", $list);
     	// execute the delete query
-    	$db	= JFactory::getDBO();
+    	$db	= \Joomla\CMS\Factory::getDBO();
     	$sql = "INSERT INTO `#__userreminder_optout` VALUES ({$ids})";
     	$db->setQuery($sql);
     	return $db->execute();
@@ -140,7 +140,7 @@ class userreminderModelOptUsers extends JModelList {
      */
     public function saveUserGroup($list){
     	
-    	$db	= JFactory::getDBO();
+    	$db	= \Joomla\CMS\Factory::getDBO();
     	// clear the table first
     	$sql = "TRUNCATE TABLE `#__userreminder_optout_usergroups`";
     	$db->setQuery($sql);
@@ -163,7 +163,7 @@ class userreminderModelOptUsers extends JModelList {
     }
 /**    
     public function getListQuery($ordering = '', $direction = '') {
-    	$db = JFactory::getDbo();
+    	$db = \Joomla\CMS\Factory::getDbo();
     	$query = $db->getQuery(true);
     
     	$query->select('*');
@@ -172,7 +172,7 @@ class userreminderModelOptUsers extends JModelList {
     	
     	$where = 'id IN (SELECT user_id FROM #__userreminder_optout)';
     	// add search filter if any
-    	$search = JFactory::getApplication()->input->get('filter_search');
+    	$search = \Joomla\CMS\Factory::getApplication()->input->get('filter_search');
     	if($search != ''){
     		$where .= " AND (name LIKE '%{$search}%' OR username LIKE '%{$search}%' OR email LIKE '%{$search}%')";
     	}
@@ -191,7 +191,7 @@ class userreminderModelOptUsers extends JModelList {
      */
 /** 
     function getUsersList($ordering = '', $direction = ''){
-    	$db = JFactory::getDbo();
+    	$db = \Joomla\CMS\Factory::getDbo();
     	$query = $db->getQuery(true);
     	 
     	$query->select('*');
@@ -199,7 +199,7 @@ class userreminderModelOptUsers extends JModelList {
     	
     	$where = 'id NOT IN (SELECT user_id FROM #__userreminder_optout)';
     	// add search filter if any
-    	$search = JFactory::getApplication()->input->get('filter_search');
+    	$search = \Joomla\CMS\Factory::getApplication()->input->get('filter_search');
     	if($search != ''){
     		$where .= " AND (name LIKE '%{$search}%' OR username LIKE '%{$search}%' OR email LIKE '%{$search}%')";
     	}
@@ -221,7 +221,7 @@ class userreminderModelOptUsers extends JModelList {
 **/    
     // Search query for users that are opt-out
     public function getListQuery($ordering = '', $direction = '') {
-    	$db = JFactory::getDbo();
+    	$db = \Joomla\CMS\Factory::getDbo();
     	$query = $db->getQuery(true);
     
     	$query->select('*');
@@ -230,7 +230,7 @@ class userreminderModelOptUsers extends JModelList {
     	$where = 'id IN (SELECT user_id FROM #__userreminder_optout)';
     	// add search filter if any
     	//$search = JRequest::getVar('filter_search');
-    	$search = JFactory::getApplication()->input->get('filter_search');
+    	$search = \Joomla\CMS\Factory::getApplication()->input->get('filter_search');
     	if($search != ''){
     		$where .= " AND (name LIKE '%{$search}%' OR username LIKE '%{$search}%' OR email LIKE '%{$search}%')";
     	}
@@ -245,7 +245,7 @@ class userreminderModelOptUsers extends JModelList {
 
     // Search query for users that are NOT opt-out
     public function getListQuery2($ordering = '', $direction = '') {
-    	$db = JFactory::getDbo();
+    	$db = \Joomla\CMS\Factory::getDbo();
     	$query = $db->getQuery(true);
     
     	$query->select('*');
@@ -254,7 +254,7 @@ class userreminderModelOptUsers extends JModelList {
     	$where = 'id NOT IN (SELECT user_id FROM #__userreminder_optout)';
     	// add search filter if any
     	//$search = JRequest::getVar('filter_search');
-    	$search = JFactory::getApplication()->input->get('filter_search');
+    	$search = \Joomla\CMS\Factory::getApplication()->input->get('filter_search');
     	if($search != ''){
     		$where .= " AND (name LIKE '%{$search}%' OR username LIKE '%{$search}%' OR email LIKE '%{$search}%')";
     	}

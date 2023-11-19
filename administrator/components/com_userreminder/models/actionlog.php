@@ -15,7 +15,7 @@ defined('_JEXEC') or die('Restricted access');
 jimport( 'joomla.application.component.model' );
 jimport( 'joomla.application.component.helper' );
 
-class userreminderModelActionLog extends JModelLegacy {
+class userreminderModelActionLog extends \Joomla\CMS\MVC\Model\BaseDatabaseModel {
 
     /**
      * Items total
@@ -33,11 +33,11 @@ class userreminderModelActionLog extends JModelLegacy {
         parent::__construct();
 
         global $option;
-		    //$mainframe = & JFactory::getApplication();
-        $mainframe = JFactory::getApplication();
+		    //$mainframe = & \Joomla\CMS\Factory::getApplication();
+        $mainframe = \Joomla\CMS\Factory::getApplication();
         // Get pagination request variables
         $limit = $mainframe->getUserStateFromRequest('global.list.limit', 'log_limit', $mainframe->getCfg('list_limit'), 'int');
-        $limitstart = JFactory::getApplication()->input->get('log_limitstart', 0, '', 'int');
+        $limitstart = \Joomla\CMS\Factory::getApplication()->input->get('log_limitstart', 0, '', 'int');
 
         // In case limit has been changed, adjust it
         $limitstart = ($limit != 0 ? (floor($limitstart / $limit) * $limit) : 0);
@@ -50,7 +50,7 @@ class userreminderModelActionLog extends JModelLegacy {
         // Load the content if it doesn't already exist
         if (empty($this->_pagination)) {
             jimport('joomla.html.pagination');
-            $this->_pagination = new JPagination($this->_total, $this->getState('log_limitstart'), $this->getState('log_limit'), 'log_');
+            $this->_pagination = new  \Joomla\CMS\Pagination\Pagination($this->_total, $this->getState('log_limitstart'), $this->getState('log_limit'), 'log_');
         }
         return $this->_pagination;
     }
@@ -60,8 +60,8 @@ class userreminderModelActionLog extends JModelLegacy {
 
         $list = array();
 
-        //$db	=& JFactory::getDBO();
-        $db	= JFactory::getDBO();
+        //$db	=& \Joomla\CMS\Factory::getDBO();
+        $db	= \Joomla\CMS\Factory::getDBO();
 
         // find users who have not logged in for x number of days
         $days= \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDaysExistingUser',180);
@@ -87,8 +87,8 @@ class userreminderModelActionLog extends JModelLegacy {
 
     function clearActionLog() {
 
-        //$db	=& JFactory::getDBO();
-        $db	= JFactory::getDBO();
+        //$db	=& \Joomla\CMS\Factory::getDBO();
+        $db	= \Joomla\CMS\Factory::getDBO();
 
         $sql = "TRUNCATE TABLE `#__userreminder_log`";
         $db->setQuery($sql);

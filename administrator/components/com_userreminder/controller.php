@@ -15,7 +15,7 @@ defined('_JEXEC') or die('Restricted access');
 jimport('joomla.application.component.controller');
 jimport( 'joomla.application.component.helper' );
 
-class userreminderController extends JControllerLegacy {
+class userreminderController extends \Joomla\CMS\MVC\Controller\BaseController {
     function __construct() {
         parent::__construct();
         $this->registerTask('applyList', 'saveList');
@@ -149,7 +149,7 @@ class userreminderController extends JControllerLegacy {
 
         $input = Factory::getApplication()->input;
 
-		$db = JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDBO();
 
 		
 		// get number email send this time
@@ -178,8 +178,8 @@ class userreminderController extends JControllerLegacy {
     	$sortColumn = $input->getString('filter_order','');
     	$sortDirection = $input->getString('filter_order_Dir','');
     	 
-    	JModelLegacy::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
-    	$groupsModel = JModelLegacy::getInstance('groups', 'usersModel');
+    	\Joomla\CMS\MVC\Model\BaseDatabaseModel::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
+    	$groupsModel = \Joomla\CMS\MVC\Model\BaseDatabaseModel::getInstance('groups', 'usersModel');
     	$groupList = $groupsModel->getItems();
     	 
     	// get the list of opt out users and it's pagination
@@ -208,12 +208,12 @@ class userreminderController extends JControllerLegacy {
 		$cid = Factory::getApplication()->input->get('cid','','string');
 
     	$model = $this->getModel('optusers');
-    	$app = JFactory::getApplication();
+    	$app = \Joomla\CMS\Factory::getApplication();
     	 
     	if($model->removeOptUsers($cid)){
-    		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_REMOVE'));
+    		$app->enqueueMessage(\Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_REMOVE'));
     	} else {
-    		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_FAILED'));
+    		$app->enqueueMessage(\Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_FAILED'));
     	}
     	// return back to the same panel
     	$this->optuserPanel();
@@ -247,8 +247,8 @@ class userreminderController extends JControllerLegacy {
 
 		Factory::getApplication()->input->set('filter_search','');
 
-    	JModelLegacy::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
-    	$groupsModel = JModelLegacy::getInstance('groups', 'usersModel');
+    	\Joomla\CMS\MVC\Model\BaseDatabaseModel::addIncludePath (JPATH_ADMINISTRATOR . '/components/com_users/models');
+    	$groupsModel = \Joomla\CMS\MVC\Model\BaseDatabaseModel::getInstance('groups', 'usersModel');
     	//$groupsModel->setState('filter.search', '');
     	$groupList = $groupsModel->getItems();
     
@@ -272,12 +272,12 @@ class userreminderController extends JControllerLegacy {
 
 		$cid = Factory::getApplication()->input->get('cid','');
     	$model = $this->getModel('optusers');
-    	$app = JFactory::getApplication();
+    	$app = \Joomla\CMS\Factory::getApplication();
     
     	if($model->addOptUsers($cid)){
-    		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_ADDED'));
+    		$app->enqueueMessage(\Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_ADDED'));
     	} else {
-    		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_FAILED'));
+    		$app->enqueueMessage(\Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_FAILED'));
     	}
     
     	switch ($this->getTask())
@@ -298,12 +298,12 @@ class userreminderController extends JControllerLegacy {
 	    $cid = Factory::getApplication()->input->get('cid',[],'array');
     
     	$model = $this->getModel('optusers');
-    	$app = JFactory::getApplication();
+    	$app = \Joomla\CMS\Factory::getApplication();
     		
     	if($model->saveUserGroup($cid)){
-    		$app->enqueueMessage(JText::_('USERREMINDER_OPTGROUP_ADDED'));
+    		$app->enqueueMessage(\Joomla\CMS\Language\Text::_('USERREMINDER_OPTGROUP_ADDED'));
     	} else {
-    		$app->enqueueMessage(JText::_('USERREMINDER_OPTUSER_FAILED'));
+    		$app->enqueueMessage(\Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_FAILED'));
     	}
     
     	switch ($this->getTask())

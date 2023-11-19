@@ -16,9 +16,9 @@ use Joomla\CMS\Language\Text;
 defined('_JEXEC') or die('Restricted access');
 // Include the component HTML helpers.
 HTMLHelper::_('bootstrap.tooltip', '.hasTooltip');
-JHtml::_('behavior.multiselect');
-//JHtml::_('behavior.modal');
-JHtml::_('formbehavior.chosen', 'select');
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.multiselect');
+//\Joomla\CMS\HTML\HTMLHelper::_('behavior.modal');
+\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
 ?>
 
@@ -32,12 +32,12 @@ JHtml::_('formbehavior.chosen', 'select');
             <table class="table table-striped" id="articleList">
                 <thead>
                 <tr>
-                    <th><?php print JText::_('USERREMINDER_NAME'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_EMAIL'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_REGISTRATIONDATE'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_TIMESINCEREG'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_NUMBER'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_REGREMACTION'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NAME'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_EMAIL'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_REGISTRATIONDATE'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_TIMESINCEREG'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NUMBER'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_REGREMACTION'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -82,12 +82,12 @@ JHtml::_('formbehavior.chosen', 'select');
             <table class="table table-striped" id="articleList">
                 <thead>
                 <tr>
-                    <th><?php print JText::_('USERREMINDER_NAME'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_EMAIL'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_REGISTRATIONDATE'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_TIMESINCEREG'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_NUMBER'); ?></th>
-                    <th><?php print JText::_('USERREMINDER_REGREMACTION'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NAME'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_EMAIL'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_REGISTRATIONDATE'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_TIMESINCEREG'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_NUMBER'); ?></th>
+                    <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_REGREMACTION'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -132,7 +132,7 @@ JHtml::_('formbehavior.chosen', 'select');
         <input type="hidden" name="task" value="displayReminders"/>
         <input type="hidden" name="view" value="userreminder"/>
 
-        <?php echo JHtml::_('form.token'); ?>
+        <?php echo \Joomla\CMS\HTML\HTMLHelper::_('form.token'); ?>
 </form> 
 
 

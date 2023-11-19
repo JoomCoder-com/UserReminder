@@ -15,13 +15,13 @@ use Joomla\CMS\HTML\HTMLHelper;
 defined('_JEXEC') or die('Restricted access');
 
 HTMLHelper::_('bootstrap.tooltip', '.hasTooltip');
-JHtml::_('behavior.multiselect');
-//JHtml::_('behavior.modal');
-JHtml::_('formbehavior.chosen', 'select');
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.multiselect');
+//\Joomla\CMS\HTML\HTMLHelper::_('behavior.modal');
+\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
 
 $itemList = $this->optusers;
-$search = $this->escape(JFactory::getApplication()->input->get('filter_search', null, 'var'));
+$search = $this->escape(\Joomla\CMS\Factory::getApplication()->input->get('filter_search', null, 'var'));
 ?>
 <form method="post" name="adminForm" id="adminForm" action="index.php?option=com_userreminder">
 <div>
@@ -40,9 +40,9 @@ $search = $this->escape(JFactory::getApplication()->input->get('filter_search', 
     <div class="row mb-3">
         <div class="col-md-4">
             <div class="input-group">
-                <input value="<?php echo $search?>" name="filter_search" id="filter_search" type="text" class="form-control" placeholder="<?php echo JText::_('USERREMINDER_USERS_SEARCH_USERS'); ?>">
+                <input value="<?php echo $search?>" name="filter_search" id="filter_search" type="text" class="form-control" placeholder="<?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USERS_SEARCH_USERS'); ?>">
                 <button class="btn btn-outline-secondary hasTooltip" title="JSEARCH_FILTER_SUBMIT" type="button"><i class="fas fa-search"></i></button>
-                <button class="btn btn-outline-secondary" title="<?php echo JText::_('JSEARCH_RESET'); ?>" type="button" onclick="document.querySelector('#filter_search').value='';this.form.submit();">
+                <button class="btn btn-outline-secondary" title="<?php echo \Joomla\CMS\Language\Text::_('JSEARCH_RESET'); ?>" type="button" onclick="document.querySelector('#filter_search').value='';this.form.submit();">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -52,13 +52,13 @@ $search = $this->escape(JFactory::getApplication()->input->get('filter_search', 
 
     <ul class="nav nav-tabs" id="submenu">
         <li class="nav-item">
-            <a class="nav-link active" href="index.php?option=com_userreminder&task=optuserPanel"><?php echo JText::_('USERREMINDER_OPTOUT_USERS2')?></a>
+            <a class="nav-link active" href="index.php?option=com_userreminder&task=optuserPanel"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_USERS2')?></a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="index.php?option=com_userreminder&task=optoutusers.userlist"><?php echo JText::_('USERREMINDER_USER_LIST')?></a>
+            <a class="nav-link" href="index.php?option=com_userreminder&task=optoutusers.userlist"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USER_LIST')?></a>
         </li>
         <li class="nav-item">
-            <a class="nav-link " href="index.php?option=com_userreminder&task=optoutusers.usergroup"><?php echo JText::_('USERREMINDER_OPTUSER_GROUP')?></a>
+            <a class="nav-link " href="index.php?option=com_userreminder&task=optoutusers.usergroup"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_GROUP')?></a>
         </li>
     </ul>
 
@@ -67,23 +67,23 @@ $search = $this->escape(JFactory::getApplication()->input->get('filter_search', 
             <thead>
             <tr>
                 <th width="1%">
-                    <input type="checkbox" name="checkall-toggle" value="" title="<?php echo JText::_('JGLOBAL_CHECK_ALL'); ?>" onclick="Joomla.checkAll(this)" />
+                    <input type="checkbox" name="checkall-toggle" value="" title="<?php echo \Joomla\CMS\Language\Text::_('JGLOBAL_CHECK_ALL'); ?>" onclick="Joomla.checkAll(this)" />
                 </th>
-                <th><?php echo JHtml::_( 'grid.sort', JText::_('USERREMINDER_NAME__'), 'name', $this->sortDirection, $this->sortColumn, 'optuserPanel'); ?></th>
-                <th><?php echo JHtml::_( 'grid.sort', JText::_('USERREMINDER_NAME'), 'username', $this->sortDirection, $this->sortColumn, 'optuserPanel'); ?></th>
-                <th><?php echo JHtml::_( 'grid.sort', JText::_('USERREMINDER_EMAIL'), 'email', $this->sortDirection, $this->sortColumn, 'optuserPanel'); ?></th>
-                <th><?php print JText::_('USERREMINDER_LASTLOGINDATE'); ?></th>
-                <th><?php print JText::_('USERREMINDER_REGISTRATIONDATE'); ?></th>
+                <th><?php echo \Joomla\CMS\HTML\HTMLHelper::_( 'grid.sort', \Joomla\CMS\Language\Text::_('USERREMINDER_NAME__'), 'name', $this->sortDirection, $this->sortColumn, 'optuserPanel'); ?></th>
+                <th><?php echo \Joomla\CMS\HTML\HTMLHelper::_( 'grid.sort', \Joomla\CMS\Language\Text::_('USERREMINDER_NAME'), 'username', $this->sortDirection, $this->sortColumn, 'optuserPanel'); ?></th>
+                <th><?php echo \Joomla\CMS\HTML\HTMLHelper::_( 'grid.sort', \Joomla\CMS\Language\Text::_('USERREMINDER_EMAIL'), 'email', $this->sortDirection, $this->sortColumn, 'optuserPanel'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_LASTLOGINDATE'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_REGISTRATIONDATE'); ?></th>
             </tr>
             </thead>
             <tbody>
             <?php foreach ($itemList as $i => $item) :?>
                 <tr>
                     <td class="center">
-                        <?php echo JHtml::_('grid.id', $i, $item->id); ?>
+                        <?php echo \Joomla\CMS\HTML\HTMLHelper::_('grid.id', $i, $item->id); ?>
                     </td>
                     <td>
-                        <a target="_blank" href="<?php echo JRoute::_('index.php?option=com_users&task=user.edit&id='.(int) $item->id); ?>" title="<?php echo JText::sprintf('COM_USERREMINDER_EDIT_USER', $this->escape($item->name)); ?>">
+                        <a target="_blank" href="<?php echo  \Joomla\CMS\Router\Route::_('index.php?option=com_users&task=user.edit&id='.(int) $item->id); ?>" title="<?php echo \Joomla\CMS\Language\Text::sprintf('COM_USERREMINDER_EDIT_USER', $this->escape($item->name)); ?>">
                             <?php echo $this->escape($item->name); ?>
                         </a>
                     </td>

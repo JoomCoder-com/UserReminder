@@ -15,11 +15,11 @@ use Joomla\CMS\Language\Text;
 
 defined('_JEXEC') or die('Restricted access');
 
-JHtml::addIncludePath(JPATH_COMPONENT.'/helpers/html');
-JHtml::_('bootstrap.tooltip','.hasTooltip');
-JHtml::_('behavior.multiselect');
-JHtml::_('dropdown.init');
-JHtml::_('formbehavior.chosen', 'select');
+\Joomla\CMS\HTML\HTMLHelper::addIncludePath(JPATH_COMPONENT.'/helpers/html');
+\Joomla\CMS\HTML\HTMLHelper::_('bootstrap.tooltip','.hasTooltip');
+\Joomla\CMS\HTML\HTMLHelper::_('behavior.multiselect');
+\Joomla\CMS\HTML\HTMLHelper::_('dropdown.init');
+\Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
   $itemlist = $this->itemlistactionlog;
 ?>
@@ -32,10 +32,10 @@ JHtml::_('formbehavior.chosen', 'select');
         <table class="table table-striped" id="articleList">
             <thead>
             <tr>
-                <th><?php print JText::_('USERREMINDER_USER_ID'); ?></th>
-                <th><?php print JText::_('USERREMINDER_USER_NAME'); ?></th>
-                <th><?php print JText::_('USERREMINDER_ACTION_DESCRIPTION'); ?></th>
-                <th><?php print JText::_('USERREMINDER_ACTION_DATE'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_USER_ID'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_USER_NAME'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_DESCRIPTION'); ?></th>
+                <th><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_DATE'); ?></th>
             </tr>
             </thead>
             <tbody>
@@ -48,7 +48,7 @@ JHtml::_('formbehavior.chosen', 'select');
                 print $item["username"];
                 print "</td>\n";
                 print "<td>\n";
-                print JText::_($item["description"]);
+                print \Joomla\CMS\Language\Text::_($item["description"]);
                 print "</td>\n";
                 print "<td>\n";
                 print $item["date"];

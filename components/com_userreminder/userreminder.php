@@ -14,11 +14,11 @@ use Joomla\CMS\Factory;
 
 defined('_JEXEC') or die('Restricted access');
 // get the request details
-$task = JFactory::getApplication()->input->get('task', '', 'default', 'cmd');
+$task = \Joomla\CMS\Factory::getApplication()->input->get('task', '', 'default', 'cmd');
 
 // load the right language files
-//$lang =& JFactory::getLanguage();
-$lang         = JFactory::getLanguage();
+//$lang =& \Joomla\CMS\Factory::getLanguage();
+$lang         = \Joomla\CMS\Factory::getLanguage();
 $extension    = 'com_userreminder';
 $base_dir     = JPATH_SITE;
 $language_tag = 'en-GB';
@@ -44,14 +44,14 @@ switch ($task)
 function optoutnow()
 {
 
-	$db = JFactory::getDBO();
-	//$user = JFactory::getUser();
+	$db = \Joomla\CMS\Factory::getDBO();
+	//$user = \Joomla\CMS\Factory::getUser();
 
 	// double check that the user logged in is the one being opted out
 	$optoutcode = Factory::getApplication()->input->get('uid', '', 'string');
 
 	// find the user
-	//$optoutcode = JFactory::getApplication()->input->get('uid',0,'','int');
+	//$optoutcode = \Joomla\CMS\Factory::getApplication()->input->get('uid',0,'','int');
 	$optoutcode2 = $db->quote($db->escape($optoutcode));
 	$q           = "Select userid from #__userreminder where optoutcode = $optoutcode2";
 	$db->setQuery($q);
@@ -94,7 +94,7 @@ function optoutnow()
 
         <div id="system-message" class="alert alert-success alert-dismissible fade show" role="alert">
             <h4 class="alert-heading">Message</h4>
-            <p><?php echo JText::_('USERREMINDER_OPTOUT_SUCCESS') ?></p>
+            <p><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_SUCCESS') ?></p>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
@@ -111,10 +111,10 @@ function optout()
 { ?>
     <div id="system-message" class="alert alert-warning alert-dismissible fade show" role="alert">
         <h4 class="alert-heading">Message</h4>
-        <p><?php echo JText::_('USERREMINDER_CONFIRMATION') ?></p>
+        <p><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_CONFIRMATION') ?></p>
         <hr>
-        <a class="btn btn-sm btn-outline-success bg-white text-success" href="<?php echo JURI::base() ?>index.php?option=com_userreminder&task=optoutnow&uid=<?php echo JFactory::getApplication()->input->get('uid') ?>"><?php echo JText::_('USERREMINDER_YES') ?></a>
-        <a class="btn btn-sm btn-outline-warning bg-white text-warning" href="<?php echo JURI::base() ?>index.php"><?php echo JText::_('USERREMINDER_NO') ?></a>
+        <a class="btn btn-sm btn-outline-success bg-white text-success" href="<?php echo JURI::base() ?>index.php?option=com_userreminder&task=optoutnow&uid=<?php echo \Joomla\CMS\Factory::getApplication()->input->get('uid') ?>"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_YES') ?></a>
+        <a class="btn btn-sm btn-outline-warning bg-white text-warning" href="<?php echo JURI::base() ?>index.php"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_NO') ?></a>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php } ?>
