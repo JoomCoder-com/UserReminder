@@ -65,7 +65,7 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 //	require_once(JPATH_ROOT .'/components/com_users/controller.php');
 
 		// check to see if the current user is in the administrator group. if not then exit
-		//$cuser =& \Joomla\CMS\Factory::getUser();
+		//$cuser =& \Joomla\CMS\Factory::getApplication()->getIdentity();
 		// echo '<pre>'; print_r($cuser); exit;
 		// // check to see if the user is a super administrator
 		// if($cuser->gid != 25) {
@@ -343,7 +343,7 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 									// check to see if the user has an optout code
 									if ($userOptOutCode == "")
 									{
-										$userOptOutCode = ApplicationHelper::getHash(JUserHelper::genRandomPassword());
+										$userOptOutCode = ApplicationHelper::getHash(\Joomla\CMS\User\UserHelper::genRandomPassword());
 
 									}
 

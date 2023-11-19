@@ -415,7 +415,7 @@ class userreminderModelSendReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseMo
 			// check to see if the user has an optout code
 			if ($userOptOutCode == "")
 			{
-				$userOptOutCode = \Joomla\CMS\Application\ApplicationHelper::getHash(JUserHelper::genRandomPassword());
+				$userOptOutCode = \Joomla\CMS\Application\ApplicationHelper::getHash(\Joomla\CMS\User\UserHelper::genRandomPassword());
 			}
 			// send email reminder
 			if (userreminderModelSendReminder::_sendMail($user, $adminemails, $type, $userOptOutCode))

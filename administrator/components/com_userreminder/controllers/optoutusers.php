@@ -20,7 +20,7 @@ defined('_JEXEC') or die;
  * @subpackage  com_config
  * @since       1.5
  */
-class UserreminderControllerOptoutUsers extends JControllerLegacy
+class UserreminderControllerOptoutUsers extends \Joomla\CMS\MVC\Controller\BaseController
 {
 	/**
 	 * Class Constructor

@@ -45,7 +45,7 @@ function optoutnow()
 {
 
 	$db = \Joomla\CMS\Factory::getDBO();
-	//$user = \Joomla\CMS\Factory::getUser();
+	//$user = \Joomla\CMS\Factory::getApplication()->getIdentity();
 
 	// double check that the user logged in is the one being opted out
 	$optoutcode = Factory::getApplication()->input->get('uid', '', 'string');

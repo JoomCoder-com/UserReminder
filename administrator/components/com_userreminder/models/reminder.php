@@ -489,8 +489,9 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$db = \Joomla\CMS\Factory::getDBO();
 
 		// get current user
-		//$user =& \Joomla\CMS\Factory::getUser();
-		$user = \Joomla\CMS\Factory::getUser();
+		//$user =& \Joomla\CMS\Factory::getApplication()->getIdentity();
+		$user = \Joomla\CMS\Factory::getApplication()->getIdentity();
+
 
 		?>
         <table class="adminheading">

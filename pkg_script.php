@@ -44,13 +44,13 @@ class pkg_userreminderInstallerScript
 	 */
 	public function postflight($type, $parent)
 	{
-		$app = JFactory::getApplication();
+		$app = \Joomla\CMS\Factory::getApplication();
 
 		// don't enable plugins if action type is update
 		if ($type == 'update' || $type == 'uninstall') return;
 
 
-		$db = JFactory::getDBO();
+		$db = \Joomla\CMS\Factory::getDBO();
 
 		$manifest = $parent->getManifest();
 
@@ -71,7 +71,7 @@ class pkg_userreminderInstallerScript
 		$db->setQuery($query);
 
 		if (!$db->execute()) {
-			$application = JFactory::getApplication();
+			$application = \Joomla\CMS\Factory::getApplication();
 			$application->enqueueMessage('Failed to Enable some plugins', 'error');
 		}
 

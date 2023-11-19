@@ -17,7 +17,7 @@ defined('_JEXEC') or die('Restricted access');
 require_once (JPATH_COMPONENT.'/controller.php');
 
 // Create the controller
-$controller	= JControllerLegacy::getInstance('userreminder');
+$controller	= \Joomla\CMS\MVC\Controller\BaseController::getInstance('userreminder');
 // Perform the Request task
 $controller->execute(\Joomla\CMS\Factory::getApplication()->input->get('task', 'cpanel', 'default', 'cmd'));
 $controller->redirect();
