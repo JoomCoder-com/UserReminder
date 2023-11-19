@@ -113,8 +113,8 @@ function optout()
         <h4 class="alert-heading">Message</h4>
         <p><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_CONFIRMATION') ?></p>
         <hr>
-        <a class="btn btn-sm btn-outline-success bg-white text-success" href="<?php echo JURI::base() ?>index.php?option=com_userreminder&task=optoutnow&uid=<?php echo \Joomla\CMS\Factory::getApplication()->input->get('uid') ?>"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_YES') ?></a>
-        <a class="btn btn-sm btn-outline-warning bg-white text-warning" href="<?php echo JURI::base() ?>index.php"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_NO') ?></a>
+        <a class="btn btn-sm btn-outline-success bg-white text-success" href="<?php echo \Joomla\CMS\Uri\Uri::base() ?>index.php?option=com_userreminder&task=optoutnow&uid=<?php echo \Joomla\CMS\Factory::getApplication()->input->get('uid') ?>"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_YES') ?></a>
+        <a class="btn btn-sm btn-outline-warning bg-white text-warning" href="<?php echo \Joomla\CMS\Uri\Uri::base() ?>index.php"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_NO') ?></a>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php } ?>

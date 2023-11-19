@@ -10,8 +10,8 @@
  */
 // no direct access
 defined('_JEXEC') or die('Restricted access');
-$logo = JURI::base(true)."/components/com_userreminder/assets/images/";
-$path = JURI::base(true)."/";
+$logo = \Joomla\CMS\Uri\Uri::base(true)."/components/com_userreminder/assets/images/";
+$path = \Joomla\CMS\Uri\Uri::base(true)."/";
 ?>
 
 

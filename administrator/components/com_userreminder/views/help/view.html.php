@@ -23,7 +23,6 @@ class userreminderViewHelp extends \Joomla\CMS\MVC\View\HtmlView
 	function _display($tpl = null){
 		\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
 
-		$bar = JToolBar::getInstance('toolbar');
 		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'displayReminders', 'users', '', \Joomla\CMS\Language\Text::_( 'USERREMINDER_INCOMPLETE_REGS' ), false, false );
 
 		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'displayUserReminders', 'user', '', \Joomla\CMS\Language\Text::_( 'USERREMINDER_USER_REM' ), false, false );

@@ -272,6 +272,21 @@
             <option value="1">JYES</option>
         </field>
 
+
+        <field
+                name="removefromusergroups"
+                type="UserGroupList"
+                label="Remove from user groups"
+                showon="enableDeleteExistingUsers:0"
+                description="Remove user from following groups if did not visit"
+                layout="joomla.form.field.list-fancy-select"
+                checksuperusergroup="1"
+                default=""
+                multiple="true"
+        >
+            <option value="0">- Select User Group -</option>
+        </field>
+
         <field type="text" name="regLoginEmailSubject"
                label="USERREMINDER_LOGIN_EMAIL_SUBJECT" default="We have missed you at [SITE_NAME]"
                description="USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>

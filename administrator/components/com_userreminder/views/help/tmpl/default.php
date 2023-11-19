@@ -11,7 +11,7 @@
 // no direct access
 defined('_JEXEC') or die('Restricted access');
 
-$logo = JURI::base(true)."/components/com_userreminder/assets/images/";
+$logo = \Joomla\CMS\Uri\Uri::base(true)."/components/com_userreminder/assets/images/";
 
 ?>
 <script type="text/javascript">

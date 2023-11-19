@@ -512,7 +512,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$sitename    = $mainframe->getCfg('sitename');
 		$mailfrom    = $mainframe->getCfg('mailfrom');
 		$fromname    = $mainframe->getCfg('fromname');
-		$siteURL     = JURI::root();
+		$siteURL     = \Joomla\CMS\Uri\Uri::root();
 
 
 		// ********************************************************************************

@@ -21,7 +21,7 @@ class userreminderViewReminder extends \Joomla\CMS\MVC\View\HtmlView
 	function _display($tpl = null){
 		
 		\Joomla\CMS\Toolbar\ToolbarHelper::title( \Joomla\CMS\Language\Text::_( 'USERREMINDER_TOOLBAR' ), 'cpanel' );
-		//\Joomla\CMS\HTML\HTMLHelper::stylesheet(JURI::root().'administrator/components/com_userreminder/assets/css/userreminder.css', false, true, false);
+		//\Joomla\CMS\HTML\HTMLHelper::stylesheet(\Joomla\CMS\Uri\Uri::root().'administrator/components/com_userreminder/assets/css/userreminder.css', false, true, false);
 		\Joomla\CMS\Toolbar\ToolbarHelper::custom('sendTestMail', 'envelope', 'send_f2.png', \Joomla\CMS\Language\Text::_( 'USERREMINDER_SEND_TEST' ), false);
 		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'sendReminder', 'envelope', 'go.png', \Joomla\CMS\Language\Text::_( 'USERREMINDER_USER_SEND' ), false, false );
 		\Joomla\CMS\Toolbar\ToolbarHelper::custom( 'cpanel', 'home.png', 'home.png', \Joomla\CMS\Language\Text::_( 'USERREMINDER_BACK' ), false, false );

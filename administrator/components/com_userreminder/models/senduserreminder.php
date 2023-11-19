@@ -12,6 +12,7 @@
 // no direct access
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 
 defined('_JEXEC') or die('Restricted access');
 
@@ -24,7 +25,7 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 //function showuserReminder( $option )
 	function count_all()
 	{
-		$db = \Joomla\CMS\Factory::getDBO();
+		$db = Factory::getDBO();
 
 		// find all records to be sent
 		// added the sql below to exclude useres that are in the user group
@@ -53,12 +54,12 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 
 	function sendUserReminder($displayHTML, $email_number_old, $email_number_new, $email_number)
 	{
-		$db = \Joomla\CMS\Factory::getDBO();
+		$db = Factory::getDBO();
 		jimport('joomla.user.helper');
 		jimport('joomla.language.helper');
 
 		//$lang = & \Joomla\CMS\Factory::getLanguage();
-		$lang = \Joomla\CMS\Factory::getLanguage();
+		$lang = Factory::getLanguage();
 		$lang->load('com_users', JPATH_SITE);
 
 		//require_once(JPATH_ROOT.DS.'components'.DS.'com_user'.DS.'controller.php');
@@ -287,9 +288,16 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 								$d9         = strtotime('-' . ComponentHelper::getParams('com_userreminder')->get('numberOfDays', 1) . ' days', time());
 								if ($check_date < $d9)
 								{
-									if (!ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers', 1))
+									if (ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers', 0))
 									{
 										$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE');
+									}
+                                    elseif (
+										!ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers', 0) &&
+										!empty(ComponentHelper::getParams('com_userreminder')->get('removefromusergroups', []))
+									)
+									{
+										$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONREMOVEUSERGROUP');
 									}
 									else
 									{
@@ -327,15 +335,41 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 
 								$sourceimg = "images/publish_x.png";
 
+
+								// delete user from followign user groups
+								if (!ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers', 0) &&
+									$action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONREMOVEUSERGROUP') &&
+                                    !empty(ComponentHelper::getParams('com_userreminder')->get('removefromusergroups',[]))
+                                )
+
+								{
+
+									$user2 = Factory::getUser($row->id);
+                                    foreach ($user2->groups as $id => $group){
+
+                                        $removeGroups = ComponentHelper::getParams('com_userreminder')->get('removefromusergroups',[]);
+
+                                        if(in_array($group,$removeGroups))
+                                            unset($user2->groups[$id]);
+
+                                    }
+
+
+                                    $user2->save();
+
+								}
+
+
 								// delete the user if required
-								if (ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers', 1) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE'))
+								if (ComponentHelper::getParams('com_userreminder')->get('enableDeleteExistingUsers', 0) && $action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE'))
 								{
 									// Changes 2.5.9.13.
-									$user2 = \Joomla\CMS\Factory::getUser($row->id);
-									$user2->delete(false);
+                                    $user2 = Factory::getUser($row->id);
+									$user2->delete();
 									unset($user2);
-									//$user->delete(false);
 								}
+
+
 
 								// send a reminder
 								if ($action == \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND'))
@@ -420,10 +454,10 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 	{
 
 		//$mainframe = & \Joomla\CMS\Factory::getApplication();
-		$mainframe = \Joomla\CMS\Factory::getApplication();
+		$mainframe = Factory::getApplication();
 
 		//$db		=& \Joomla\CMS\Factory::getDBO();
-		$db = \Joomla\CMS\Factory::getDBO();
+		$db = Factory::getDBO();
 
 		//$name 		= $user->get('name');
 		//$email 		= $user->get('email');
@@ -437,7 +471,7 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 		$sitename    = $mainframe->getCfg('sitename');
 		$mailfrom    = $mainframe->getCfg('mailfrom');
 		$fromname    = $mainframe->getCfg('fromname');
-		$siteURL     = JURI::root();
+		$siteURL     = \Joomla\CMS\Uri\Uri::root();
 
 		// get the parameter for this component
 		//$regConfig = &\Joomla\CMS\Component\ComponentHelper::getParams( 'com_userreminder' );
@@ -512,11 +546,11 @@ class userreminderModelSendUserReminder extends \Joomla\CMS\MVC\Model\BaseDataba
 
 			if (!ComponentHelper::getParams('com_userreminder')->get('enabledBccToAdmin', 1) && !empty($adminemails))
 			{
-				$successmail = \Joomla\CMS\Factory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null, $adminemails);
+				$successmail = Factory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null, $adminemails);
 			}
 			else
 			{
-				$successmail = \Joomla\CMS\Factory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null);
+				$successmail = Factory::getMailer()->sendMail($mailfrom, $fromname, $email, $subject, $message, true, null);
 			}
 
 			return $successmail;

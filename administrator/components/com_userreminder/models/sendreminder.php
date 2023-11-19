@@ -516,7 +516,7 @@ class userreminderModelSendReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseMo
 		$sitename    = $mainframe->getCfg('sitename');
 		$mailfrom    = $mainframe->getCfg('mailfrom');
 		$fromname    = $mainframe->getCfg('fromname');
-		$siteURL     = JURI::root();
+		$siteURL     = \Joomla\CMS\Uri\Uri::root();
 
 		// get the parameter for this component
 		//$regConfig = &\Joomla\CMS\Component\ComponentHelper::getParams( 'com_userreminder' );
