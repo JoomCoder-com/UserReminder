@@ -36,8 +36,8 @@ class userreminderController extends \Joomla\CMS\MVC\Controller\BaseController {
         $model = $this->getModel('reminder');
         $view	= $this->getView ( 'reminder','html');
 
-        // Get the incomplete registrations not a
-	    $view->itemlist = $model->showuserReminder();
+        // Get the incomplete registrations not avtivated
+	    $view->itemlist = $model->getRegisteredUsersNotActivated();
 
         // Get the registered user who have never logged in, but have activated their registration
 	    $view->itemlistlogin  = $model->getRegisteredUsersNeverLogged();
@@ -98,7 +98,7 @@ class userreminderController extends \Joomla\CMS\MVC\Controller\BaseController {
         $view	= $this->getView ( 'reminder','html');
         $model->sendTestMail();
         // Get the incomplete registrations
-        $results = $model->showuserReminder();
+        $results = $model->getRegisteredUsersNotActivated();
         $view->itemlist = $results;
         // Get the registered user who have never logged in, but have activated their registration
         $resultslogin = $model->getRegisteredUsersNeverLogged();

@@ -11,6 +11,7 @@
 
 // no direct access
 use Joomla\CMS\Component\ComponentHelper;
+use Userreminder\Users\User;
 
 defined('_JEXEC') or die('Restricted access');
 
@@ -527,29 +528,7 @@ class userreminderModelSendReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseMo
 		$tableParam  = str_replace("\r\n", "<br />", $result[0]);
 		$usersConfig = json_decode($tableParam, true);
 
-		// check to see if Joomla or CB activation link should be used
-		if ($params->get('useCBActivation', 0))
-		{
-			// Find the activation code for community builder
-			$q = "Select cbactivation FROM #__comprofiler where  #__comprofiler.user_id =" . $user->id;
-			$db->setQuery($q);
-			$db->execute();
-
-
-			$cbuser = $db->loadObject();
-
-			// set the activation url
-			//$activationURL = $siteURL."index.php?option=com_comprofiler&task=confirm&confirmcode=".$cbuser->cbactivation;
-
-			$activationURL = $siteURL . $params->get('activateURL', '') . $cbuser->cbactivation;
-		}
-		else
-		{
-			//$activationURL = $siteURL."index.php?option=com_users&task=activate&activation=".$user->get('activation');
-			//$activationURL = $siteURL.$this->getParamData( $usersConfig,'activateURL',"" ).$user->get('activation');
-
-			$activationURL = $siteURL . $params->get('activateURL', '') . $user->activation;
-		}
+		$activationURL = User::getActivationUrl($user);
 
 		if ($type == 2)
 		{

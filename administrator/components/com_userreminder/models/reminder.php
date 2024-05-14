@@ -12,6 +12,7 @@
 // no direct access
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
+use Userreminder\Users\User;
 
 defined('_JEXEC') or die('Restricted access');
 
@@ -83,7 +84,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		// Load the content if it doesn't already exist
 		if (empty($this->_total))
 		{
-			$this->_data = $this->showuserReminder();
+			$this->_data = $this->getRegisteredUsersNotActivated();
 		}
 
 		return $this->_total;
@@ -122,9 +123,9 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		return $this->_pagination2;
 	}
 
-	function showuserReminder()
+	public function getRegisteredUsersNotActivated()
 	{
-		global $mainframe, $iMaxRecords;
+		global $iMaxRecords;
 
 		$iMaxRecords = 1;
 		$params      = ComponentHelper::getParams('com_userreminder');
@@ -134,7 +135,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		$list = array();
 
-		// Changes 2.5.9.13
+
 		if ($params->get('debugUserReminder', 0))
 		{
 			?>
@@ -152,7 +153,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		// AND #__users.id IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id NOT IN (SELECT group_id FROM #__userreminder_optout_usergroups))
 		if ($params->get('useCBActivation', 0))
 		{
-			if (!$params->get('enabledSendImed', 0))
+			if ($params->get('enabledSendImed', 0))
 			{
 
 				// LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id
@@ -189,7 +190,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		else
 		{
 
-			if ($params->get('enabledSendImed', 0))
+			if (!$params->get('enabledSendImed', 0))
 			{
 
 
@@ -365,7 +366,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 			$query->where("
 			    (
-			        (ISNULL(#__userreminder_optout.user_id) AND block = 0 AND ISNULL(lastvisitDate))  OR  
+			        (ISNULL(#__userreminder_optout.user_id) AND block = 0 AND activation=0 AND ISNULL(lastvisitDate))  OR  
 			        (ISNULL(#__userreminder_optout.user_id) AND id=userid and type=2)
 			    ) 
 			    
@@ -409,6 +410,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 				$user = \Joomla\CMS\Factory::getUser($row->id);
 				$name = $user->name . " [" . $user->username . "]";
 
+                // get user action
 				if ($row->block >= 1)
 				{
 					$action = Text::_('USERREMINDER_USER_NOTREGISTERED');
@@ -484,6 +486,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 					}
 				}
 
+                // add user to the list
 				$list[] = array("name" => $name, "email" => $row->email, "regDate" => $row->registerDate, "remindersent" => $row->datesent, "action" => $action, "remindernumber" => $row->remindernumber);
 			}
 		}
@@ -519,37 +522,14 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$username = $user->get('username');
 
 		//$usersConfig 	= &\Joomla\CMS\Component\ComponentHelper::getParams( 'com_users' );
-		$usersConfig = \Joomla\CMS\Component\ComponentHelper::getParams('com_users');
+		$usersConfig = ComponentHelper::getParams('com_users');
 		$sitename    = $mainframe->getCfg('sitename');
 		$mailfrom    = $mainframe->getCfg('mailfrom');
 		$fromname    = $mainframe->getCfg('fromname');
 		$siteURL     = \Joomla\CMS\Uri\Uri::root();
 
 
-		// ********************************************************************************
-		// check to see if Joomla or CB activation link should be used
-		// ********************************************************************************
-
-
-		if (ComponentHelper::getParams('com_userreminder')->get('useCBActivation', 0))
-		{
-			// Find the activation code for community builder
-			$q = "Select cbactivation FROM #__comprofiler where  #__comprofiler.user_id =" . $user->id;
-			$db->setQuery($q);
-			$db->execute();
-
-			$cbuser = $db->loadObject();
-
-			// set the activation url
-			//$activationURL = $siteURL."index.php?option=com_comprofiler&task=confirm&confirmcode=".$cbuser->cbactivation;
-
-			$activationURL = $siteURL . \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('activateURL', '') . $cbuser->cbactivation;
-		}
-		else
-		{
-			//$activationURL = $siteURL."index.php?option=com_users&task=activate&activation=".$user->get('activation');
-			$activationURL = $siteURL . \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('activateURL', '') . $user->get('activation');
-		}
+		$activationURL = User::getActivationUrl($user);
 
 
 		// Check and Set sender details
@@ -563,14 +543,14 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		// Create and send TEST email for users who have never logged in
 		// ********************************************************************************
 
-		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailSubject', '') == "")
+		if (ComponentHelper::getParams('com_userreminder')->get('regActivationEmailSubject', '') == "")
 		{
 			$subject = Text::_('USERREMINDER_REMINDER_DETAILS_FOR');
 		}
 		else
 		{
 
-			$subject = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailSubject', '');
+			$subject = ComponentHelper::getParams('com_userreminder')->get('regActivationEmailSubject', '');
 		}
 
 		//$subject 	= sprintf ( $subject, $name, $sitename);
@@ -582,7 +562,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$mode = 1;
 		// send mail html. If no HTML then use plain text
 
-		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailBodyHTML', "") == "")
+		if (ComponentHelper::getParams('com_userreminder')->get('regActivationEmailBodyHTML', "") == "")
 		{
 			$message = Text::_('USERREMINDER_SEND_MSG_REMINDER');
 			$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
@@ -590,7 +570,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		else
 		{
 
-			$message = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailBodyHTML', "");
+			$message = ComponentHelper::getParams('com_userreminder')->get('regActivationEmailBodyHTML', "");
 		}
 
 		$activationURL = "<a href='$activationURL'>$activationURL</a>";
@@ -621,13 +601,13 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		// get email subject
 
-		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailSubject', '') == "")
+		if (ComponentHelper::getParams('com_userreminder')->get('regLoginEmailSubject', '') == "")
 		{
 			$subject = Text::_('USERREMINDER_LOGINREMINDER_DETAILS_FOR');
 		}
 		else
 		{
-			$subject = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailSubject', "");
+			$subject = ComponentHelper::getParams('com_userreminder')->get('regLoginEmailSubject', "");
 		}
 
 		//$subject 	= sprintf ( $subject, $sitename);
@@ -638,7 +618,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$mode = 1;
 		// send mail with message html. if no HTML then use plain text
 
-		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailBodyHTML', '') == "")
+		if (ComponentHelper::getParams('com_userreminder')->get('regLoginEmailBodyHTML', '') == "")
 		{
 			$message = Text::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
 			$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
@@ -646,7 +626,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		else
 		{
 
-			$message = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailBodyHTML', '');
+			$message = ComponentHelper::getParams('com_userreminder')->get('regLoginEmailBodyHTML', '');
 		}
 
 		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
