@@ -35,15 +35,13 @@ class userreminderController extends \Joomla\CMS\MVC\Controller\BaseController {
         //$model = &$this->getModel('userreminder');
         $model = $this->getModel('reminder');
         $view	= $this->getView ( 'reminder','html');
-        // Get the incomplete registrations
-        $results = $model->showuserReminder();
 
+        // Get the incomplete registrations not a
+	    $view->itemlist = $model->showuserReminder();
 
-        $view->itemlist = $results;
         // Get the registered user who have never logged in, but have activated their registration
-        $resultslogin = $model->showloginReminder();
+	    $view->itemlistlogin  = $model->getRegisteredUsersNeverLogged();
 
-        $view->itemlistlogin = $resultslogin;
         // pagination for first tab
         $pagination = $model->getPagination();
 
@@ -103,7 +101,7 @@ class userreminderController extends \Joomla\CMS\MVC\Controller\BaseController {
         $results = $model->showuserReminder();
         $view->itemlist = $results;
         // Get the registered user who have never logged in, but have activated their registration
-        $resultslogin = $model->showloginReminder();
+        $resultslogin = $model->getRegisteredUsersNeverLogged();
         $view->itemlistlogin = $resultslogin;
         // pagination for first tab
         $pagination = $model->getPagination();

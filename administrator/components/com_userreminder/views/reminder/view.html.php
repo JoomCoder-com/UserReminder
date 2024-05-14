@@ -30,4 +30,3 @@ class userreminderViewReminder extends \Joomla\CMS\MVC\View\HtmlView
 	}
 
 }
-?>

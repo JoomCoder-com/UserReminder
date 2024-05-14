@@ -11,6 +11,7 @@
 
 // no direct access
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Language\Text;
 
 defined('_JEXEC') or die('Restricted access');
 
@@ -104,7 +105,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		// Load the content if it doesn't already exist
 		if (empty($this->_total2))
 		{
-			$this->_data = $this->showloginReminder();
+			$this->_data = $this->getRegisteredUsersNeverLogged();
 		}
 
 		return $this->_total2;
@@ -139,7 +140,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 			?>
             <tr>
                 <td colspan=3><font color="red">
-                        <H1><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_DEBUG'); ?></H1><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_DEBUG_TEXT'); ?>
+                        <H1><?php print Text::_('USERREMINDER_DEBUG'); ?></H1><?php print Text::_('USERREMINDER_DEBUG_TEXT'); ?>
                     </font><br/></td>
             </tr>
 			<?php
@@ -254,12 +255,12 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 				$name = $user->name . " [" . $user->username . "]";
 				if (!$row->block)
 				{
-					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_USER_REGISTERED');
+					$action = Text::_('USERREMINDER_USER_REGISTERED');
 				}
                 elseif (!$params->get('enableActivateReminder', 1))
 					// check to see if this function has been enabled
 				{
-					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTENABLED');
+					$action = Text::_('USERREMINDER_ACTIONNOTENABLED');
 
 				}
 				// check to see if a reminder needs to be sent
@@ -269,11 +270,11 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 					if ($iMaxRecords > $params->get('maxemailstosend', 20))
 					{
 						//$action=\Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONMAXEMAILS1');
-						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+						$action = Text::_('USERREMINDER_ACTIONSEND');
 					}
 					else
 					{
-						$action      = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+						$action      = Text::_('USERREMINDER_ACTIONSEND');
 						$iMaxRecords = $iMaxRecords + 1;
 					}
 				}
@@ -290,11 +291,11 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 							if ($iMaxRecords > $params->get('maxemailstosend', 20))
 							{
 								//$action=\Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONMAXEMAILS1');
-								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+								$action = Text::_('USERREMINDER_ACTIONSEND');
 							}
 							else
 							{
-								$action      = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+								$action      = Text::_('USERREMINDER_ACTIONSEND');
 								$iMaxRecords = $iMaxRecords + 1;
 							}
 						}
@@ -303,17 +304,17 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 							// delete the user
 							if ($params->get('enableDeleteUsers', 0))
 							{
-								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE');
+								$action = Text::_('USERREMINDER_ACTIONDELETE');
 							}
 							else
 							{
-								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTDELETED');
+								$action = Text::_('USERREMINDER_ACTIONNOTDELETED');
 							}
 						}
 					}
 					else
 					{
-						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_NONE');
+						$action = Text::_('USERREMINDER_ACTION_NONE');
 					}
 				}
 
@@ -327,57 +328,66 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 	}
 
-
-	function showloginReminder()
+	/*
+	 * Get the registered user who have never logged in, but have activated their registration
+	 */
+	public function getRegisteredUsersNeverLogged()
 	{
-		//$db =& \Joomla\CMS\Factory::getDBO();
-		$db = \Joomla\CMS\Factory::getDBO();
+
 		global $iMaxRecords;
-		//$mainframe = & \Joomla\CMS\Factory::getApplication();
-		$mainframe = \Joomla\CMS\Factory::getApplication();
 
+		// some inits
+		$list                = array();
+		$sendFirstImmediatly = ComponentHelper::getParams('com_userreminder')->get('enabledSendImed', 0);
+        $numberOfDaysBeforeSending = ComponentHelper::getParams('com_userreminder')->get('numberOfDays', 1);
 
-		$list = array();
-
-		//$db	=& \Joomla\CMS\Factory::getDBO();
 		$db = \Joomla\CMS\Factory::getDBO();
-		// added the sql below to exclude useres that are in the user group
-		// AND #__users.id IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id NOT IN (SELECT group_id FROM #__userreminder_optout_usergroups))
-		if (!ComponentHelper::getParams('com_userreminder')->get('enabledSendImed', 0))
-		{
 
-			$sql = "SELECT id, email, activation, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber 
-                   FROM #__users 
-                   LEFT JOIN #__userreminder on id=userid 
-                   LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id 
-                   WHERE
-                   ( 
-                   (isnull(#__userreminder_optout.user_id) AND block = 0 AND ISNULL(lastvisitDate)) 
-                   or 
-                   (isnull(#__userreminder_optout.user_id) AND id=userid and type=2)
-                   )
-           		   AND (#__users.id NOT IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id IN (SELECT group_id FROM #__userreminder_optout_usergroups)))";
+		// get new query
+		$query = $db->getQuery(true);
+
+		// query
+		$query->select('id, email, activation, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber')
+			->from('#__users')
+			->leftJoin('#__userreminder','id = userid')
+			->leftJoin('#__userreminder_optout','#__users.id = #__userreminder_optout.user_id');
+
+		// set subqueries
+		$subQueryGroupsIds = "SELECT group_id FROM #__userreminder_optout_usergroups"; // get opt-out user groups ids
+		$subQueryUsersIds  = "SELECT user_id FROM #__user_usergroup_map WHERE group_id IN ($subQueryGroupsIds)"; // get opt-out users ids
+
+		// set wheres
+		$excludeOptOutUsers = "#__users.id NOT IN ($subQueryUsersIds)"; // exclude optOut users ids
+
+
+		if ($sendFirstImmediatly)
+		{ // Send 1st reminder immediately
+
+			$query->where("
+			    (
+			        (ISNULL(#__userreminder_optout.user_id) AND block = 0 AND ISNULL(lastvisitDate))  OR  
+			        (ISNULL(#__userreminder_optout.user_id) AND id=userid and type=2)
+			    ) 
+			    
+			    AND $excludeOptOutUsers	    
+			");
+
 		}
 		else
-		{
+		{ //  wait until the number of days
 
-
-			$sql = "SELECT id, email, activation, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber
-                   FROM #__users 
-                   LEFT JOIN #__userreminder on id=userid 
-                   LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id 
-                   WHERE
+			$query->where("
                    ( 
-                   (isnull(#__userreminder_optout.user_id) AND block = 0 AND ISNULL(lastvisitDate) AND date_add(registerDate, INTERVAL " . ComponentHelper::getParams('com_userreminder')->get('numberOfDays', 1) . " DAY) < now()) 
+                   (isnull(#__userreminder_optout.user_id) AND block = 0 AND ISNULL(lastvisitDate) AND date_add(registerDate, INTERVAL $numberOfDaysBeforeSending DAY) < now()) 
                    or 
                    (isnull(#__userreminder_optout.user_id) AND id=userid and type=2)
                    )
-           		   AND (#__users.id NOT IN (SELECT user_id FROM #__user_usergroup_map WHERE group_id IN (SELECT group_id FROM #__userreminder_optout_usergroups)))";
+           		   AND $excludeOptOutUsers"
+			);
+
 		}
 
-		//$sql = "SELECT COUNT(*), id, email, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber FROM #__users LEFT JOIN #__userreminder on id=userid WHERE (block = 0 AND lastvisitDate = '0000-00-00 00:00:00' AND date_add(registerDate, INTERVAL ".\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDays',1 )." DAY) < now()) or (id=userid and type=2)";
-
-		$db->setQuery($sql, $this->getState('limitstart2'), $this->getState('limit2'));
+		$db->setQuery($query, $this->getState('limitstart2'), $this->getState('limit2'));
 
 		$rows = $db->loadObjectList();
 
@@ -394,29 +404,31 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		{
 			foreach ($rows as $row)
 			{
-				//$user	= &\Joomla\CMS\Factory::getUser($row->id);
+
+                // get user info
 				$user = \Joomla\CMS\Factory::getUser($row->id);
 				$name = $user->name . " [" . $user->username . "]";
+
 				if ($row->block >= 1)
 				{
-					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_USER_NOTREGISTERED');
+					$action = Text::_('USERREMINDER_USER_NOTREGISTERED');
 				}
                 elseif (
-                        !$row->block AND
-                        (
-                                $row->lastvisitDate != '0000-00-00 00:00:00' &&
-                                !is_null($row->lastvisitDate) &&
-                                !empty($row->lastvisitDate)
-                        )
-                )
+					!$row->block and
+					(
+						$row->lastvisitDate != '0000-00-00 00:00:00' &&
+						!is_null($row->lastvisitDate) &&
+						!empty($row->lastvisitDate)
+					)
+				)
 				{
 
-					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_USER_HASLOGGEDIN');
+					$action = Text::_('USERREMINDER_USER_HASLOGGEDIN');
 				}
                 elseif (!ComponentHelper::getParams('com_userreminder')->get('enableLoginReminder', 1))
 					// check to see if this function has been enabled
 				{
-					$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTENABLED');
+					$action = Text::_('USERREMINDER_ACTIONNOTENABLED');
 				}
 				// check to see if a reminder needs to be sent
                 elseif ($row->datesent == "" or $row->type != "2")
@@ -424,12 +436,11 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 					// check to see if the maximum number of emails is going to be exceeded
 					if ($iMaxRecords > ComponentHelper::getParams('com_userreminder')->get('maxemailstosend', 20))
 					{
-						//$action=\Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONMAXEMAILS1');
-						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+						$action = Text::_('USERREMINDER_ACTIONSEND');
 					}
 					else
 					{
-						$action      = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+						$action      = Text::_('USERREMINDER_ACTIONSEND');
 						$iMaxRecords = $iMaxRecords + 1;
 					}
 				}
@@ -446,11 +457,11 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 							if ($iMaxRecords > ComponentHelper::getParams('com_userreminder')->get('maxemailstosend', 20))
 							{
 								//$action=\Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONMAXEMAILS1');
-								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+								$action = Text::_('USERREMINDER_ACTIONSEND');
 							}
 							else
 							{
-								$action      = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONSEND');
+								$action      = Text::_('USERREMINDER_ACTIONSEND');
 								$iMaxRecords = $iMaxRecords + 1;
 							}
 						}
@@ -459,17 +470,17 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 							// delete the user
 							if (ComponentHelper::getParams('com_userreminder')->get('enableDeleteUsersLogin', 0))
 							{
-								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONDELETE');
+								$action = Text::_('USERREMINDER_ACTIONDELETE');
 							}
 							else
 							{
-								$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTIONNOTDELETED');
+								$action = Text::_('USERREMINDER_ACTIONNOTDELETED');
 							}
 						}
 					}
 					else
 					{
-						$action = \Joomla\CMS\Language\Text::_('USERREMINDER_ACTION_LOGINNONE');
+						$action = Text::_('USERREMINDER_ACTION_LOGINNONE');
 					}
 				}
 
@@ -497,7 +508,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
         <table class="adminheading">
             <tr>
                 <td>
-                    <h1><?php print \Joomla\CMS\Language\Text::_('USERREMINDER_TEST') . ' ' . $user->get('email'); ?></h1>
+                    <h1><?php print Text::_('USERREMINDER_TEST') . ' ' . $user->get('email'); ?></h1>
                 </td>
             </tr>
         </table>
@@ -554,7 +565,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailSubject', '') == "")
 		{
-			$subject = \Joomla\CMS\Language\Text::_('USERREMINDER_REMINDER_DETAILS_FOR');
+			$subject = Text::_('USERREMINDER_REMINDER_DETAILS_FOR');
 		}
 		else
 		{
@@ -573,7 +584,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regActivationEmailBodyHTML', "") == "")
 		{
-			$message = \Joomla\CMS\Language\Text::_('USERREMINDER_SEND_MSG_REMINDER');
+			$message = Text::_('USERREMINDER_SEND_MSG_REMINDER');
 			$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 		}
 		else
@@ -585,11 +596,11 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$activationURL = "<a href='$activationURL'>$activationURL</a>";
 		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
 		$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
-		$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
-		$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
-		$websiteURL = "<a href='$siteURL'>$siteURL</a>";
+		$optOutUrl     = $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
+		$optOutUrl     = "<a href='$optOutUrl'>$optOutUrl</a>";
+		$websiteURL    = "<a href='$siteURL'>$siteURL</a>";
 
-		$message = \Joomla\CMS\Language\Text::_('USERREMINDER_REMINDER_DETAILS_FOR_TEST') . chr(10) . chr(10) . $message;
+		$message = Text::_('USERREMINDER_REMINDER_DETAILS_FOR_TEST') . chr(10) . chr(10) . $message;
 		$message = userreminderModelReminder::replaceParams($message, "[NAME]", $name);
 		$message = userreminderModelReminder::replaceParams($message, "[SITE_NAME]", $sitename);
 		$message = userreminderModelReminder::replaceParams($message, "[ACTIVATE_URL]", $activationURL);
@@ -612,7 +623,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailSubject', '') == "")
 		{
-			$subject = \Joomla\CMS\Language\Text::_('USERREMINDER_LOGINREMINDER_DETAILS_FOR');
+			$subject = Text::_('USERREMINDER_LOGINREMINDER_DETAILS_FOR');
 		}
 		else
 		{
@@ -629,7 +640,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		if (\Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('regLoginEmailBodyHTML', '') == "")
 		{
-			$message = \Joomla\CMS\Language\Text::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
+			$message = Text::_('USERREMINDER_SEND_MSG_LOGINREMINDER');
 			$message = preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
 		}
 		else
@@ -640,17 +651,17 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		$passwordReset = $siteURL . ComponentHelper::getParams('com_userreminder')->get('passwordReset', 'index.php?option=com_users&view=reset');
 		$passwordReset = "<a href='$passwordReset'>$passwordReset</a>";
-		$optOutUrl =  $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
-		$optOutUrl = "<a href='$optOutUrl'>$optOutUrl</a>";
-		$websiteUrl = "<a href='$siteURL'>$siteURL</a>";
+		$optOutUrl     = $siteURL . 'index.php?option=com_userreminder&task=optout&uid=' . $user->id;
+		$optOutUrl     = "<a href='$optOutUrl'>$optOutUrl</a>";
+		$websiteUrl    = "<a href='$siteURL'>$siteURL</a>";
 
 		//$message = sprintf ( \Joomla\CMS\Language\Text::_( 'USERREMINDER_REMINDER_DETAILS_FOR_TEST' ).chr(10).chr(10).$message, $name, $sitename, $siteURL, $username, $siteURL.'index.php?option=com_user&view=reset');
-		$message = \Joomla\CMS\Language\Text::_('USERREMINDER_REMINDER_DETAILS_FOR_TEST') . chr(10) . chr(10) . $message;
+		$message = Text::_('USERREMINDER_REMINDER_DETAILS_FOR_TEST') . chr(10) . chr(10) . $message;
 		$message = userreminderModelReminder::replaceParams($message, "[NAME]", $name);
 		$message = userreminderModelReminder::replaceParams($message, "[SITE_NAME]", $sitename);
 		$message = userreminderModelReminder::replaceParams($message, "[SITE_URL]", $websiteUrl);
 		$message = userreminderModelReminder::replaceParams($message, "[USERNAME]", $username);
-			$message = userreminderModelReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
+		$message = userreminderModelReminder::replaceParams($message, "[PASSWORD_RESET]", $passwordReset);
 		$message = userreminderModelReminder::replaceParams($message, "[OPTOUT]", $optOutUrl);
 		$message = html_entity_decode($message, ENT_QUOTES);
 		//$message	= preg_replace("(\n)", "<br />", $message); // if content is plain text -> carriage returns it if have \n
