@@ -95,6 +95,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		// Load the content if it doesn't already exist
 		if (empty($this->_pagination))
 		{
+
 			$this->_pagination = new  \Joomla\CMS\Pagination\Pagination($this->getTotal(), $this->getState('limitstart'), $this->getState('limit'), 'regrim_');
 		}
 
@@ -157,7 +158,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 			{
 
 				// LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id
-				$sql = "SELECT #__users.id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
+				$sql = "SELECT SQL_CALC_FOUND_ROWS *, #__users.id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
                       FROM #__users 
                       INNER JOIN #__comprofiler on #__comprofiler.user_id=#__users.id 
                       LEFT JOIN #__userreminder on #__users.id=userid 
@@ -173,7 +174,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 			else
 			{
 
-				$sql = "SELECT #__users.id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
+				$sql = "SELECT SQL_CALC_FOUND_ROWS *, #__users.id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
                       FROM #__users 
                       INNER JOIN #__comprofiler on #__comprofiler.user_id=#__users.id 
                       LEFT JOIN #__userreminder on #__users.id=userid 
@@ -194,7 +195,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 			{
 
 
-				$sql = "SELECT  id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
+				$sql = "SELECT SQL_CALC_FOUND_ROWS *,  id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
                       FROM #__users 
                       LEFT JOIN #__userreminder on id = userid 
                       LEFT JOIN #__userreminder_optout on #__users.id = #__userreminder_optout.user_id 
@@ -218,7 +219,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 			else
 			{
 
-				$sql = "SELECT  id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
+				$sql = "SELECT SQL_CALC_FOUND_ROWS *, id, email, activation, block, registerDate, lastvisitDate, activation, datesent, remindernumber 
                       FROM #__users 
                       LEFT JOIN #__userreminder on id=userid 
                       LEFT JOIN #__userreminder_optout on #__users.id=#__userreminder_optout.user_id 
@@ -348,7 +349,7 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 		$query = $db->getQuery(true);
 
 		// query
-		$query->select('id, email, activation, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber')
+		$query->select('SQL_CALC_FOUND_ROWS *, id, email, activation, block, registerDate, lastvisitDate, activation, datesent, type, remindernumber')
 			->from('#__users')
 			->leftJoin('#__userreminder','id = userid')
 			->leftJoin('#__userreminder_optout','#__users.id = #__userreminder_optout.user_id');
@@ -504,7 +505,10 @@ class userreminderModelReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
 		// get current user
 		//$user =& \Joomla\CMS\Factory::getApplication()->getIdentity();
-		$user = \Joomla\CMS\Factory::getApplication()->getIdentity();
+
+        $userId = ComponentHelper::getParams('com_userreminder')->get('test_user',\Joomla\CMS\Factory::getApplication()->getIdentity()->id);
+
+		$user = \Joomla\CMS\Factory::getUser($userId);
 
 
 		?>

@@ -2,6 +2,9 @@
 <config>
     <fieldset name="main" label="Main" addfieldpath="/administrator/components/com_userreminder/models/fields">
 
+
+        <field type="user" name="test_user" label="Test User" description="Test emails will be sent to this user, if not set then superadmin email will be used." />
+
         <field type="list" default="1" class="form-select" id="paramsnumberOfDays" name="numberOfDays"
                label="USERREMINDER_DAYS" description="USERREMINDER_DAYS_TEXT">
             <option value="1">1</option>

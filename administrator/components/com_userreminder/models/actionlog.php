@@ -65,7 +65,7 @@ class userreminderModelActionLog extends \Joomla\CMS\MVC\Model\BaseDatabaseModel
 
         // find users who have not logged in for x number of days
         $days= \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('numberOfDaysExistingUser',180);
-        $sql = "SELECT `id`, `userId`, `username`, `description`, `date` FROM #__userreminder_log order by `id` desc";
+        $sql = "SELECT SQL_CALC_FOUND_ROWS *, `id`, `userId`, `username`, `description`, `date` FROM #__userreminder_log order by `id` desc";
 
         $rows = $this->_getList($sql, $this->getState('log_limitstart'), $this->getState('log_limit'));
 

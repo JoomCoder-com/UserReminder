@@ -92,7 +92,7 @@ class userreminderController extends \Joomla\CMS\MVC\Controller\BaseController {
         $view->paginationActionLog = $pagination;
         $view->_display();
     }
-    function sendTestMail() {
+    public function sendTestMail() {
         //$model = &$this->getModel('userreminder');
         $model = $this->getModel('reminder');
         $view	= $this->getView ( 'reminder','html');

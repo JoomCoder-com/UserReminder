@@ -224,7 +224,7 @@ class userreminderModelOptUsers extends \Joomla\CMS\MVC\Model\ListModel {
     	$db = \Joomla\CMS\Factory::getDbo();
     	$query = $db->getQuery(true);
     
-    	$query->select('*');
+    	$query->select(['SQL_CALC_FOUND_ROWS *']);
     	$query->from($db->quoteName('#__users'));
    	
     	$where = 'id IN (SELECT user_id FROM #__userreminder_optout)';
@@ -248,7 +248,7 @@ class userreminderModelOptUsers extends \Joomla\CMS\MVC\Model\ListModel {
     	$db = \Joomla\CMS\Factory::getDbo();
     	$query = $db->getQuery(true);
     
-    	$query->select('*');
+    	$query->select(['SQL_CALC_FOUND_ROWS *']);
     	$query->from($db->quoteName('#__users'));
     	
     	$where = 'id NOT IN (SELECT user_id FROM #__userreminder_optout)';

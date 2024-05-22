@@ -20,6 +20,7 @@ HTMLHelper::_('bootstrap.tooltip', '.hasTooltip');
 //\Joomla\CMS\HTML\HTMLHelper::_('behavior.modal');
 \Joomla\CMS\HTML\HTMLHelper::_('formbehavior.chosen', 'select');
 
+
 ?>
 
 <form method="post" name="adminForm" id="adminForm" action="index.php?option=com_userreminder&view=displayReminders">
