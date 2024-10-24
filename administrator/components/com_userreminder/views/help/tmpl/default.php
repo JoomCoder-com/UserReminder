@@ -68,10 +68,10 @@ Joomla.submitbutton = function(task)
         <b>Use Community Builder Activation</b> - If you are using the Community Builder component on your website to manage users then set this option to 'yes' to create a valid link in the reminder email. By Default the Joomla registration/activation link is used<br />
         <b>Email Subject</b> - Subject line in email. Available merge fields are  <br />
         [NAME] = Users Full Name  <br />
-        [SITE_NAME] = Webiste Name<br />
+        [SITE_NAME] = Website Name<br />
         <b>Email Message</b> = Email Body. Available merge fields are  <br />
         [NAME] = Users Full Name <br />
-        [SITE_NAME] = Webiste Name <br />
+        [SITE_NAME] = Website Name <br />
         [SITE_URL] = Website url <br />
         [USERNAME] = Username<br />
         [ACTIVATE_URL] = Activation url <br />
@@ -89,10 +89,10 @@ Joomla.submitbutton = function(task)
         <b>Delete Users</b> - Set this to true to enable users to be deleted. Note that users will only be deleted if the number of days defined in the parameter 'Days before next reminder is sent or users deleted' has passed since the maximum number of notification have been sent.<br />
         <b>Email Subject</b> - Subject line in email. Available merge fields are  <br />
         [NAME] = Users Full Name  <br />
-        [SITE_NAME] = Webiste Name<br />
+        [SITE_NAME] = Website Name<br />
         <b>Email Message</b> = Email Body. Available merge fields are  <br />
         [NAME] = Users Full Name <br />
-        [SITE_NAME] = Webiste Name <br />
+        [SITE_NAME] = Website Name <br />
         [SITE_URL] = Website url <br />
         [USERNAME] = Username <br />
         [PASSWORD_RESET] = Password reset url<br />
@@ -108,10 +108,10 @@ Joomla.submitbutton = function(task)
         <b>Days</b> - Number of days that a user has not logged in for. Once this number of days has been reached a reminder email can be sent.<br />
         <b>Email Subject</b> - Subject line in email. Available merge fields are <br />
         [NAME] = Users Full Name <br />
-        [SITE_NAME] = Webiste Name<br />
+        [SITE_NAME] = Website Name<br />
         <b>Email Message</b> = Email Body. Available merge fields are<br />
         [NAME] = Users Full Name <br />
-        [SITE_NAME] = Webiste Name <br />
+        [SITE_NAME] = Website Name <br />
         [SITE_URL] = Website url <br />
         [USERNAME] = Username <br />
         [PASSWORD_RESET] = Password reset url<br />

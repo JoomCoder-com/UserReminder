@@ -586,7 +586,7 @@ class userreminderModelSendReminder extends \Joomla\CMS\MVC\Model\BaseDatabaseMo
 			// create the message to be sent to users to activate
 			// get email subject
 
-			if ($params->get('regActivationEmailSubject', '') == "")
+			if ($params->get('regLoginEmailSubjectVisited', '') == "")
 			{
 				$subject = \Joomla\CMS\Language\Text::_('USERREMINDER_REMINDER_DETAILS_FOR');
 			}
