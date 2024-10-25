@@ -34,19 +34,17 @@ $groupList = $this->groupList;
 		</div>
 	<?php endif;
 	endif; ?>
-	<div id="j-sidebar-container" class="span2">
-		<ul class="nav nav-tabs" id="submenu">
-			<li  class="nav-item">
-				<a class="nav-link" href="index.php?option=com_userreminder&task=optuserPanel"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_USERS2')?></a>
-			</li>
-			<li class="nav-item">
-				<a class="nav-link" href="index.php?option=com_userreminder&task=optoutusers.userlist"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USER_LIST')?></a>
-			</li>
-			<li  class="nav-item">
-				<a class="nav-link active" href="index.php?option=com_userreminder&task=optoutusers.usergroup"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_GROUP')?></a>
-			</li>
-		</ul>
-	</div>
+    <ul class="nav nav-tabs" id="submenu">
+        <li class="nav-item">
+            <a class="nav-link " href="index.php?option=com_userreminder&task=optuserPanel"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_USERS2')?></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link " href="index.php?option=com_userreminder&task=optoutusers.userlist"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USER_LIST')?></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="index.php?option=com_userreminder&task=optoutusers.usergroup"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_GROUP')?></a>
+        </li>
+    </ul>
     <div class="tab-content">
         <form method="post" name="adminForm" id="adminForm" action="index.php?option=com_userreminder">
             <table class="table table-striped" id="articleList">

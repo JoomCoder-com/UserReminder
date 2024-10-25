@@ -23,7 +23,7 @@ $userList = $this->userlist;
 $search = $this->escape(\Joomla\CMS\Factory::getApplication()->input->get('filter_search', null, 'string'));
 
 ?>
-
+<form method="post" name="adminForm" id="adminForm" action="index.php?option=com_userreminder">
 <div>
 	<?php
 	if(isset($this->message)):	 
@@ -51,17 +51,17 @@ $search = $this->escape(\Joomla\CMS\Factory::getApplication()->input->get('filte
 
     <ul class="nav nav-tabs" id="submenu">
         <li class="nav-item">
-            <a class="nav-link" href="index.php?option=com_userreminder&task=optuserPanel"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USER_LIST')?></a>
+            <a class="nav-link " href="index.php?option=com_userreminder&task=optuserPanel"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_USERS2')?></a>
         </li>
         <li class="nav-item">
-            <a class="nav-link active" href="index.php?option=com_userreminder&task=optoutusers.userlist"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTOUT_USERS')?></a>
+            <a class="nav-link active" href="index.php?option=com_userreminder&task=optoutusers.userlist"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USER_LIST')?></a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="index.php?option=com_userreminder&task=optoutusers.usergroup"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_GROUP')?></a>
+            <a class="nav-link " href="index.php?option=com_userreminder&task=optoutusers.usergroup"><?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_OPTUSER_GROUP')?></a>
         </li>
     </ul>
     <div class="tab-content">
-        <form method="post" name="adminForm" id="adminForm" action="index.php?option=com_userreminder">
+
 
             <table class="table table-striped" id="articleList">
                 <thead>
@@ -107,15 +107,7 @@ $search = $this->escape(\Joomla\CMS\Factory::getApplication()->input->get('filte
             <input type="hidden" name="filter_order_Dir" value="<?php echo $this->sortDirection; ?>" />
             <input type="hidden" name="task" id="task" value="optoutusers.userlist" />
             <input type="hidden" value="0" name="boxchecked" />
-        </form>
+
     </div>
 </div>
-<script type="text/javascript">
-	function tableOrdering( order, dir, task ){
-	        var form = document.adminForm;
-	 
-	        form.filter_order.value = order;
-	        form.filter_order_Dir.value = dir;
-	        document.adminForm.submit( task );
-	}
-</script>
+</form>
