@@ -111,8 +111,6 @@ $search = $this->escape(\Joomla\CMS\Factory::getApplication()->input->get('filte
         <input type="hidden" name="filter_order_Dir" value="<?php echo $this->sortDirection; ?>" />
         <input type="hidden" name="task" id="task" value="optuserPanel" />
         <input type="hidden" value="0" name="boxchecked" />
-        <input type="hidden" id="selectedTab" name="selectedTab" value="<?php echo $selectedTab;?>" />
-
 </div>
 </form>
 <script type="text/javascript">
