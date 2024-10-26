@@ -41,7 +41,7 @@ $search = $this->escape(\Joomla\CMS\Factory::getApplication()->input->get('filte
         <div class="col-md-4">
             <div class="input-group">
                 <input value="<?php echo $search?>" name="filter_search" id="filter_search" type="text" class="form-control" placeholder="<?php echo \Joomla\CMS\Language\Text::_('USERREMINDER_USERS_SEARCH_USERS'); ?>">
-                <button class="btn btn-outline-secondary hasTooltip" title="JSEARCH_FILTER_SUBMIT" type="button"><i class="fas fa-search"></i></button>
+                <button class="btn btn-outline-secondary hasTooltip" type="submit"><i class="fas fa-search"></i></button>
                 <button class="btn btn-outline-secondary" title="<?php echo \Joomla\CMS\Language\Text::_('JSEARCH_RESET'); ?>" type="button" onclick="document.querySelector('#filter_search').value='';this.form.submit();">
                     <i class="fas fa-times"></i>
                 </button>
