@@ -1,60 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension type="component" version="1.0" method="upgrade">
-	<name>com_userreminder</name>
-	<creationDate>28-10-2021</creationDate>
-	<author>JoomCoder</author>
-	<authorEmail>support@joomcoder.com</authorEmail>
-	<authorUrl>https://www.joomcoder.com</authorUrl>
-	<copyright>Copyright © 2020 - 2026 JoomCoder - All rights reserved.</copyright>
-	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
-	<version>##VERSION##</version>
-	<description>Manage Users who have not completed the registration process, never logged in or who have not visited your site for a period of time.</description>
-	<install>
-		<sql>
-			<file driver="mysql" charset="utf8" >install.sql</file>
-		</sql>
-	</install>
-	<uninstall>
-		<sql>
-		  <file charset="utf8" driver="mysql">uninstall.sql</file>
-		</sql>
-	</uninstall>
-  
-	<languages folder="site">
-			<language tag="en-GB">language/com_userreminder.ini</language>
-	</languages>
-	
-	<files folder="site">
-		<filename>userreminder.php</filename>
-		<filename>index.html</filename>
-		<filename>router.php</filename>
-	</files>
-	
-	<administration>
-		<menu>com_userreminder</menu>
-		
-		<files folder="admin">
-			<filename>index.html</filename>
-			<filename>userreminder.php</filename>
-			<filename>controller.php</filename>
-			<folder>controllers</folder>			
-			<folder>models</folder>			
-			<folder>views</folder>
-			<folder>libraries</folder>
-			<folder>assets</folder>
-			<filename>access.xml</filename>
-			<filename>config.xml</filename>
-			<filename>install.sql</filename>
-			<filename>uninstall.sql</filename>		
-		</files>
-		
-		<languages folder="admin">
-			<language tag="en-GB">language/com_userreminder.ini</language>
-			<language tag="en-GB">language/com_userreminder.sys.ini</language>
-		</languages>
-		
-	</administration>
+<extension type="component" version="4.0" method="upgrade">
+    <name>com_userreminder</name>
+    <creationDate>2026-09-03</creationDate>
+    <author>JoomCoder</author>
+    <authorEmail>support@joomcoder.com</authorEmail>
+    <authorUrl>https://www.joomcoder.com</authorUrl>
+    <copyright>Copyright (C) 2020 - 2026 JoomCoder. All rights reserved.</copyright>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <version>##VERSION##</version>
+    <description>COM_USERREMINDER_DESCRIPTION</description>
 
+    <namespace>JoomCoder\Component\UserReminder</namespace>
 
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
 
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates</schemapath>
+        </schemas>
+    </update>
+
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+
+    <files>
+        <folder>forms</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+        <folder>services</folder>
+        <folder>layouts</folder>
+        <folder>sql</folder>
+        <folder>language</folder>
+        <filename>config.xml</filename>
+        <filename>access.xml</filename>
+        <filename>userreminder.xml</filename>
+        <filename>index.html</filename>
+    </files>
+
+    <languages folder="language">
+        <language tag="en-GB">en-GB/com_userreminder.ini</language>
+        <language tag="en-GB">en-GB/com_userreminder.sys.ini</language>
+    </languages>
+
+    <media folder="media" destination="com_userreminder">
+        <folder>js</folder>
+        <folder>css</folder>
+    </media>
+
+    <administration>
+        <menu>com_userreminder</menu>
+
+        <submenu>
+            <menu link="option=com_userreminder&amp;view=cpanel">COM_USERREMINDER_SUBMENU_CPANEL</menu>
+            <menu link="option=com_userreminder&amp;view=reminders">COM_USERREMINDER_SUBMENU_REMINDERS</menu>
+            <menu link="option=com_userreminder&amp;view=activeusers">COM_USERREMINDER_SUBMENU_ACTIVE_USERS</menu>
+            <menu link="option=com_userreminder&amp;view=optoutusers">COM_USERREMINDER_SUBMENU_OPTOUT</menu>
+            <menu link="option=com_userreminder&amp;view=log">COM_USERREMINDER_SUBMENU_LOG</menu>
+            <menu link="option=com_userreminder&amp;view=help">COM_USERREMINDER_SUBMENU_HELP</menu>
+        </submenu>
+    </administration>
 </extension>

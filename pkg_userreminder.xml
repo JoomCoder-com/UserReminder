@@ -1,30 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <extension type="package" version="4.0.0" method="upgrade">
-    <name>UserReminder Pro</name>
-    <packagename>UserReminder</packagename>
+    <name>UserReminder</name>
+    <packagename>userreminder</packagename>
     <version>##VERSION##</version>
     <url>https://www.joomcoder.com</url>
-    <creationDate>28-10-2021</creationDate>
-    <copyright>(C) 2013 - 2023 JoomCoder. All rights reserved.</copyright>
+    <creationDate>2026-09-03</creationDate>
+    <copyright>(C) 2013 - 2026 JoomCoder. All rights reserved.</copyright>
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
     <authorEmail>support@joomcoder.com</authorEmail>
     <authorUrl>https://www.joomcoder.com</authorUrl>
     <author>JoomCoder</author>
     <packager>JoomCoder</packager>
     <packagerurl>https://www.joomcoder.com</packagerurl>
-    <description>UserReminder package used to install all extensions related to UserReminder component at one time</description>
+    <description>UserReminder package — install admin + site + scheduler in one shot.</description>
     <blockChildUninstall>true</blockChildUninstall>
 
     <scriptfile>pkg_script.php</scriptfile>
 
     <files>
-        <!-- Install components -->
-        <folder type="component" id="com_userreminder">components/com_userreminder</folder>
-
-        <!-- Install Plugins -->
-        <folder enable="1" type="plugin" id="userreminder" group="system">plugins/system/plg_system_userreminder</folder>
+        <folder type="component" id="com_userreminder" client="administrator">packages/pkg_userreminder/com_userreminder_admin.zip</folder>
+        <folder type="component" id="com_userreminder" client="site">packages/pkg_userreminder/com_userreminder_site.zip</folder>
+        <folder type="plugin" id="userreminder" group="system" enable="1">packages/pkg_userreminder/plg_system_userreminder.zip</folder>
     </files>
-
 
     <updateservers>
         <server type="extension" priority="1" name="UserReminder Update">
@@ -33,5 +30,4 @@
     </updateservers>
 
     <dlid/>
-
 </extension>

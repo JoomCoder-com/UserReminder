@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="1.0" type="plugin" group="system" method="upgrade">
+<extension version="4.0" type="plugin" group="system" method="upgrade">
     <name>System - UserReminder Scheduler</name>
     <author>JoomCoder</author>
-    <creationDate>28-10-2021</creationDate>
-    <copyright>Copyright © 2023 - 2026 JoomCoder - All rights reserved.</copyright>
+    <creationDate>2026-09-03</creationDate>
+    <copyright>Copyright (C) 2023 - 2026 JoomCoder. All rights reserved.</copyright>
     <authorEmail>support@joomcoder.com</authorEmail>
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
     <authorUrl>https://www.joomcoder.com</authorUrl>
     <version>##VERSION##</version>
     <description>UserReminder scheduler to automatically send reminder emails</description>
+
+    <namespace>JoomCoder\Plugin\System\UserReminder</namespace>
+
     <files>
-        <filename plugin="userreminder">userreminder.php</filename>
+        <filename plugin="userreminder">src/Extension/UserReminderPlugin.php</filename>
+        <folder>src</folder>
+        <folder>language</folder>
     </files>
+
+    <languages folder="language">
+        <language tag="en-GB">en-GB/plg_system_userreminder.ini</language>
+        <language tag="en-GB">en-GB/plg_system_userreminder.sys.ini</language>
+    </languages>
 </extension>

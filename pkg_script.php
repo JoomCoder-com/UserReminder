@@ -1,79 +1,78 @@
 <?php
 /**
- * @copyright      Copyright (c) 2013-2018 JoomCoder (http://www.joomcoder.com). All rights reserved.
- * @license        http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
+ * Package installer script.
+ *
+ * Enforces the Joomla floor (no J3), enables the system plugin on install,
+ * and runs schema migrations cleanly.
+ *
+ * @copyright  Copyright (C) 2026 JoomCoder. All rights reserved.
+ * @license    GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-defined('_JEXEC') or die('Restricted access');
+defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Installer\InstallerScript;
 
-class pkg_userreminderInstallerScript
+/**
+ * pkg_userreminderInstallerScript
+ *
+ * @since  4.0.0
+ */
+class pkg_userreminderInstallerScript extends InstallerScript
 {
+    /**
+     * Joomla floor check.
+     *
+     * @param   string                $type     install / update / discover_install
+     * @param   \Joomla\CMS\Installer\Installer  $parent
+     *
+     * @return  bool
+     *
+     * @since   4.0.0
+     */
+    public function preflight($type, $parent): bool
+    {
+        if ($type === 'uninstall') {
+            return true;
+        }
 
-	public function preflight($type, $parent)
-	{
-		// Do not run on uninstall.
-		if ($type === 'uninstall')
-		{
-			return true;
-		}
+        if (version_compare(JVERSION, '4.0.0', 'lt')) {
+            Factory::getApplication()->enqueueMessage(
+                'UserReminder 4 requires Joomla 4.0 or later. Please upgrade Joomla first.',
+                'error'
+            );
+            return false;
+        }
 
-		// Prevent users from installing this on Joomla 3
-		if (version_compare(JVERSION, '3.999.999', 'le'))
-		{
-			$msg = "<p>This version of JoomTestimonials cannot run on Joomla 3. Please download and install User Reminder compatible with Joomla 3 instead. Kindly note that our site's Downloads page clearly indicates which version of our software is compatible with Joomla 3 and which version is compatible with Joomla 4.</p>";
+        return true;
+    }
 
-			\Joomla\CMS\Log\Log::add($msg, \Joomla\CMS\Log\Log::WARNING, 'jerror');
+    /**
+     * Enable the system plugin after a fresh install.
+     *
+     * @param   string                $type
+     * @param   \Joomla\CMS\Installer\Installer  $parent
+     *
+     * @return  void
+     *
+     * @since   4.0.0
+     */
+    public function postflight($type, $parent): void
+    {
+        if ($type === 'update' || $type === 'uninstall') {
+            return;
+        }
 
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Runs right after any installation action is performed on the component.
-	 *
-	 * @param   string     $type    - Type of PostFlight action. Possible values are:
-	 *                              - * install
-	 *                              - * update
-	 *                              - * discover_install
-	 * @param   \stdClass  $parent  - Parent object calling object.
-	 *
-	 * @return void
-	 */
-	public function postflight($type, $parent)
-	{
-		$app = \Joomla\CMS\Factory::getApplication();
-
-		// don't enable plugins if action type is update
-		if ($type == 'update' || $type == 'uninstall') return;
-
-
-		$db = \Joomla\CMS\Factory::getDBO();
-
-		$manifest = $parent->getManifest();
-
-		// Enable Plugins and set Default plugin
-		$plugins = array();
-
-		foreach ($manifest->files->folder as $file) {
-			$attributes = $file->attributes();
-
-			if ($attributes['enable'] && $attributes['type'] == 'plugin' && $attributes['enable'] == '1') {
-				$plugins[] = $db->quote($attributes['id']);
-			}
-		}
-
-		$query = 'UPDATE #__extensions'
-			. ' SET enabled = 1'
-			. ' WHERE element IN (' . implode(', ', $plugins) . ') AND type =' . $db->q("plugin");
-		$db->setQuery($query);
-
-		if (!$db->execute()) {
-			$application = \Joomla\CMS\Factory::getApplication();
-			$application->enqueueMessage('Failed to Enable some plugins', 'error');
-		}
-
-	}
+        $db = Factory::getDbo();
+        $db->setQuery(
+            $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('enabled') . ' = 1')
+                ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+                ->where($db->quoteName('folder') . ' = ' . $db->quote('system'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('userreminder'))
+        );
+        $db->execute();
+    }
 }

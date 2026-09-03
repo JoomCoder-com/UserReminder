@@ -1,0 +1,16 @@
+/* com_userreminder — admin sidebar tweaks */
+ul.main-nav {
+    visibility: hidden;
+}
+
+ul.main-nav.userreminder-rendered {
+    visibility: visible;
+}
+
+ul.main-nav li.userreminder-header a {
+    font-weight: bold;
+}
+
+ul.main-nav li.userreminder-back-item {
+    margin-top: 1.5rem;
+}
