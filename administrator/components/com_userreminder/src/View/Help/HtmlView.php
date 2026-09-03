@@ -30,8 +30,9 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_HELP'), 'userreminder');
         UserReminderHelper::addSubmenu('help');
+
+        ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_HELP'), 'userreminder');
 
         parent::display($tpl);
     }

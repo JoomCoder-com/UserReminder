@@ -83,8 +83,9 @@ class HtmlView extends BaseHtmlView
             'aging'  => $aging,
         ]);
 
-        $this->addToolbar();
         UserReminderHelper::addSubmenu('cpanel');
+
+        $this->addToolbar();
         $this->loadDashboardAssets();
 
         parent::display($tpl);

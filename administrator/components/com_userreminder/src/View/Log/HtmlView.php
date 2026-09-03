@@ -37,8 +37,9 @@ class HtmlView extends BaseHtmlView
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
 
-        $this->addToolbar();
         UserReminderHelper::addSubmenu('log');
+
+        $this->addToolbar();
 
         parent::display($tpl);
     }

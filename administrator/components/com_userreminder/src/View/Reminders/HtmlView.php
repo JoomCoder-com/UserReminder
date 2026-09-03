@@ -94,9 +94,9 @@ class HtmlView extends BaseHtmlView
         $this->activeFilters = $model->getActiveFilters();
         $this->db         = Factory::getDbo();
 
-        $this->addToolbar();
-
         UserReminderHelper::addSubmenu('reminders');
+
+        $this->addToolbar();
 
         parent::display($tpl);
     }

@@ -49,8 +49,9 @@ class HtmlView extends BaseHtmlView
             $this->groupList = $this->loadUserGroups();
         }
 
-        $this->addToolbar();
         UserReminderHelper::addSubmenu('optoutusers.' . ($this->getLayout() ?: 'optout'));
+
+        $this->addToolbar();
 
         parent::display($tpl);
     }
