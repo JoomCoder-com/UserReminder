@@ -39,8 +39,9 @@ class ActiveUsersModel extends ListModel
         $db     = $this->getDbo();
         $query  = $db->getQuery(true);
         $params = ComponentHelper::getParams('com_userreminder');
-        $days   = (int) $params->get('numberOfDaysExistingUser', 180);
+        $days   = max(1, (int) $params->get('numberOfDaysExistingUser', 180));
 
+        // Keep nodays for display but filter sargably on the indexed column directly.
         $query->select('a.id, a.name, a.username, a.email, a.lastvisitDate')
             ->select('(TO_DAYS(NOW()) - TO_DAYS(a.lastvisitDate)) AS nodays')
             ->select('b.datesent, b.remindernumber')
@@ -50,8 +51,18 @@ class ActiveUsersModel extends ListModel
             ->where('o.user_id IS NULL')
             ->where('a.block = 0')
             ->where('a.lastvisitDate IS NOT NULL')
-            ->where('(TO_DAYS(NOW()) - TO_DAYS(a.lastvisitDate)) > ' . $days)
+            ->where($db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)')
             ->order($db->quoteName('a.lastvisitDate') . ' ASC');
+
+        $search = (string) $this->getState('filter.search', '');
+        if ($search !== '') {
+            $search = '%' . $db->escape($search, true) . '%';
+            $query->where(
+                '(a.name LIKE ' . $db->quote($search, false)
+                . ' OR a.username LIKE ' . $db->quote($search, false)
+                . ' OR a.email LIKE ' . $db->quote($search, false) . ')'
+            );
+        }
 
         return $query;
     }

@@ -39,9 +39,9 @@ $pagination = $this->pagination;
                         <?php else: ?>
                             <?php foreach ($this->items as $row): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($row->name, ENT_QUOTES); ?></td>
-                                    <td><?php echo htmlspecialchars($row->email, ENT_QUOTES); ?></td>
-                                    <td><?php echo htmlspecialchars($row->lastvisitDate, ENT_QUOTES); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($row->name ?? ''), ENT_QUOTES); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($row->email ?? ''), ENT_QUOTES); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($row->lastvisitDate ?? ''), ENT_QUOTES); ?></td>
                                     <td><?php echo (int) ($row->remindernumber ?? 0); ?></td>
                                     <td><?php echo Text::_('COM_USERREMINDER_ACTIONSEND'); ?></td>
                                 </tr>

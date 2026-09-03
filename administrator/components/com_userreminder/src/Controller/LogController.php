@@ -35,4 +35,43 @@ class LogController extends BaseController
 
         $this->setRedirect(Route::_('index.php?option=com_userreminder&view=log', false));
     }
+
+    /**
+     * Prune log rows older than 365 days (12-month retention).
+     * Called from dashboard toolbar and log view.
+     *
+     * @return  void
+     *
+     * @since   4.1.0
+     */
+    public function pruneOld(): void
+    {
+        $this->checkToken();
+
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\LogModel $model */
+        $model   = $this->getModel('Log');
+        $deleted = $model->pruneOld(365);
+
+        if ($deleted > 0) {
+            Factory::getApplication()->enqueueMessage(
+                Text::sprintf('COM_USERREMINDER_LOG_PRUNED', $deleted),
+                'success'
+            );
+        } else {
+            Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_LOG_PRUNED_NONE'), 'info');
+        }
+
+        // Return to where the user came from — prefer cpanel if that was the view.
+        $return = $this->input->get('return', '', 'base64');
+        if ($return !== '') {
+            $url = base64_decode($return);
+        } else {
+            $referer = $this->input->get('view', 'cpanel', 'cmd');
+            $url     = $referer === 'log'
+                ? 'index.php?option=com_userreminder&view=log'
+                : 'index.php?option=com_userreminder&view=cpanel';
+        }
+
+        $this->setRedirect(Route::_($url, false));
+    }
 }

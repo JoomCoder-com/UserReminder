@@ -75,13 +75,14 @@ class RemindersModel extends ListModel
      */
     protected function getListQuery(): QueryInterface
     {
-        $db    = $this->getDbo();
-        $query = $db->getQuery(true);
+        $db     = $this->getDbo();
+        $query  = $db->getQuery(true);
         $params = ComponentHelper::getParams('com_userreminder');
-        $days    = (int) $params->get('numberOfDays', 1);
+        $days   = max(1, (int) $params->get('numberOfDays', 1));
 
+        // Sargable: column < DATE_SUB(NOW(), INTERVAL) — never wrap the column in DATE_ADD/TO_DAYS.
         $query->select('a.id, a.name, a.username, a.email, a.registerDate, a.lastvisitDate, a.block, a.activation')
-            ->select('b.datesent, b.remindernumber, b.optoutcode')
+            ->select('b.datesent, b.remindernumber')
             ->from($db->quoteName('#__users', 'a'))
             ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
             ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
@@ -89,8 +90,19 @@ class RemindersModel extends ListModel
             ->where('a.block >= 1')
             ->where('a.activation <> ' . $db->quote(''))
             ->where('a.lastvisitDate IS NULL')
-            ->where('DATE_ADD(a.registerDate, INTERVAL ' . $days . ' DAY) < NOW()')
+            ->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)')
             ->order($db->quoteName('a.registerDate') . ' ASC');
+
+        // Optional search — mirrors OptOutUsersModel pattern, only when filter is set.
+        $search = (string) $this->getState('filter.search', '');
+        if ($search !== '') {
+            $search = '%' . $db->escape($search, true) . '%';
+            $query->where(
+                '(a.name LIKE ' . $db->quote($search, false)
+                . ' OR a.username LIKE ' . $db->quote($search, false)
+                . ' OR a.email LIKE ' . $db->quote($search, false) . ')'
+            );
+        }
 
         return $query;
     }

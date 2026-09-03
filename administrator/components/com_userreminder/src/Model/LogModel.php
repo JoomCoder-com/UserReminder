@@ -34,8 +34,9 @@ class LogModel extends ListModel
 
     protected function getListQuery(): QueryInterface
     {
+        // Lean: only columns the template actually uses; keeps temp tables small on large logs.
         $query = $this->getDbo()->getQuery(true)
-            ->select('*')
+            ->select($this->getDbo()->quoteName(['id', 'userId', 'username', 'description', 'date']))
             ->from($this->getDbo()->quoteName('#__userreminder_log'))
             ->order($this->getDbo()->quoteName('id') . ' DESC');
 
@@ -54,6 +55,66 @@ class LogModel extends ListModel
         $db = $this->getDbo();
         $db->setQuery('TRUNCATE TABLE ' . $db->quoteName('#__userreminder_log'));
         $db->execute();
+    }
+
+    /**
+     * Delete log rows older than $days days, in batches of $batchSize to avoid
+     * long locks on large tables. Used by the 12-month retention task.
+     *
+     * @param   int  $days       Age threshold (e.g. 365).
+     * @param   int  $batchSize  Rows per DELETE.
+     *
+     * @return  int  Total rows deleted.
+     *
+     * @since   4.1.0
+     */
+    public function pruneOld(int $days = 365, int $batchSize = 1000): int
+    {
+        $days      = max(1, (int) $days);
+        $batchSize = max(100, min(5000, (int) $batchSize));
+        $cutoff    = Factory::getDate()->modify('-' . $days . ' days')->toSql();
+        $db        = $this->getDbo();
+        $total     = 0;
+
+        do {
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName('#__userreminder_log'))
+                ->where($db->quoteName('date') . ' < ' . $db->quote($cutoff))
+                ->order($db->quoteName('id') . ' ASC');
+            // MySQL supports LIMIT on DELETE; fall back to subselect if needed.
+            try {
+                $db->setQuery($query . ' LIMIT ' . $batchSize);
+                $db->execute();
+                $affected = $db->getAffectedRows();
+            } catch (\Throwable) {
+                // Fallback for stricter sql modes — delete by id subselect.
+                $sub = $db->getQuery(true)
+                    ->select($db->quoteName('id'))
+                    ->from($db->quoteName('#__userreminder_log'))
+                    ->where($db->quoteName('date') . ' < ' . $db->quote($cutoff))
+                    ->order($db->quoteName('id') . ' ASC');
+                $db->setQuery($sub, 0, $batchSize);
+                $ids = $db->loadColumn() ?: [];
+                if (empty($ids)) {
+                    break;
+                }
+                $del = $db->getQuery(true)
+                    ->delete($db->quoteName('#__userreminder_log'))
+                    ->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $ids)) . ')');
+                $db->setQuery($del);
+                $db->execute();
+                $affected = $db->getAffectedRows();
+            }
+
+            $total += $affected;
+
+            // Avoid infinite loop on 0 affected but still rows present (should not happen).
+            if ($affected === 0) {
+                break;
+            }
+        } while ($affected === $batchSize);
+
+        return $total;
     }
 
     /**

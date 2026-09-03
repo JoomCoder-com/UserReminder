@@ -124,7 +124,7 @@ final class SendService
             ->where('o.user_id IS NULL')
             ->where('a.lastvisitDate IS NOT NULL')
             ->where('a.block = 0')
-            ->where('(TO_DAYS(NOW()) - TO_DAYS(a.lastvisitDate)) > ' . $days)
+            ->where($this->db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)')
             ->order('a.lastvisitDate ASC');
 
         $this->db->setQuery($query, $offset, $limit);
@@ -187,6 +187,8 @@ final class SendService
     {
         $db = $this->db;
 
+        $days = max(1, (int) $params->get('numberOfDays', 1));
+
         $notActivated = $db->getQuery(true)
             ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate')
             ->select('b.datesent, b.remindernumber, b.optoutcode')
@@ -198,7 +200,7 @@ final class SendService
             ->where('a.activation <> ' . $db->quote(''))
             ->where('a.block >= 1')
             ->where('a.lastvisitDate IS NULL')
-            ->where('DATE_ADD(a.registerDate, INTERVAL ' . (int) $params->get('numberOfDays', 1) . ' DAY) < NOW()');
+            ->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
 
         $neverLogged = $db->getQuery(true)
             ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate')

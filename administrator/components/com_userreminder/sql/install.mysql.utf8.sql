@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS `#__userreminder` (
     `remindernumber` INT(11) NOT NULL DEFAULT 0,
     `type`           INT(11) NOT NULL DEFAULT 0,
     `optoutcode`     VARCHAR(255) NOT NULL DEFAULT '',
-    PRIMARY KEY (`userid`)
+    PRIMARY KEY (`userid`),
+    KEY `idx_ur_sent_type` (`datesent`, `remindernumber`, `type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__userreminder_log` (
@@ -14,7 +15,9 @@ CREATE TABLE IF NOT EXISTS `#__userreminder_log` (
     `description` TEXT NOT NULL,
     `date`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    KEY `idx_userreminder_log_userId_date` (`userId`, `date`)
+    KEY `idx_userreminder_log_userId_date` (`userId`, `date`),
+    KEY `idx_ur_log_date` (`date`),
+    KEY `idx_ur_log_date_id` (`date`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__userreminder_sch` (
@@ -37,8 +40,8 @@ CREATE TABLE IF NOT EXISTS `#__userreminder_optout_usergroups` (
     PRIMARY KEY (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Record the schema version so the 4.0.0 update SQL is skipped on fresh installs.
+-- Record the schema version so update SQL is skipped on fresh installs.
 INSERT IGNORE INTO `#__schemas` (`extension_id`, `version_id`)
-    SELECT `extension_id`, '4.0.0'
+    SELECT `extension_id`, '4.1.0'
       FROM `#__extensions`
      WHERE `element` = 'com_userreminder' AND `type` = 'component';

@@ -49,6 +49,7 @@
     </languages>
 
     <media folder="media" destination="com_userreminder">
+        <filename>joomla.asset.json</filename>
         <folder>js</folder>
         <folder>css</folder>
     </media>

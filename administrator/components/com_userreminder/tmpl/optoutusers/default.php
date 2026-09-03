@@ -82,13 +82,13 @@ HTMLHelper::_('formbehavior.chosen', 'select');
                             </td>
                             <td>
                                 <a href="<?php echo Route::_('index.php?option=com_users&task=user.edit&id=' . (int) $row->id); ?>" target="_blank">
-                                    <?php echo htmlspecialchars($row->name, ENT_QUOTES); ?>
+                                    <?php echo htmlspecialchars((string) ($row->name ?? ''), ENT_QUOTES); ?>
                                 </a>
                             </td>
-                            <td><?php echo htmlspecialchars($row->username, ENT_QUOTES); ?></td>
-                            <td><?php echo htmlspecialchars($row->email, ENT_QUOTES); ?></td>
-                            <td><?php echo htmlspecialchars($row->lastvisitDate, ENT_QUOTES); ?></td>
-                            <td><?php echo htmlspecialchars($row->registerDate, ENT_QUOTES); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->email ?? ''), ENT_QUOTES); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->lastvisitDate ?? ''), ENT_QUOTES); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->registerDate ?? ''), ENT_QUOTES); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

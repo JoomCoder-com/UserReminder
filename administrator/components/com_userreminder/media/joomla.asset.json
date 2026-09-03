@@ -1,0 +1,41 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_userreminder",
+  "version": "4.1.0",
+  "description": "UserReminder admin assets",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "com_userreminder.chart",
+      "type": "script",
+      "uri": "com_userreminder/chart.umd.min.js",
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_userreminder.dashboard",
+      "type": "script",
+      "uri": "com_userreminder/dashboard.js",
+      "dependencies": [
+        "com_userreminder.chart"
+      ],
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_userreminder.sidebar",
+      "type": "script",
+      "uri": "com_userreminder/userreminder-sidebar.js",
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_userreminder.style",
+      "type": "style",
+      "uri": "com_userreminder/userreminder.css"
+    }
+  ]
+}

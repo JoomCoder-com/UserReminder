@@ -48,6 +48,10 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_LOG'), 'userreminder');
 
         $bar = Toolbar::getInstance();
+        $bar->standardButton('prune', Text::_('COM_USERREMINDER_DASH_PRUNE'), 'log.pruneOld')
+            ->icon('icon-clock')
+            ->buttonClass('btn btn-outline-secondary');
+
         $bar->standardButton('clear', Text::_('COM_USERREMINDER_LOG_CLEAR'), 'log.clear')
             ->icon('icon-trash')
             ->listCheck(true);

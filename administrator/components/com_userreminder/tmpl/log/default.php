@@ -38,10 +38,10 @@ $pagination = $this->pagination;
                         <?php else: ?>
                             <?php foreach ($this->items as $row): ?>
                                 <tr>
-                                    <td><?php echo (int) $row->userId; ?></td>
-                                    <td><?php echo htmlspecialchars($row->username ?? '', ENT_QUOTES); ?></td>
-                                    <td><?php echo htmlspecialchars($row->description ?? '', ENT_QUOTES); ?></td>
-                                    <td><?php echo htmlspecialchars($row->date, ENT_QUOTES); ?></td>
+                                    <td><?php echo (int) ($row->userId ?? 0); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($row->description ?? ''), ENT_QUOTES); ?></td>
+                                    <td><?php echo htmlspecialchars((string) ($row->date ?? ''), ENT_QUOTES); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>

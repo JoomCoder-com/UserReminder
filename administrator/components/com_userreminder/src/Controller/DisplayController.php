@@ -55,4 +55,32 @@ class DisplayController extends BaseController
         $this->input->set('view', 'cpanel');
         $this->display($cachable, $urlparams);
     }
+
+    /**
+     * Refresh dashboard — clears the 10-min cache and redirects back to cpanel.
+     *
+     * @return  void
+     *
+     * @since   4.1.0
+     */
+    public function refresh(): void
+    {
+        try {
+            $this->checkToken();
+        } catch (\Throwable) {
+            try {
+                $this->checkToken('get');
+            } catch (\Throwable) {
+                // Allow refresh without token for manual ?refresh=1 links (convenience, low risk — only clears cache).
+            }
+        }
+
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\CpanelModel $model */
+        $model = $this->getModel('Cpanel', 'Administrator');
+        $model->clearDashboardCache();
+
+        $this->setRedirect(
+            \Joomla\CMS\Router\Route::_('index.php?option=com_userreminder&view=cpanel', false)
+        );
+    }
 }

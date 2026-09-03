@@ -57,13 +57,16 @@ class OptOutUsersModel extends ListModel
         $db    = $this->getDbo();
         $query = $db->getQuery(true);
 
-        $query->select('a.*')
+        // Lean SELECT — never SELECT a.* on #__users (wide table, kills covering + temp tables).
+        $query->select('a.id, a.name, a.username, a.email, a.registerDate, a.lastvisitDate, a.block, a.activation')
             ->from($db->quoteName('#__users', 'a'));
 
         $layout = Factory::getApplication()->input->get('layout', 'optout', 'string');
 
         if ($layout === 'userlist') {
-            $query->where('a.id NOT IN (SELECT user_id FROM ' . $db->quoteName('#__userreminder_optout') . ')');
+            // Sargable / anti-join: LEFT JOIN .. IS NULL beats NOT IN (SELECT) on large tables.
+            $query->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
+                ->where('o.user_id IS NULL');
         } else {
             $query->innerJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id');
         }
@@ -78,10 +81,17 @@ class OptOutUsersModel extends ListModel
             );
         }
 
-        $query->order(
-            $db->quoteName($db->escape($this->getState('list.ordering', 'a.name')))
-            . ' ' . $db->escape($this->getState('list.direction', 'ASC'))
-        );
+        $ordering  = $this->getState('list.ordering', 'a.name');
+        $direction = $this->getState('list.direction', 'ASC');
+
+        // Whitelist ordering to avoid injection via state.
+        $allowedOrder = ['a.name', 'a.username', 'a.email', 'a.registerDate', 'a.lastvisitDate', 'a.id'];
+        if (!in_array($ordering, $allowedOrder, true)) {
+            $ordering = 'a.name';
+        }
+        $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+
+        $query->order($db->quoteName($ordering) . ' ' . $direction);
 
         return $query;
     }
