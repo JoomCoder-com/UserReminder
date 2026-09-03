@@ -2,8 +2,8 @@
 -- (MySQL 8.0.13+ / Joomla 6 require NO_ZERO_DATE in sql_mode).
 
 -- Update schema version (idempotent).
-INSERT IGNORE INTO `#__schemas` (`version_id`, `schema_version`, `extension_id`)
-    SELECT NULL, '4.0.0', `extension_id`
+INSERT IGNORE INTO `#__schemas` (`extension_id`, `version_id`)
+    SELECT `extension_id`, '4.0.0'
       FROM `#__extensions`
      WHERE `element` = 'com_userreminder' AND `type` = 'component';
 
@@ -21,11 +21,11 @@ ALTER TABLE `#__userreminder_sch` ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=
 ALTER TABLE `#__userreminder_optout` ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ALTER TABLE `#__userreminder_optout_usergroups` ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add useful indexes. CREATE INDEX IF NOT EXISTS is MySQL 8.0.29+ / MariaDB 10.5+,
--- which is above Joomla 4's floor. We instead drop the index if it exists, then
--- create it. The DROP is a no-op when missing (error 1091) and the installer
--- will surface that as a fatal failure if it occurs.
-ALTER TABLE `#__userreminder_log` DROP INDEX `idx_userreminder_log_userId_date`;
+-- Add useful indexes. Use IF EXISTS so the statements are idempotent on both
+-- fresh installs (indexes already exist) and upgrades from older schemas
+-- (indexes may be missing). Requires MySQL 8.0.23+ / MariaDB 10.1.8+ which is
+-- satisfied by the Joomla 4.4/5/6 floor (MySQL 8.0.13+ / MariaDB 10.4+ on J6).
+ALTER TABLE `#__userreminder_log` DROP INDEX IF EXISTS `idx_userreminder_log_userId_date`;
 ALTER TABLE `#__userreminder_log` ADD INDEX `idx_userreminder_log_userId_date` (`userId`, `date`);
-ALTER TABLE `#__userreminder_sch` DROP INDEX `idx_userreminder_sch_when`;
+ALTER TABLE `#__userreminder_sch` DROP INDEX IF EXISTS `idx_userreminder_sch_when`;
 ALTER TABLE `#__userreminder_sch` ADD INDEX `idx_userreminder_sch_when` (`yearsent`, `monthsent`, `daysent`);

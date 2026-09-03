@@ -11,10 +11,15 @@ namespace JoomCoder\Component\UserReminder\Site\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Component\Router\RouterInterface;
+use Joomla\CMS\Application\SiteApplication;
+use Joomla\CMS\Categories\CategoryFactoryInterface;
 use Joomla\CMS\Component\Router\RouterView;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
+use Joomla\CMS\Component\Router\Rules\MenuRules;
+use Joomla\CMS\Component\Router\Rules\NomenuRules;
 use Joomla\CMS\Component\Router\Rules\StandardRules;
+use Joomla\CMS\Menu\AbstractMenu;
+use Joomla\Database\DatabaseInterface;
 
 /**
  * SEF router for com_userreminder on the site.
@@ -31,17 +36,21 @@ use Joomla\CMS\Component\Router\Rules\StandardRules;
 class Router extends RouterView
 {
     public function __construct(
-        RouterInterface $router,
-        array $config = []
+        SiteApplication $app,
+        AbstractMenu $menu,
+        ?CategoryFactoryInterface $categoryFactory = null,
+        ?DatabaseInterface $db = null
     ) {
         $optout = new RouterViewConfiguration('optout');
-        $optout->addLayout('confirm');
+        $optout->setKey('uid');
 
         $this->registerView($optout);
 
-        parent::__construct($router, $config);
+        parent::__construct($app, $menu);
 
+        $this->attachRule(new MenuRules($this));
         $this->attachRule(new StandardRules($this));
+        $this->attachRule(new NomenuRules($this));
     }
 
     /**

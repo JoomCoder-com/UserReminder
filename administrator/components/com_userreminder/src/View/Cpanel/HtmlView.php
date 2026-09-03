@@ -12,7 +12,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Cpanel;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\HtmlView;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
@@ -21,7 +21,7 @@ use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
  *
  * @since  4.0.0
  */
-class HtmlView extends HtmlView
+class HtmlView extends BaseHtmlView
 {
     /**
      * @var  bool

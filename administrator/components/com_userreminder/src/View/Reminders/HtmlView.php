@@ -12,9 +12,14 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Reminders;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\HtmlView;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Pagination\Pagination;
+use Joomla\CMS\Registry\Registry;
+use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Joomla\Database\DatabaseDriver;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /**
@@ -23,10 +28,28 @@ use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
  *
  * @since  4.0.0
  */
-class HtmlView extends HtmlView
+class HtmlView extends BaseHtmlView
 {
     /**
-     * @var  \Joomla\CMS\Pagination\Pagination
+     * The search tools form
+     *
+     * @var  Form
+     *
+     * @since  4.0.0
+     */
+    public $filterForm;
+
+    /**
+     * The active search filters
+     *
+     * @var  array
+     *
+     * @since  4.0.0
+     */
+    public $activeFilters = [];
+
+    /**
+     * @var  Pagination
      *
      * @since  4.0.0
      */
@@ -40,7 +63,16 @@ class HtmlView extends HtmlView
     protected $items;
 
     /**
-     * @var  \Joomla\Database\DatabaseDriver
+     * The model state
+     *
+     * @var  Registry
+     *
+     * @since  4.0.0
+     */
+    protected $state;
+
+    /**
+     * @var  DatabaseDriver
      *
      * @since  4.0.0
      */
@@ -53,8 +85,13 @@ class HtmlView extends HtmlView
             return;
         }
 
-        $this->items      = $this->get('Items');
-        $this->pagination = $this->get('Pagination');
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\RemindersModel $model */
+        $model           = $this->getModel();
+        $this->items      = $model->getItems();
+        $this->pagination = $model->getPagination();
+        $this->state      = $model->getState();
+        $this->filterForm = $model->getFilterForm();
+        $this->activeFilters = $model->getActiveFilters();
         $this->db         = Factory::getDbo();
 
         $this->addToolbar();
@@ -66,7 +103,7 @@ class HtmlView extends HtmlView
 
     protected function addToolbar(): void
     {
-        $toolbar = ToolbarHelper::getInstance('toolbar');
+        $toolbar = Toolbar::getInstance();
 
         ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_REMINDERS'), 'userreminder');
 

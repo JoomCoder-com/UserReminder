@@ -15,6 +15,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
  * ActiveUsers list model — users who registered and have been inactive for X
@@ -67,8 +68,12 @@ class ActiveUsersModel extends ListModel
 
         $user = Factory::getUser($userId);
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Service\SendService $send */
-        $send = Factory::getContainer()->get(\JoomCoder\Component\UserReminder\Administrator\Service\SendService::class);
+        try {
+            /** @var SendService $send */
+            $send = Factory::getContainer()->get(SendService::class);
+        } catch (\Throwable) {
+            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
+        }
 
         $row = (object) [
             'id'             => $user->id,

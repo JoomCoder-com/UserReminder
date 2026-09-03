@@ -106,13 +106,11 @@ final class UserReminderHelper
     {
         HTMLHelper::_('script', 'com_userreminder/userreminder-sidebar.js', [
             'relative' => true,
-            'path'     => 'media/com_userreminder/js',
             'version'  => 'auto',
         ]);
 
         HTMLHelper::_('stylesheet', 'com_userreminder/userreminder.css', [
             'relative' => true,
-            'path'     => 'media/com_userreminder/css',
             'version'  => 'auto',
         ]);
     }

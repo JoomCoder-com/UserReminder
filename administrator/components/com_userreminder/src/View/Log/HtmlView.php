@@ -12,7 +12,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Log;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\HtmlView;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
@@ -22,7 +22,7 @@ use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
  *
  * @since  4.0.0
  */
-class HtmlView extends HtmlView
+class HtmlView extends BaseHtmlView
 {
     protected $items;
     protected $pagination;

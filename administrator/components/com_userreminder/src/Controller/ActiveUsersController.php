@@ -28,8 +28,12 @@ class ActiveUsersController extends BaseController
     {
         $this->checkToken();
 
-        /** @var SendService $send */
-        $send = Factory::getContainer()->get(SendService::class);
+        try {
+            /** @var SendService $send */
+            $send = Factory::getContainer()->get(SendService::class);
+        } catch (\Throwable) {
+            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
+        }
         $stats = $send->processInactiveUserReminders(true, 0, 0);
 
         Factory::getApplication()->enqueueMessage(

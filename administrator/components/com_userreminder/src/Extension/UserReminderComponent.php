@@ -15,11 +15,14 @@ use Joomla\CMS\Categories\CategoryServiceInterface;
 use Joomla\CMS\Categories\CategoryServiceTrait;
 use Joomla\CMS\Component\Router\RouterServiceInterface;
 use Joomla\CMS\Component\Router\RouterServiceTrait;
+use Joomla\CMS\Extension\BootableExtensionInterface;
 use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Extension\MVCComponent;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
+use Psr\Container\ContainerInterface;
 
 /**
  * Component class for com_userreminder.
@@ -31,6 +34,7 @@ use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
  */
 class UserReminderComponent extends MVCComponent implements
     ComponentInterface,
+    BootableExtensionInterface,
     CategoryServiceInterface,
     RouterServiceInterface
 {
@@ -45,9 +49,9 @@ class UserReminderComponent extends MVCComponent implements
      *
      * @since   4.0.0
      */
-    public function boot(): void
+    public function boot(ContainerInterface $container): void
     {
-        $app = $this->getApplication();
+        $app = Factory::getApplication();
 
         // Always load the admin + site language files for the component so
         // menus, toolbars and views don't have to remember to do it themselves.
@@ -55,6 +59,8 @@ class UserReminderComponent extends MVCComponent implements
         $lang->load('com_userreminder', JPATH_ADMINISTRATOR . '/components/com_userreminder');
         $lang->load('com_userreminder', JPATH_SITE . '/components/com_userreminder');
 
-        UserReminderHelper::loadCommonAssets();
+        if ($app->isClient('administrator')) {
+            UserReminderHelper::loadCommonAssets();
+        }
     }
 }

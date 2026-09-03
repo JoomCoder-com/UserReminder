@@ -291,7 +291,7 @@ final class SendService
      *
      * @since   4.0.0
      */
-    private function sendOne(object $row, int $type, Registry $params): bool
+    public function sendOne(object $row, int $type, Registry $params): bool
     {
         // Debug mode never actually sends.
         if ((int) $params->get('debugUserReminder', 0) === 1) {

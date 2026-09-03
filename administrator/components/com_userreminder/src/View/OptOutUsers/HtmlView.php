@@ -13,7 +13,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\View\HtmlView;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
@@ -24,7 +24,7 @@ use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
  *
  * @since  4.0.0
  */
-class HtmlView extends HtmlView
+class HtmlView extends BaseHtmlView
 {
     public $items;
     public $pagination;
@@ -89,12 +89,41 @@ class HtmlView extends HtmlView
     {
         $db    = Factory::getDbo();
         $query = $db->getQuery(true)
-            ->select('id, parent_id, title, level')
+            ->select($db->quoteName(['id', 'parent_id', 'title', 'lft', 'rgt']))
             ->from($db->quoteName('#__usergroups'))
             ->order('lft ASC');
 
         $db->setQuery($query);
 
-        return $db->loadObjectList();
+        $groups = $db->loadObjectList() ?: [];
+
+        // Compute level via parent hierarchy to keep template indentation working
+        // without relying on a DB column that Joomla 4+ no longer provides.
+        $byId = [];
+        foreach ($groups as $g) {
+            $byId[(int) $g->id] = $g;
+            $g->level = 0;
+        }
+
+        foreach ($groups as $g) {
+            $level   = 0;
+            $pid     = (int) $g->parent_id;
+            $visited = [];
+
+            while ($pid !== 0 && isset($byId[$pid]) && !isset($visited[$pid])) {
+                $visited[$pid] = true;
+                $level++;
+                $pid = (int) $byId[$pid]->parent_id;
+
+                // Safety cap for malformed trees.
+                if ($level > 20) {
+                    break;
+                }
+            }
+
+            $g->level = $level;
+        }
+
+        return $groups;
     }
 }

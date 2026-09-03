@@ -10,7 +10,7 @@
     <version>##VERSION##</version>
     <description>UserReminder scheduler to automatically send reminder emails</description>
 
-    <namespace>JoomCoder\Plugin\System\UserReminder</namespace>
+    <namespace path="src">JoomCoder\Plugin\System\UserReminder</namespace>
 
     <files>
         <filename plugin="userreminder">src/Extension/UserReminderPlugin.php</filename>

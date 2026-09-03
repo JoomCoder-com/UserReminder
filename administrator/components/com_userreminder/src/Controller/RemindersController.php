@@ -36,8 +36,12 @@ class RemindersController extends BaseController
     {
         $this->checkToken();
 
-        /** @var SendService $send */
-        $send = Factory::getContainer()->get(SendService::class);
+        try {
+            /** @var SendService $send */
+            $send = Factory::getContainer()->get(SendService::class);
+        } catch (\Throwable) {
+            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
+        }
 
         $app   = Factory::getApplication();
         $input = $app->getInput();

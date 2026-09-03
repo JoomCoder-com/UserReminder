@@ -12,7 +12,7 @@ namespace JoomCoder\Component\UserReminder\Site\View\Optout;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\MVC\View\HtmlView;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Uri\Uri;
 
 /**
@@ -20,7 +20,7 @@ use Joomla\CMS\Uri\Uri;
  *
  * @since  4.0.0
  */
-class HtmlView extends HtmlView
+class HtmlView extends BaseHtmlView
 {
     /**
      * @var  string

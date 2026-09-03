@@ -15,8 +15,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\Event;
-use Joomla\Plugin\PluginInterface;
-use Joomla\Plugin\PluginHelper;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
  * System plugin for the UserReminder scheduler.
@@ -31,7 +30,7 @@ use Joomla\Plugin\PluginHelper;
  *
  * @since  4.0.0
  */
-final class UserReminderPlugin extends CMSPlugin implements PluginInterface
+final class UserReminderPlugin extends CMSPlugin
 {
     /**
      * @var  bool
@@ -117,8 +116,12 @@ final class UserReminderPlugin extends CMSPlugin implements PluginInterface
         $db->setQuery($insert);
         $db->execute();
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Service\SendService $send */
-        $send = Factory::getContainer()->get(\JoomCoder\Component\UserReminder\Administrator\Service\SendService::class);
+        try {
+            /** @var SendService $send */
+            $send = Factory::getContainer()->get(SendService::class);
+        } catch (\Throwable) {
+            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
+        }
         $numberEmail = (int) $params->get('number_email', 50);
 
         if ((int) $params->get('enabledScheduledActivationReminders', 1) === 1) {

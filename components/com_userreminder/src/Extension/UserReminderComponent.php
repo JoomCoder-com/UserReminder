@@ -13,8 +13,10 @@ namespace JoomCoder\Component\UserReminder\Site\Extension;
 
 use Joomla\CMS\Component\Router\RouterServiceInterface;
 use Joomla\CMS\Component\Router\RouterServiceTrait;
+use Joomla\CMS\Extension\BootableExtensionInterface;
 use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Extension\MVCComponent;
+use Joomla\CMS\Factory;
 use Psr\Container\ContainerInterface;
 use JoomCoder\Component\UserReminder\Site\Service\Router;
 
@@ -26,20 +28,20 @@ use JoomCoder\Component\UserReminder\Site\Service\Router;
  *
  * @since  4.0.0
  */
-class UserReminderComponent extends MVCComponent implements ComponentInterface, RouterServiceInterface
+class UserReminderComponent extends MVCComponent implements ComponentInterface, BootableExtensionInterface, RouterServiceInterface
 {
     use RouterServiceTrait;
 
-    public function boot(): void
+    public function boot(ContainerInterface $container): void
     {
         // Load component language on the site too (admin language is loaded by the
         // admin component's boot()).
-        $lang = $this->getApplication()->getLanguage();
+        $lang = Factory::getApplication()->getLanguage();
         $lang->load('com_userreminder', JPATH_SITE . '/components/com_userreminder');
     }
 
     public function getRouter(?ContainerInterface $container = null): Router
     {
-        return new Router($this->getApplication()->getRouter());
+        return new Router(Factory::getApplication()->getRouter());
     }
 }

@@ -15,6 +15,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
  * Reminders list model — paginated list of users who need a registration
@@ -24,6 +25,13 @@ use Joomla\Database\QueryInterface;
  */
 class RemindersModel extends ListModel
 {
+    /**
+     * The prefix to use with controller messages.
+     *
+     * @var  string
+     */
+    protected $filterFormName = 'filter_reminders';
+
     /**
      * Constructor.
      *
@@ -38,6 +46,24 @@ class RemindersModel extends ListModel
         }
 
         parent::__construct($config);
+    }
+
+    /**
+     * Method to auto-populate the model state.
+     *
+     * @param   string  $ordering   The field to order by.
+     * @param   string  $direction  The direction to order.
+     *
+     * @return  void
+     *
+     * @since   4.0.0
+     */
+    protected function populateState($ordering = 'a.registerDate', $direction = 'asc'): void
+    {
+        $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
+        $this->setState('filter.search', $search);
+
+        parent::populateState($ordering, $direction);
     }
 
     /**
@@ -89,8 +115,12 @@ class RemindersModel extends ListModel
 
         $user = Factory::getUser($userId);
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Service\SendService $send */
-        $send = Factory::getContainer()->get(\JoomCoder\Component\UserReminder\Administrator\Service\SendService::class);
+        try {
+            /** @var SendService $send */
+            $send = Factory::getContainer()->get(SendService::class);
+        } catch (\Throwable) {
+            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
+        }
 
         $row = (object) [
             'id'           => $user->id,

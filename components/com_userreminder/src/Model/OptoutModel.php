@@ -52,6 +52,16 @@ class OptoutModel extends BaseDatabaseModel
             return false;
         }
 
+        // Check if already opted out — idempotent success.
+        $check = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__userreminder_optout'))
+            ->where($db->quoteName('user_id') . ' = ' . $userId);
+        $db->setQuery($check);
+        if ((int) $db->loadResult() > 0) {
+            return true;
+        }
+
         // Idempotent insert — ignore duplicate keys.
         $insert = $db->getQuery(true)
             ->insert($db->quoteName('#__userreminder_optout'))
@@ -64,7 +74,9 @@ class OptoutModel extends BaseDatabaseModel
             $db->execute();
             return true;
         } catch (\Throwable) {
-            return false;
+            // Race condition: another request inserted in the meantime — treat as success.
+            $db->setQuery($check);
+            return (int) $db->loadResult() > 0;
         }
     }
 }
