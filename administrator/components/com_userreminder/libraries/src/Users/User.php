@@ -1,9 +1,9 @@
 <?php
 /**
- * UserReminder by joomcoder
+ * UserReminder by JoomCoder
  * a component for Joomla! CMS (http://www.joomla.org)
  * Author Website: https://www.joomcoder.com/
- * @copyright Copyright (C) 2012 joomcoder (https://www.joomcoder.com). All rights reserved.
+ * @copyright Copyright (C) 2020 - 2026 JoomCoder (https://www.joomcoder.com). All rights reserved.
  * @license   GNU/GPL http://www.gnu.org/copyleft/gpl.html
  */
 

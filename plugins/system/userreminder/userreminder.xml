@@ -3,10 +3,10 @@
     <name>System - UserReminder Scheduler</name>
     <author>JoomCoder</author>
     <creationDate>28-10-2021</creationDate>
-    <copyright>Copyright © 2023 - JoomCoder - All rights reserved.</copyright>
+    <copyright>Copyright © 2023 - 2026 JoomCoder - All rights reserved.</copyright>
     <authorEmail>support@joomcoder.com</authorEmail>
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
-    <authorUrl>www.joomcoder.com</authorUrl>
+    <authorUrl>https://www.joomcoder.com</authorUrl>
     <version>##VERSION##</version>
     <description>UserReminder scheduler to automatically send reminder emails</description>
     <files>

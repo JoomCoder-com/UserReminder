@@ -3,9 +3,9 @@
 	<name>com_userreminder</name>
 	<creationDate>28-10-2021</creationDate>
 	<author>JoomCoder</author>
-	<authorEmail>www.joomcoder.com</authorEmail>
-	<authorUrl>www.joomcoder.com</authorUrl>
-	<copyright>Copyright © 2020 - 2023 JoomCoder - All rights reserved.</copyright>
+	<authorEmail>support@joomcoder.com</authorEmail>
+	<authorUrl>https://www.joomcoder.com</authorUrl>
+	<copyright>Copyright © 2020 - 2026 JoomCoder - All rights reserved.</copyright>
 	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
 	<version>##VERSION##</version>
 	<description>Manage Users who have not completed the registration process, never logged in or who have not visited your site for a period of time.</description>

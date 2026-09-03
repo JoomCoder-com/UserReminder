@@ -25,7 +25,7 @@ Joomla.submitbutton = function(task)
 
 <div class="my-3">
     Below you will find details on how to use UserReminder.<br />
-    For further help and updates please visit <a href="http://www.joomcoder.com/" target="_blank">UserReminder Website (www.joomcoder.com)</a>
+    For further help and updates please visit the <a href="https://www.joomcoder.com/docs/user-reminder" target="_blank">UserReminder Documentation</a>.
 </div>
 
 <div class="card">
