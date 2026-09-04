@@ -11,9 +11,11 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\ActiveUsers;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
+use Joomla\CMS\Toolbar\ToolbarHelper;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /**
@@ -45,9 +47,9 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar(): void
     {
-        $toolbar = Toolbar::getInstance();
+        ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_ACTIVE_USERS'), 'userreminder');
 
-        \Joomla\CMS\Toolbar\ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_ACTIVE_USERS'), 'userreminder');
+        $toolbar = Toolbar::getInstance();
 
         $toolbar->standardButton('sendTestMail', Text::_('COM_USERREMINDER_TOOLBAR_TEST'), 'activeusers.sendTestMail')
             ->icon('icon-envelope');
@@ -55,7 +57,8 @@ class HtmlView extends BaseHtmlView
         $toolbar->standardButton('sendReminders', Text::_('COM_USERREMINDER_TOOLBAR_SEND'), 'activeusers.sendReminders')
             ->icon('icon-paper-plane');
 
-        $toolbar->standardButton('cpanel', Text::_('COM_USERREMINDER_TOOLBAR_HOME'), 'display.cpanel')
-            ->icon('icon-home');
+        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
+            ToolbarHelper::preferences('com_userreminder');
+        }
     }
 }

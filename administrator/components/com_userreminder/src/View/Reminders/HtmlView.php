@@ -103,9 +103,9 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar(): void
     {
-        $toolbar = Toolbar::getInstance();
-
         ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_REMINDERS'), 'userreminder');
+
+        $toolbar = Toolbar::getInstance();
 
         $toolbar->standardButton('sendTestMail', Text::_('COM_USERREMINDER_TOOLBAR_TEST'), 'reminders.sendTestMail')
             ->icon('icon-envelope');
@@ -113,7 +113,8 @@ class HtmlView extends BaseHtmlView
         $toolbar->standardButton('sendReminders', Text::_('COM_USERREMINDER_TOOLBAR_SEND'), 'reminders.sendReminders')
             ->icon('icon-paper-plane');
 
-        $toolbar->standardButton('cpanel', Text::_('COM_USERREMINDER_TOOLBAR_HOME'), 'display.cpanel')
-            ->icon('icon-home');
+        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
+            ToolbarHelper::preferences('com_userreminder');
+        }
     }
 }

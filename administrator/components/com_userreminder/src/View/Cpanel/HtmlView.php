@@ -110,7 +110,9 @@ class HtmlView extends BaseHtmlView
         $bar->standardButton('cpanel', Text::_('JTOOLBAR_HELP'), 'display.cpanel')
             ->icon('icon-help');
 
-        // Preferences (Parameters) already added by helper if authorised.
+        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
+            ToolbarHelper::preferences('com_userreminder');
+        }
     }
 
     private function loadDashboardAssets(): void

@@ -82,8 +82,9 @@ class HtmlView extends BaseHtmlView
                 break;
         }
 
-        Toolbar::getInstance()->standardButton('cpanel', Text::_('COM_USERREMINDER_TOOLBAR_HOME'), 'display.cpanel')
-            ->icon('icon-home');
+        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
+            ToolbarHelper::preferences('com_userreminder');
+        }
     }
 
     private function loadUserGroups(): array

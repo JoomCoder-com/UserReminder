@@ -14,9 +14,6 @@ namespace JoomCoder\Component\UserReminder\Administrator\Helper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Uri\Uri;
-use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -182,10 +179,5 @@ final class UserReminderHelper
 
         // Load the sidebar JS.
         HTMLHelper::script('media/com_userreminder/js/userreminder-sidebar.js', ['version' => 'auto']);
-
-        // Toolbar preferences (Parameters) link for users with admin rights.
-        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
-            Toolbar::getInstance()->preferences('com_userreminder');
-        }
     }
 }

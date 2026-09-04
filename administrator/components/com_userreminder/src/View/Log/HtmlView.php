@@ -11,6 +11,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Log;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
@@ -57,7 +58,8 @@ class HtmlView extends BaseHtmlView
             ->icon('icon-trash')
             ->listCheck(true);
 
-        $bar->standardButton('cpanel', Text::_('COM_USERREMINDER_TOOLBAR_HOME'), 'display.cpanel')
-            ->icon('icon-home');
+        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
+            ToolbarHelper::preferences('com_userreminder');
+        }
     }
 }

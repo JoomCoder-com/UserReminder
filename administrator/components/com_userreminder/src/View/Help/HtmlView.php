@@ -11,6 +11,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Help;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -32,8 +33,17 @@ class HtmlView extends BaseHtmlView
 
         UserReminderHelper::addSubmenu('help');
 
-        ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_HELP'), 'userreminder');
+        $this->addToolbar();
 
         parent::display($tpl);
+    }
+
+    protected function addToolbar(): void
+    {
+        ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_HELP'), 'userreminder');
+
+        if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
+            ToolbarHelper::preferences('com_userreminder');
+        }
     }
 }
