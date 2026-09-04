@@ -24,14 +24,15 @@ use Joomla\CMS\Language\Text;
                 <p><?php echo Text::_('COM_USERREMINDER_HELP_PARAMS_DESC'); ?></p>
                 <p><?php echo Text::_('COM_USERREMINDER_HELP_PLACEHOLDERS'); ?></p>
                 <ul>
-                    <li><code>[NAME]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_NAME'); ?></li>
-                    <li><code>[SITE_NAME]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_SITENAME'); ?></li>
-                    <li><code>[SITE_URL]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_SITEURL'); ?></li>
-                    <li><code>[USERNAME]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_USERNAME'); ?></li>
-                    <li><code>[PASSWORD_RESET]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_RESET'); ?></li>
-                    <li><code>[OPTOUT]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_OPTOUT'); ?></li>
-                    <li><code>[ACTIVATE_URL]</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_ACTIVATE'); ?></li>
+                    <li><code>{NAME}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_NAME'); ?></li>
+                    <li><code>{SITENAME}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_SITENAME'); ?></li>
+                    <li><code>{SITELINK}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_SITEURL'); ?></li>
+                    <li><code>{USERNAME}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_USERNAME'); ?></li>
+                    <li><code>{PASSWORD_RESET_URL}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_RESET'); ?></li>
+                    <li><code>{OPTOUT_URL}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_OPTOUT'); ?></li>
+                    <li><code>{ACTIVATE_URL}</code> &mdash; <?php echo Text::_('COM_USERREMINDER_PLACEHOLDER_ACTIVATE'); ?></li>
                 </ul>
+                <p class="alert alert-info"><?php echo Text::_('COM_USERREMINDER_HELP_MAILTEMPLATES_DESC'); ?></p>
             </div>
         </div>
 

@@ -7,11 +7,13 @@ INSERT IGNORE INTO `#__schemas` (`extension_id`, `version_id`)
       FROM `#__extensions`
      WHERE `element` = 'com_userreminder' AND `type` = 'component';
 
--- Convert existing '0000-00-00 00:00:00' dates in #__userreminder to NULL.
+-- Convert existing zero/garbage dates in #__userreminder to NULL.
+-- Compare against a real datetime literal: `= ''` on a DATETIME column raises
+-- "Truncated incorrect datetime value" under strict sql_mode (MySQL 8/MariaDB).
 UPDATE `#__userreminder`
    SET `datesent` = NULL
- WHERE `datesent` = '0000-00-00 00:00:00'
-    OR `datesent` = '';
+ WHERE `datesent` IS NOT NULL
+   AND `datesent` < '1000-01-01 00:00:00';
 
 -- Switch engines and charset to InnoDB / utf8mb4. These ALTERs are no-ops when
 -- the table already has the desired engine / collation.

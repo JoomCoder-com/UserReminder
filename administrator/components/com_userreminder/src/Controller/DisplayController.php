@@ -12,8 +12,12 @@ namespace JoomCoder\Component\UserReminder\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\AdministratorApplication;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\CMS\Router\Route;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
  * Base controller for com_userreminder. Default task = display.
@@ -22,6 +26,8 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
  */
 class DisplayController extends BaseController
 {
+    use AclTrait;
+
     /**
      * @param   array                     $config
      * @param   MVCFactoryInterface|null  $factory
@@ -65,15 +71,7 @@ class DisplayController extends BaseController
      */
     public function refresh(): void
     {
-        try {
-            $this->checkToken();
-        } catch (\Throwable) {
-            try {
-                $this->checkToken('get');
-            } catch (\Throwable) {
-                // Allow refresh without token for manual ?refresh=1 links (convenience, low risk — only clears cache).
-            }
-        }
+        $this->checkToken();
 
         /** @var \JoomCoder\Component\UserReminder\Administrator\Model\CpanelModel $model */
         $model = $this->getModel('Cpanel', 'Administrator');
@@ -82,5 +80,72 @@ class DisplayController extends BaseController
         $this->setRedirect(
             \Joomla\CMS\Router\Route::_('index.php?option=com_userreminder&view=cpanel', false)
         );
+    }
+
+    /**
+     * Send registration reminders (types 1 + 2) from the dashboard toolbar.
+     *
+     * @return  void
+     *
+     * @since   4.1.0
+     */
+    public function sendReminders(): void
+    {
+        $this->checkToken();
+        $this->requireAuthorised('core.manage');
+
+        $stats = $this->getSendService()->processRegistrationReminders(true, 0, 0);
+
+        $this->enqueueRunMessage($stats);
+        $this->redirectToCpanel();
+    }
+
+    /**
+     * Send active user (inactivity) reminders from the dashboard toolbar.
+     *
+     * @return  void
+     *
+     * @since   4.1.0
+     */
+    public function sendInactiveReminders(): void
+    {
+        $this->checkToken();
+        $this->requireAuthorised('core.manage');
+
+        $stats = $this->getSendService()->processInactiveUserReminders(true, 0, 0);
+
+        $this->enqueueRunMessage($stats);
+        $this->redirectToCpanel();
+    }
+
+    /**
+     * @return  SendService
+     */
+    private function getSendService(): SendService
+    {
+        return SendService::instance();
+    }
+
+    /**
+     * @param   array  $stats  processed/sent/deleted counts
+     *
+     * @return  void
+     */
+    private function enqueueRunMessage(array $stats): void
+    {
+        Factory::getApplication()->enqueueMessage(
+            Text::sprintf(
+                'COM_USERREMINDER_RUN_COMPLETE',
+                $stats['processed'],
+                $stats['sent'],
+                $stats['deleted']
+            ),
+            'info'
+        );
+    }
+
+    private function redirectToCpanel(): void
+    {
+        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=cpanel', false));
     }
 }

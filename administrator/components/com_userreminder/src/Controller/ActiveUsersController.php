@@ -24,19 +24,17 @@ use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
  */
 class ActiveUsersController extends BaseController
 {
+    use AclTrait;
+
     public function sendReminders(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
-        try {
-            /** @var SendService $send */
-            $send = Factory::getContainer()->get(SendService::class);
-        } catch (\Throwable) {
-            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
-        }
-        $stats = $send->processInactiveUserReminders(true, 0, 0);
+        $app   = Factory::getApplication();
+        $stats = SendService::instance()->processInactiveUserReminders(true, 0, 0);
 
-        Factory::getApplication()->enqueueMessage(
+        $app->enqueueMessage(
             Text::sprintf(
                 'COM_USERREMINDER_RUN_COMPLETE',
                 $stats['processed'],
@@ -52,12 +50,17 @@ class ActiveUsersController extends BaseController
     public function sendTestMail(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\ActiveUsersModel $model */
-        $model = $this->getModel('ActiveUsers');
-        $model->sendTestMail();
+        $app = Factory::getApplication();
 
-        Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_TEST_SENT'), 'info');
+        $sent = SendService::instance()
+            ->sendTestMail([SendService::TYPE_INACTIVE_USER]);
+
+        $app->enqueueMessage(
+            $sent ? Text::_('COM_USERREMINDER_TEST_SENT') : Text::_('COM_USERREMINDER_TEST_SEND_ERROR'),
+            $sent ? 'info' : 'error'
+        );
 
         $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
     }

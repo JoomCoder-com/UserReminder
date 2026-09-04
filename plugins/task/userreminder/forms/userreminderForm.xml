@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="params">
+        <fieldset name="basic">
+            <field
+                name="runRegistrationReminders"
+                type="radio"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                label="PLG_TASK_USERREMINDER_RUN_REGISTRATION"
+                description="PLG_TASK_USERREMINDER_RUN_REGISTRATION_DESC"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field
+                name="runInactiveReminders"
+                type="radio"
+                default="1"
+                layout="joomla.form.field.radio.switcher"
+                label="PLG_TASK_USERREMINDER_RUN_INACTIVE"
+                description="PLG_TASK_USERREMINDER_RUN_INACTIVE_DESC"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
+    </fields>
+</form>

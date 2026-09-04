@@ -23,10 +23,24 @@ use Joomla\Database\QueryInterface;
  */
 class LogModel extends ListModel
 {
+    /**
+     * The prefix to use with controller messages.
+     *
+     * @var  string
+     */
+    protected $filterFormName = 'filter_log';
+
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
-            $config['filter_fields'] = ['id', 'userId', 'username', 'description', 'date'];
+            $config['filter_fields'] = [
+                'id', 'id',
+                'userId', 'userId',
+                'username', 'username',
+                'description', 'description',
+                'date', 'date',
+                'search',
+            ];
         }
 
         parent::__construct($config);
@@ -34,13 +48,57 @@ class LogModel extends ListModel
 
     protected function getListQuery(): QueryInterface
     {
+        $db = $this->getDbo();
+
         // Lean: only columns the template actually uses; keeps temp tables small on large logs.
-        $query = $this->getDbo()->getQuery(true)
-            ->select($this->getDbo()->quoteName(['id', 'userId', 'username', 'description', 'date']))
-            ->from($this->getDbo()->quoteName('#__userreminder_log'))
-            ->order($this->getDbo()->quoteName('id') . ' DESC');
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['id', 'userId', 'username', 'description', 'date']))
+            ->from($db->quoteName('#__userreminder_log'));
+
+        // Search by username or description.
+        $search = (string) $this->getState('filter.search', '');
+        if ($search !== '') {
+            $search = '%' . $db->escape($search, true) . '%';
+            $query->where(
+                '(' . $db->quoteName('username') . ' LIKE ' . $db->quote($search, false)
+                . ' OR ' . $db->quoteName('description') . ' LIKE ' . $db->quote($search, false) . ')'
+            );
+        }
+
+        // Add the list ordering clause (searchtools drives list.ordering/list.direction).
+        $orderCol  = $this->state->get('list.ordering', 'id');
+        $orderDirn = $this->state->get('list.direction', 'desc');
+        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDirn));
 
         return $query;
+    }
+
+    /**
+     * Delete selected log rows.
+     *
+     * @param   int[]  $ids  Log row IDs.
+     *
+     * @return  int  Rows deleted.
+     *
+     * @since   4.2.0
+     */
+    public function remove(array $ids): int
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $db = $this->getDbo();
+        $db->setQuery(
+            $db->getQuery(true)
+                ->delete($db->quoteName('#__userreminder_log'))
+                ->where($db->quoteName('id') . ' IN (' . implode(',', $ids) . ')')
+        );
+        $db->execute();
+
+        return $db->getAffectedRows();
     }
 
     /**

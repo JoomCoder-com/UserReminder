@@ -15,6 +15,8 @@ use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
+use Joomla\CMS\Mail\MailTemplate;
 use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserHelper;
@@ -40,6 +42,24 @@ final class SendService
 
     public function __construct(private DatabaseInterface $db)
     {
+    }
+
+    /**
+     * Resolve the service. The component provider registers SendService in the
+     * component's DI container; fall back to direct construction when the
+     * global container is asked (controllers, plugins, CLI).
+     *
+     * @return  self
+     *
+     * @since   4.2.0
+     */
+    public static function instance(): self
+    {
+        try {
+            return Factory::getContainer()->get(self::class);
+        } catch (\Throwable) {
+            return new self(Factory::getContainer()->get(DatabaseInterface::class));
+        }
     }
 
     /**
@@ -283,7 +303,8 @@ final class SendService
     }
 
     /**
-     * Send one reminder email.
+     * Send one reminder email through the Joomla mail template
+     * (com_userreminder.userreminder.reminder_* — editable in System → Mail Templates).
      *
      * @param   object    $row
      * @param   int       $type
@@ -305,34 +326,13 @@ final class SendService
         $mailfrom = $app->get('mailfrom');
         $fromname = $app->get('fromname');
 
-        $subjectKey = match ($type) {
-            self::TYPE_NOT_ACTIVATED => 'regactivationEmailSubject',
-            self::TYPE_NEVER_LOGGED  => 'regLoginEmailSubject',
-            default                  => 'regExistingUserEmailSubject',
+        $templateId = match ($type) {
+            self::TYPE_NOT_ACTIVATED => 'com_userreminder.userreminder.reminder_activation',
+            self::TYPE_NEVER_LOGGED  => 'com_userreminder.userreminder.reminder_login',
+            default                  => 'com_userreminder.userreminder.reminder_inactive',
         };
 
-        $bodyKey = match ($type) {
-            self::TYPE_NOT_ACTIVATED => 'regActivationEmailBodyHTML',
-            self::TYPE_NEVER_LOGGED  => 'regLoginEmailBodyHTML',
-            default                  => 'regExistingUserEmailBodyHTML',
-        };
-
-        $defaultSubjectKey = match ($type) {
-            self::TYPE_NOT_ACTIVATED => 'USERREMINDER_REMINDER_DETAILS_FOR',
-            self::TYPE_NEVER_LOGGED  => 'USERREMINDER_LOGINREMINDER_DETAILS_FOR',
-            default                  => 'USERREMINDER_EXISTINGUSERREMINDER_DETAILS_FOR',
-        };
-
-        $defaultBodyKey = match ($type) {
-            self::TYPE_NOT_ACTIVATED => 'USERREMINDER_SEND_MSG_REMINDER',
-            self::TYPE_NEVER_LOGGED  => 'USERREMINDER_SEND_MSG_LOGINREMINDER',
-            default                  => 'USERREMINDER_SEND_MSG_EXISTINGUSERREMINDER',
-        };
-
-        $subject = $params->get($subjectKey, '') ?: Text::_($defaultSubjectKey);
-        $body    = $params->get($bodyKey, '') ?: Text::_($defaultBodyKey);
-
-        // Build tokens.
+        // Build tags.
         $user        = Factory::getUser($row->id);
         $name        = $user->get('name', $row->name ?? '');
         $username    = $user->get('username', $row->username ?? '');
@@ -343,22 +343,9 @@ final class SendService
         $optOutUrl   = $siteUrl . 'index.php?option=com_userreminder&view=optout&uid=' . $optOutCode;
         $passwordReset = $siteUrl . ($params->get('passwordReset', 'index.php?option=com_users&view=reset'));
 
-        $tokens = [
-            '[NAME]'           => $name,
-            '[SITE_NAME]'      => $sitename,
-            '[SITE_URL]'       => $siteUrl,
-            '[USERNAME]'       => $username,
-            '[PASSWORD_RESET]' => $passwordReset,
-            '[OPTOUT]'         => $optOutUrl,
-            '[ACTIVATE_URL]'   => ActivationUrlHelper::get($row, $params),
-        ];
-
-        $subject = strtr($subject, $tokens);
-        $body    = strtr($body, $tokens);
-
         // BCC for admins (optional).
-        $bcc  = null;
-        if ((int) $params->get('enabledBccToAdmin', 1) === 0) {
+        $bcc = null;
+        if ((int) $params->get('enabledBccToAdmin', 1) === 1) {
             $bcc = $params->get('bccEmailAddress', '');
         }
 
@@ -368,20 +355,74 @@ final class SendService
             $mailer        = $mailerFactory->createMailer();
 
             $mailer->setSender($mailfrom, $fromname);
-            $mailer->setSubject($subject);
-            $mailer->setBody($body);
-            $mailer->addRecipient($email);
 
             if (!empty($bcc)) {
                 $mailer->addBcc($bcc);
             }
 
-            $mailer->send();
+            $mailTemplate = new MailTemplate($templateId, $app->getLanguage()->getTag(), $mailer);
+            $mailTemplate->addTemplateData([
+                'NAME'             => $name,
+                'SITENAME'         => $sitename,
+                'SITELINK'         => $siteUrl,
+                'USERNAME'         => $username,
+                'PASSWORD_RESET_URL' => $passwordReset,
+                'OPTOUT_URL'       => $optOutUrl,
+                'ACTIVATE_URL'     => ActivationUrlHelper::get($row, $params),
+            ]);
+            $mailTemplate->addRecipient($email);
 
-            return true;
-        } catch (\Throwable) {
+            $sent = $mailTemplate->send();
+
+            return $sent === true;
+        } catch (\Throwable $e) {
+            Log::add(Text::sprintf('COM_USERREMINDER_SEND_ERROR', $email, $e->getMessage()), Log::ERROR, 'com_userreminder');
+
             return false;
         }
+    }
+
+    /**
+     * Send one test email per requested reminder type to the configured test user.
+     *
+     * @param   int[]  $types  One or more TYPE_* constants.
+     *
+     * @return  bool  true when every email was sent (debug mode always succeeds).
+     *
+     * @since   4.2.0
+     */
+    public function sendTestMail(array $types): bool
+    {
+        $params = ComponentHelper::getParams('com_userreminder');
+        $app    = Factory::getApplication();
+        $userId = (int) $params->get('test_user', $app->getIdentity()->id);
+
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $user = Factory::getUser($userId);
+
+        $row = (object) [
+            'id'             => $user->id,
+            'name'           => $user->name,
+            'username'       => $user->username,
+            'email'          => $user->email,
+            'activation'     => $user->activation ?? '',
+            'optoutcode'     => null,
+            'remindernumber' => 0,
+            'datesent'       => null,
+        ];
+
+        $ok = true;
+
+        foreach ($types as $type) {
+            if (!$this->sendOne($row, (int) $type, $params)) {
+                $ok = false;
+            }
+        }
+
+        return $ok;
     }
 
     /**
@@ -437,9 +478,9 @@ final class SendService
     private function writeLog(object $row, int $type): void
     {
         $description = match ($type) {
-            self::TYPE_NOT_ACTIVATED => Text::_('USERREMINDER_ACTIVATE_REMINDER_SENT'),
-            self::TYPE_NEVER_LOGGED  => Text::_('USERREMINDER_LOGIN_REMINDER_SENT'),
-            default                  => Text::_('USERREMINDER_USER_REMINDER_SENT'),
+            self::TYPE_NOT_ACTIVATED => Text::_('COM_USERREMINDER_ACTIVATE_REMINDER_SENT'),
+            self::TYPE_NEVER_LOGGED  => Text::_('COM_USERREMINDER_LOGIN_REMINDER_SENT'),
+            default                  => Text::_('COM_USERREMINDER_USER_REMINDER_SENT'),
         };
 
         $query = $this->db->getQuery(true)
@@ -453,7 +494,7 @@ final class SendService
             ->values(implode(',', [
                 (int) $row->id,
                 $this->db->quote($row->username ?? ''),
-                $this->db->quote('Reminders Run: ' . $description),
+                $this->db->quote(Text::_('COM_USERREMINDER_LOG_PREFIX') . ' ' . $description),
                 $this->db->quote(Factory::getDate()->toSql()),
             ]));
 

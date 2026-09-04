@@ -77,50 +77,6 @@
         </field>
     </fieldset>
 
-    <fieldset name="scheduler" label="COM_USERREMINDER_FIELDSET_SCHEDULER">
-        <field name="enabledScheduledExecution" type="radio" default="0"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_SCHEDULED_ENABLE"
-               description="COM_USERREMINDER_SCHEDULED_ENABLE_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
-
-        <field name="scheduledExecutionType" type="list" default="1" class="form-select"
-               showon="enabledScheduledExecution:1"
-               label="COM_USERREMINDER_SCHEDULED_TYPE"
-               description="COM_USERREMINDER_SCHEDULED_TYPE_TEXT">
-            <option value="1">COM_USERREMINDER_TYPE1</option>
-            <option value="2">COM_USERREMINDER_TYPE2</option>
-            <option value="3">COM_USERREMINDER_TYPE3</option>
-        </field>
-
-        <field name="scheduledExecutionTime" type="SchedulerTime" default="0"
-               showon="enabledScheduledExecution:1"
-               label="COM_USERREMINDER_SCHEDULED_TIME"
-               description="COM_USERREMINDER_SCHEDULED_TIME_TEXT">
-            <option value="">COM_USERREMINDER_SELECT_TIME</option>
-        </field>
-
-        <field name="enabledScheduledActivationReminders" type="radio" default="0"
-               showon="enabledScheduledExecution:1"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_SCHEDULED_ACTIVATION_REMINDERS_ENABLE"
-               description="COM_USERREMINDER_SCHEDULED_ACTIVATION_REMINDERS_ENABLE_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
-
-        <field name="enabledScheduledUserReminders" type="radio" default="0"
-               showon="enabledScheduledExecution:1"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_SCHEDULED_USER_REMINDERS_ENABLE"
-               description="COM_USERREMINDER_SCHEDULED_USER_REMINDERS_ENABLE_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
-    </fieldset>
-
     <fieldset name="not_activated" label="COM_USERREMINDER_FIELDSET_NOT_ACTIVATED">
         <field name="enableActivateReminder" type="radio" default="0"
                layout="joomla.form.field.radio.switcher"
@@ -147,17 +103,6 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
-
-        <field name="regactivationEmailSubject" type="text" default="Please complete registration for [NAME] at [SITE_NAME]"
-               showon="enableActivateReminder:1"
-               label="COM_USERREMINDER_REG_EMAIL_SUBJECT"
-               description="COM_USERREMINDER_REG_EMAIL_SUBJECT_TEXT"/>
-
-        <field name="regActivationEmailBodyHTML" type="editor" filter="raw"
-               showon="enableActivateReminder:1"
-               label="COM_USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
-               description="COM_USERREMINDER_REG_EMAIL_TEXT_BODY"
-               default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have not completed registering at [SITE_NAME].&lt;br /&gt;&lt;br /&gt;Your account is created and must be activated before you can use it.&lt;br /&gt;&lt;br /&gt;To activate the account click on the following link or copy-paste it in your browser:&lt;br /&gt;[ACTIVATE_URL]&lt;br /&gt;&lt;br /&gt;After activation you may login to [SITE_URL] using the following username and password:&lt;br /&gt;&lt;br /&gt;Username: [USERNAME]&lt;br /&gt;Forgot your Password? : [PASSWORD_RESET]&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"/>
     </fieldset>
 
     <fieldset name="never_logged_in" label="COM_USERREMINDER_FIELDSET_NEVER_LOGGED">
@@ -177,17 +122,6 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
-
-        <field name="regloginemailsubject" type="text" default="You have successfully activated your account at [SITE_NAME]"
-               showon="enableLoginReminder:1"
-               label="COM_USERREMINDER_LOGIN_EMAIL_SUBJECT"
-               description="COM_USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>
-
-        <field name="regLoginEmailBodyHTML" type="editor" filter="raw"
-               showon="enableLoginReminder:1"
-               label="COM_USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
-               description="COM_USERREMINDER_REG_LOGIN_TEXT_BODY"
-               default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have successfully registered you account at [SITE_NAME].&lt;br /&gt;&lt;br /&gt;However you have not logged in since activating your account.&lt;br /&gt;&lt;br /&gt;To access the website click on the following link or copy-paste it in your browser:&lt;br /&gt;[SITE_URL]&lt;br /&gt;&lt;br /&gt;You may login using the following username and password:&lt;br /&gt;&lt;br /&gt;Username: [USERNAME]&lt;br /&gt;Forgot your Password? : [PASSWORD_RESET]&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"/>
     </fieldset>
 
     <fieldset name="existing_user" label="COM_USERREMINDER_FIELDSET_EXISTING_USER">
@@ -214,14 +148,10 @@
                showon="enableDeleteExistingUsers:0"
                label="COM_USERREMINDER_REMOVE_FROM_GROUPS"
                description="COM_USERREMINDER_REMOVE_FROM_GROUPS_DESC"/>
+    </fieldset>
 
-        <field name="regLoginEmailSubjectVisited" type="text" default="We have missed you at [SITE_NAME]"
-               label="COM_USERREMINDER_LOGIN_EMAIL_SUBJECT"
-               description="COM_USERREMINDER_LOGIN_EMAIL_SUBJECT_TEXT"/>
-
-        <field name="regExistingUserEmailBodyHTML" type="editor" filter="raw"
-               label="COM_USERREMINDER_CUSTOM_EMAIL_HTML_MESSAGES_REM"
-               description="COM_USERREMINDER_REG_EXISTINGUSER_TEXT_BODY"
-               default="Hello [NAME],&lt;br /&gt;&lt;br /&gt;We have noticed that you have not visited [SITE_NAME] for a while.&lt;br /&gt;&lt;br /&gt;If you no longer wish to receive these reminders then unsubscribe here [OPTOUT]"/>
+    <fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL">
+        <field name="rules" type="rules" component="com_userreminder" filter="rules"
+               validate="rules" label="JCONFIG_PERMISSIONS_LABEL" section="component"/>
     </fieldset>
 </config>

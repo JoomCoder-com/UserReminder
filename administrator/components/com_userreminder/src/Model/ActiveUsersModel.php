@@ -12,10 +12,8 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
-use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
  * ActiveUsers list model — users who registered and have been inactive for X
@@ -25,10 +23,27 @@ use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
  */
 class ActiveUsersModel extends ListModel
 {
+    /**
+     * The prefix to use with controller messages.
+     *
+     * @var  string
+     */
+    protected $filterFormName = 'filter_activeusers';
+
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
-            $config['filter_fields'] = ['id', 'name', 'username', 'email', 'lastvisitDate'];
+            $config['filter_fields'] = [
+                'id', 'a.id',
+                'name', 'a.name',
+                'username', 'a.username',
+                'email', 'a.email',
+                'lastvisitDate', 'a.lastvisitDate',
+                'nodays', 'nodays',
+                'datesent', 'b.datesent',
+                'remindernumber', 'b.remindernumber',
+                'search',
+            ];
         }
 
         parent::__construct($config);
@@ -51,8 +66,7 @@ class ActiveUsersModel extends ListModel
             ->where('o.user_id IS NULL')
             ->where('a.block = 0')
             ->where('a.lastvisitDate IS NOT NULL')
-            ->where($db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)')
-            ->order($db->quoteName('a.lastvisitDate') . ' ASC');
+            ->where($db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
 
         $search = (string) $this->getState('filter.search', '');
         if ($search !== '') {
@@ -64,39 +78,11 @@ class ActiveUsersModel extends ListModel
             );
         }
 
+        // Add the list ordering clause (searchtools drives list.ordering/list.direction).
+        $orderCol  = $this->state->get('list.ordering', 'a.lastvisitDate');
+        $orderDirn = $this->state->get('list.direction', 'asc');
+        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDirn));
+
         return $query;
-    }
-
-    public function sendTestMail(): void
-    {
-        $params = ComponentHelper::getParams('com_userreminder');
-        $app    = Factory::getApplication();
-        $userId = (int) $params->get('test_user', $app->getIdentity()->id);
-
-        if ($userId <= 0) {
-            return;
-        }
-
-        $user = Factory::getUser($userId);
-
-        try {
-            /** @var SendService $send */
-            $send = Factory::getContainer()->get(SendService::class);
-        } catch (\Throwable) {
-            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
-        }
-
-        $row = (object) [
-            'id'             => $user->id,
-            'name'           => $user->name,
-            'username'       => $user->username,
-            'email'          => $user->email,
-            'activation'     => '',
-            'optoutcode'     => null,
-            'remindernumber' => 0,
-            'datesent'       => null,
-        ];
-
-        $send->sendOne($row, SendService::TYPE_INACTIVE_USER, $params);
     }
 }

@@ -23,6 +23,8 @@ use Joomla\CMS\Router\Route;
  */
 class OptOutUsersController extends BaseController
 {
+    use AclTrait;
+
     /**
      * Add the staged users (from the "Select Users" toolbar modal) to the opt-out list.
      *
@@ -36,6 +38,7 @@ class OptOutUsersController extends BaseController
     public function save(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
         $app     = Factory::getApplication();
         $userIds = (array) $app->getInput()->get('userids', [], 'array');
@@ -69,6 +72,7 @@ class OptOutUsersController extends BaseController
     public function remove(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.delete');
 
         $app  = Factory::getApplication();
         $cid  = (array) $app->getInput()->get('cid', [], 'array');
@@ -95,6 +99,7 @@ class OptOutUsersController extends BaseController
     public function saveGroup(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
         $app  = Factory::getApplication();
         $cid  = (array) $app->getInput()->get('cid', [], 'array');

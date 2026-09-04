@@ -12,15 +12,13 @@ namespace JoomCoder\Component\UserReminder\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
 
 /**
  * Admin helper for com_userreminder.
  *
  * Owns the admin sidebar (in-place replacement of Joomla's <ul.main-nav>)
- * and the common JS/CSS asset load. Every list view calls
+ * and the scheduled-task status checks. Every list view calls
  * `UserReminderHelper::addSubmenu($vName)` before parent::display().
  *
  * @since  4.0.0
@@ -28,48 +26,90 @@ use Joomla\Database\DatabaseInterface;
 final class UserReminderHelper
 {
     /**
-     * Load assets shared across admin views. Called by addSubmenu().
+     * Task type used by plg_task_userreminder.
      *
-     * @return  void
+     * @var  string
      *
-     * @since   4.0.0
+     * @since  4.2.0
      */
-    public static function loadCommonAssets(): void
-    {
-        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-        $wa->useScript('jquery');
-    }
+    public const SCHEDULER_TASK_TYPE = 'userreminder.run';
 
     /**
-     * Whether the component's system plugin is currently enabled.
-     *
-     * Only relevant if the component uses a system plugin to inject
-     * the sidebar on "vertical" admin pages (com_fields, com_config,
-     * com_categories) — when the plugin is disabled, those pages
-     * silently fall back to Joomla's default sidebar. The dashboard
-     * should surface this as a warning.
+     * Whether the Task - UserReminder plugin is installed and enabled.
      *
      * @return  bool
      *
-     * @since   4.0.0
+     * @since   4.2.0
      */
-    public static function isSystemPluginEnabled(): bool
+    public static function isTaskPluginEnabled(): bool
     {
-        try {
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
-        } catch (\Throwable) {
-            $db = Factory::getDbo();
-        }
+        $db = Factory::getDbo();
         $query = $db->getQuery(true)
             ->select($db->quoteName('enabled'))
             ->from($db->quoteName('#__extensions'))
             ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-            ->where($db->quoteName('folder') . ' = ' . $db->quote('system'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('task'))
             ->where($db->quoteName('element') . ' = ' . $db->quote('userreminder'));
 
-        $db->setQuery($query);
+        try {
+            $db->setQuery($query);
 
-        return (bool) $db->loadResult();
+            return (bool) $db->loadResult();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether an enabled scheduled task exists for User Reminder.
+     *
+     * @return  bool  true when at least one enabled userreminder.run task exists.
+     *
+     * @since   4.2.0
+     */
+    public static function isScheduledTaskEnabled(): bool
+    {
+        $db = Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__scheduler_tasks'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote(self::SCHEDULER_TASK_TYPE))
+            ->where($db->quoteName('state') . ' = 1');
+
+        try {
+            $db->setQuery($query);
+
+            return (int) $db->loadResult() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Fetch the first configured User Reminder scheduled task.
+     *
+     * @return  object|null  Row with title/state/next_execution/params or null.
+     *
+     * @since   4.2.0
+     */
+    public static function getSchedulerTask(): ?object
+    {
+        $db = Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['title', 'state', 'next_execution', 'params']))
+            ->from($db->quoteName('#__scheduler_tasks'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote(self::SCHEDULER_TASK_TYPE))
+            ->order($db->quoteName('id') . ' ASC');
+
+        try {
+            $db->setQuery($query, 0, 1);
+
+            $row = $db->loadObject();
+
+            return $row ?: null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -84,8 +124,6 @@ final class UserReminderHelper
      */
     public static function addSubmenu(string $vName): void
     {
-        self::loadCommonAssets();
-
         $document = Factory::getApplication()->getDocument();
 
         // Build menu items array.
@@ -125,6 +163,13 @@ final class UserReminderHelper
             'url'    => 'index.php?option=com_userreminder&view=log',
             'icon'   => 'fas fa-clipboard-list',
             'active' => ($vName == 'log'),
+        ];
+
+        $items[] = [
+            'label'  => Text::_('COM_USERREMINDER_SUBMENU_MAILTEMPLATES'),
+            'url'    => 'index.php?option=com_mails&view=templates&filter[extension]=com_userreminder',
+            'icon'   => 'fas fa-envelope-open-text',
+            'active' => false,
         ];
 
         $items[] = [
@@ -177,7 +222,9 @@ final class UserReminderHelper
             }
         ');
 
-        // Load the sidebar JS.
-        HTMLHelper::script('media/com_userreminder/js/userreminder-sidebar.js', ['version' => 'auto']);
+        // Load the sidebar JS through the asset registry.
+        $wa = $document->getWebAssetManager();
+        $wa->getRegistry()->addRegistryFile('media/com_userreminder/joomla.asset.json');
+        $wa->useScript('com_userreminder.sidebar');
     }
 }

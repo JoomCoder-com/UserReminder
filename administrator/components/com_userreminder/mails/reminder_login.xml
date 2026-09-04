@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mailtemplate>
+    <mail>
+        <name>com_userreminder.userreminder.reminder_login</name>
+        <title>COM_USERREMINDER_MAIL_USERREMINDER_REMINDER_LOGIN_TITLE</title>
+        <description>COM_USERREMINDER_MAIL_USERREMINDER_REMINDER_LOGIN_DESC</description>
+        <template>
+            <subject><![CDATA[USERREMINDER_LOGINREMINDER_DETAILS_FOR]]></subject>
+            <body><![CDATA[USERREMINDER_SEND_MSG_LOGINREMINDER]]></body>
+            <htmlbody><![CDATA[Hello {NAME},<br /><br />We have noticed that you have successfully registered your account at {SITENAME}.<br /><br />However you have not logged in since activating your account.<br /><br />To access the website click on the following link or copy-paste it in your browser:<br />{SITELINK}<br /><br />You may login using the following username and password:<br /><br />Username: {USERNAME}<br />Forgot your Password? : {PASSWORD_RESET_URL}<br /><br />If you no longer wish to receive these reminders then unsubscribe here {OPTOUT_URL}]]></htmlbody>
+            <tags>
+                <tag>NAME</tag>
+                <tag>SITENAME</tag>
+                <tag>SITELINK</tag>
+                <tag>USERNAME</tag>
+                <tag>PASSWORD_RESET_URL</tag>
+                <tag>OPTOUT_URL</tag>
+            </tags>
+        </template>
+    </mail>
+</mailtemplate>

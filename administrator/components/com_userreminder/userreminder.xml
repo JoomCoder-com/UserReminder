@@ -7,7 +7,7 @@
     <authorUrl>https://www.joomcoder.com</authorUrl>
     <copyright>Copyright (C) 2020 - 2026 JoomCoder. All rights reserved.</copyright>
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
-    <version>##VERSION##</version>
+    <version>4.2.0</version>
     <description>COM_USERREMINDER_DESCRIPTION</description>
 
     <namespace path="src">JoomCoder\Component\UserReminder</namespace>
@@ -18,9 +18,12 @@
         </sql>
     </install>
 
+    <scriptfile>script.php</scriptfile>
+
     <update>
         <schemas>
-            <schemapath type="mysql">sql/updates</schemapath>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+            <schemapath type="mariadb">sql/updates/mysql</schemapath>
         </schemas>
     </update>
 
@@ -30,23 +33,17 @@
         </sql>
     </uninstall>
 
-    <files>
-        <folder>forms</folder>
+    <!-- Site half -->
+    <languages folder="site/language">
+        <language tag="en-GB">en-GB/com_userreminder.ini</language>
+    </languages>
+
+    <files folder="site">
         <folder>src</folder>
         <folder>tmpl</folder>
-        <folder>services</folder>
-        <folder>sql</folder>
         <folder>language</folder>
-        <filename>config.xml</filename>
-        <filename>access.xml</filename>
-        <filename>userreminder.xml</filename>
         <filename>index.html</filename>
     </files>
-
-    <languages folder="language">
-        <language tag="en-GB">en-GB/com_userreminder.ini</language>
-        <language tag="en-GB">en-GB/com_userreminder.sys.ini</language>
-    </languages>
 
     <media folder="media" destination="com_userreminder">
         <filename>joomla.asset.json</filename>
@@ -57,12 +54,32 @@
     <administration>
         <menu>com_userreminder</menu>
 
+        <languages folder="admin/language">
+            <language tag="en-GB">en-GB/com_userreminder.ini</language>
+            <language tag="en-GB">en-GB/com_userreminder.sys.ini</language>
+        </languages>
+
+        <files folder="admin">
+            <folder>forms</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>language</folder>
+            <folder>mails</folder>
+            <filename>config.xml</filename>
+            <filename>access.xml</filename>
+            <filename>script.php</filename>
+            <filename>index.html</filename>
+        </files>
+
         <submenu>
             <menu link="option=com_userreminder&amp;view=cpanel">COM_USERREMINDER_SUBMENU_CPANEL</menu>
             <menu link="option=com_userreminder&amp;view=reminders">COM_USERREMINDER_SUBMENU_REMINDERS</menu>
             <menu link="option=com_userreminder&amp;view=activeusers">COM_USERREMINDER_SUBMENU_ACTIVE_USERS</menu>
             <menu link="option=com_userreminder&amp;view=optoutusers">COM_USERREMINDER_SUBMENU_OPTOUT</menu>
             <menu link="option=com_userreminder&amp;view=log">COM_USERREMINDER_SUBMENU_LOG</menu>
+            <menu link="option=com_mails&amp;view=templates&amp;filter[extension]=com_userreminder">COM_USERREMINDER_SUBMENU_MAILTEMPLATES</menu>
             <menu link="option=com_userreminder&amp;view=help">COM_USERREMINDER_SUBMENU_HELP</menu>
         </submenu>
     </administration>

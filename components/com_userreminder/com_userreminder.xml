@@ -7,13 +7,12 @@
     <authorUrl>https://www.joomcoder.com</authorUrl>
     <copyright>Copyright (C) 2020 - 2026 JoomCoder. All rights reserved.</copyright>
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
-    <version>##VERSION##</version>
+    <version>4.2.0</version>
     <description>COM_USERREMINDER_SITE_DESCRIPTION</description>
 
     <namespace path="src">JoomCoder\Component\UserReminder</namespace>
 
     <files>
-        <folder>forms</folder>
         <folder>src</folder>
         <folder>tmpl</folder>
         <folder>services</folder>
@@ -21,6 +20,10 @@
         <filename>com_userreminder.xml</filename>
         <filename>index.html</filename>
     </files>
+
+    <administration>
+        <files folder=""/>
+    </administration>
 
     <languages folder="language">
         <language tag="en-GB">en-GB/com_userreminder.ini</language>

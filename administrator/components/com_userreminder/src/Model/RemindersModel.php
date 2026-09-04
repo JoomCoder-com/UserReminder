@@ -12,10 +12,8 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
-use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
  * Reminders list model — paginated list of users who need a registration
@@ -42,28 +40,20 @@ class RemindersModel extends ListModel
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
-            $config['filter_fields'] = ['id', 'name', 'username', 'email', 'registerDate', 'lastvisitDate', 'block'];
+            $config['filter_fields'] = [
+                'id', 'a.id',
+                'name', 'a.name',
+                'username', 'a.username',
+                'email', 'a.email',
+                'registerDate', 'a.registerDate',
+                'lastvisitDate', 'a.lastvisitDate',
+                'datesent', 'b.datesent',
+                'remindernumber', 'b.remindernumber',
+                'search',
+            ];
         }
 
         parent::__construct($config);
-    }
-
-    /**
-     * Method to auto-populate the model state.
-     *
-     * @param   string  $ordering   The field to order by.
-     * @param   string  $direction  The direction to order.
-     *
-     * @return  void
-     *
-     * @since   4.0.0
-     */
-    protected function populateState($ordering = 'a.registerDate', $direction = 'asc'): void
-    {
-        $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
-        $this->setState('filter.search', $search);
-
-        parent::populateState($ordering, $direction);
     }
 
     /**
@@ -90,8 +80,7 @@ class RemindersModel extends ListModel
             ->where('a.block >= 1')
             ->where('a.activation <> ' . $db->quote(''))
             ->where('a.lastvisitDate IS NULL')
-            ->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)')
-            ->order($db->quoteName('a.registerDate') . ' ASC');
+            ->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
 
         // Optional search — mirrors OptOutUsersModel pattern, only when filter is set.
         $search = (string) $this->getState('filter.search', '');
@@ -104,48 +93,11 @@ class RemindersModel extends ListModel
             );
         }
 
+        // Add the list ordering clause (searchtools drives list.ordering/list.direction).
+        $orderCol  = $this->state->get('list.ordering', 'a.registerDate');
+        $orderDirn = $this->state->get('list.direction', 'asc');
+        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDirn));
+
         return $query;
-    }
-
-    /**
-     * Test-mail support — sends one sample email for each reminder type to
-     * the configured test user.
-     *
-     * @return  void
-     *
-     * @since   4.0.0
-     */
-    public function sendTestMail(): void
-    {
-        $params = ComponentHelper::getParams('com_userreminder');
-        $app    = Factory::getApplication();
-        $userId = (int) $params->get('test_user', $app->getIdentity()->id);
-
-        if ($userId <= 0) {
-            return;
-        }
-
-        $user = Factory::getUser($userId);
-
-        try {
-            /** @var SendService $send */
-            $send = Factory::getContainer()->get(SendService::class);
-        } catch (\Throwable) {
-            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
-        }
-
-        $row = (object) [
-            'id'           => $user->id,
-            'name'         => $user->name,
-            'username'     => $user->username,
-            'email'        => $user->email,
-            'activation'   => $user->activation,
-            'optoutcode'   => null,
-            'remindernumber' => 0,
-            'datesent'     => null,
-        ];
-
-        $send->sendOne($row, SendService::TYPE_NOT_ACTIVATED, $params);
-        $send->sendOne($row, SendService::TYPE_NEVER_LOGGED, $params);
     }
 }

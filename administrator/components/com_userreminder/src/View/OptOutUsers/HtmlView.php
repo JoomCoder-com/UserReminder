@@ -55,7 +55,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($this->getLayout() === 'usergroup') {
-            $this->groupList = $this->loadUserGroups();
+            $this->groupList = $this->get('UserGroups');
         }
 
         UserReminderHelper::addSubmenu('optoutusers.' . ($this->getLayout() ?: 'default'));
@@ -93,47 +93,5 @@ class HtmlView extends BaseHtmlView
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');
         }
-    }
-
-    private function loadUserGroups(): array
-    {
-        $db    = Factory::getDbo();
-        $query = $db->getQuery(true)
-            ->select($db->quoteName(['id', 'parent_id', 'title', 'lft', 'rgt']))
-            ->from($db->quoteName('#__usergroups'))
-            ->order('lft ASC');
-
-        $db->setQuery($query);
-
-        $groups = $db->loadObjectList() ?: [];
-
-        // Compute level via parent hierarchy to keep template indentation working
-        // without relying on a DB column that Joomla 4+ no longer provides.
-        $byId = [];
-        foreach ($groups as $g) {
-            $byId[(int) $g->id] = $g;
-            $g->level = 0;
-        }
-
-        foreach ($groups as $g) {
-            $level   = 0;
-            $pid     = (int) $g->parent_id;
-            $visited = [];
-
-            while ($pid !== 0 && isset($byId[$pid]) && !isset($visited[$pid])) {
-                $visited[$pid] = true;
-                $level++;
-                $pid = (int) $byId[$pid]->parent_id;
-
-                // Safety cap for malformed trees.
-                if ($level > 20) {
-                    break;
-                }
-            }
-
-            $g->level = $level;
-        }
-
-        return $groups;
     }
 }

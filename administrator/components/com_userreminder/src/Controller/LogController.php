@@ -23,15 +23,28 @@ use Joomla\CMS\Router\Route;
  */
 class LogController extends BaseController
 {
+    use AclTrait;
+
     public function clear(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.delete');
+
+        $app = Factory::getApplication();
+
+        // With rows checked, only the selected entries are removed; otherwise the whole log.
+        $cid = (array) $app->getInput()->get('cid', [], 'array');
 
         /** @var \JoomCoder\Component\UserReminder\Administrator\Model\LogModel $model */
         $model = $this->getModel('Log');
-        $model->clear();
 
-        Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_LOG_CLEARED'), 'success');
+        if ($cid !== []) {
+            $deleted = $model->remove($cid);
+            $app->enqueueMessage(Text::sprintf('COM_USERREMINDER_LOG_REMOVED_N', $deleted), 'success');
+        } else {
+            $model->clear();
+            $app->enqueueMessage(Text::_('COM_USERREMINDER_LOG_CLEARED'), 'success');
+        }
 
         $this->setRedirect(Route::_('index.php?option=com_userreminder&view=log', false));
     }
@@ -47,6 +60,7 @@ class LogController extends BaseController
     public function pruneOld(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.delete');
 
         /** @var \JoomCoder\Component\UserReminder\Administrator\Model\LogModel $model */
         $model   = $this->getModel('Log');

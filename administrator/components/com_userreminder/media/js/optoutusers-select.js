@@ -100,7 +100,13 @@
     removeButton.type = 'button';
     removeButton.className = 'btn btn-sm btn-danger';
     removeButton.setAttribute('data-picked-remove', '');
-    removeButton.setAttribute('aria-label', 'Remove');
+
+    const userLabel = data.name || id;
+    const removeLabel = (window.Joomla && Joomla.Text && Joomla.Text._)
+      ? Joomla.Text._('COM_USERREMINDER_OPTOUT_REMOVE_PICKED').replace('%s', userLabel)
+      : userLabel;
+    removeButton.setAttribute('aria-label', removeLabel);
+    removeButton.title = removeLabel;
 
     const icon = document.createElement('span');
     icon.className = 'icon-trash';

@@ -2,8 +2,8 @@
 /**
  * Package installer script.
  *
- * Enforces the Joomla floor (no J3), enables the system plugin on install,
- * and runs schema migrations cleanly.
+ * Enforces the Joomla floor (no J3), and since 4.2.0 uninstalls the legacy
+ * page-hit system plugin (scheduling moved to plg_task_userreminder).
  *
  * @copyright  Copyright (C) 2026 JoomCoder. All rights reserved.
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
@@ -12,6 +12,7 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Installer\Installer;
 use Joomla\CMS\Installer\InstallerScript;
 
 /**
@@ -49,30 +50,47 @@ class pkg_userreminderInstallerScript extends InstallerScript
     }
 
     /**
-     * Enable the system plugin after a fresh install.
+     * Uninstall the legacy system plugin after install or update.
+     *
+     * Since 4.2.0 scheduling lives in plg_task_userreminder (Scheduled Tasks).
+     * The system plugin is a no-op stub since 4.2.0, so a failed uninstall here
+     * can never cause double-sending.
      *
      * @param   string                $type
      * @param   \Joomla\CMS\Installer\Installer  $parent
      *
      * @return  void
      *
-     * @since   4.0.0
+     * @since   4.2.0
      */
     public function postflight($type, $parent): void
     {
-        if ($type === 'update' || $type === 'uninstall') {
+        if ($type === 'uninstall') {
             return;
         }
 
-        $db = Factory::getDbo();
+        $db   = Factory::getDbo();
         $db->setQuery(
             $db->getQuery(true)
-                ->update($db->quoteName('#__extensions'))
-                ->set($db->quoteName('enabled') . ' = 1')
+                ->select($db->quoteName('extension_id'))
+                ->from($db->quoteName('#__extensions'))
                 ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
                 ->where($db->quoteName('folder') . ' = ' . $db->quote('system'))
                 ->where($db->quoteName('element') . ' = ' . $db->quote('userreminder'))
         );
-        $db->execute();
+
+        try {
+            $extensionId = (int) $db->loadResult();
+        } catch (\Throwable) {
+            return;
+        }
+
+        if ($extensionId > 0) {
+            try {
+                Installer::getInstance()->uninstall('plugin', $extensionId, 0);
+            } catch (\Throwable) {
+                // The stub is inert — safe to leave behind.
+            }
+        }
     }
 }

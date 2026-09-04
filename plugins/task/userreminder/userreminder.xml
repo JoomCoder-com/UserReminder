@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="task" method="upgrade">
+    <name>plg_task_userreminder</name>
+    <author>JoomCoder</author>
+    <creationDate>2026-09-03</creationDate>
+    <copyright>Copyright (C) 2026 JoomCoder. All rights reserved.</copyright>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
+    <authorEmail>support@joomcoder.com</authorEmail>
+    <authorUrl>https://www.joomcoder.com</authorUrl>
+    <version>4.2.0</version>
+    <description>PLG_TASK_USERREMINDER_XML_DESCRIPTION</description>
+    <namespace path="src">JoomCoder\Plugin\Task\UserReminder</namespace>
+
+    <scriptfile>script.php</scriptfile>
+
+    <files>
+        <folder plugin="userreminder">services</folder>
+        <folder>src</folder>
+        <folder>forms</folder>
+    </files>
+    <languages>
+        <language tag="en-GB">language/en-GB/plg_task_userreminder.ini</language>
+        <language tag="en-GB">language/en-GB/plg_task_userreminder.sys.ini</language>
+    </languages>
+</extension>

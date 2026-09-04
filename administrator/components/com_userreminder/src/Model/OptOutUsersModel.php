@@ -136,6 +136,55 @@ class OptOutUsersModel extends ListModel
     }
 
     /**
+     * All user groups with a computed nesting level, for the group picker layout.
+     *
+     * Level is computed via the parent hierarchy rather than a DB column.
+     *
+     * @return  object[]
+     *
+     * @since   4.2.0
+     */
+    public function getUserGroups(): array
+    {
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['id', 'parent_id', 'title', 'lft', 'rgt']))
+            ->from($db->quoteName('#__usergroups'))
+            ->order('lft ASC');
+
+        $db->setQuery($query);
+
+        $groups = $db->loadObjectList() ?: [];
+
+        $byId = [];
+        foreach ($groups as $g) {
+            $byId[(int) $g->id] = $g;
+            $g->level = 0;
+        }
+
+        foreach ($groups as $g) {
+            $level   = 0;
+            $pid     = (int) $g->parent_id;
+            $visited = [];
+
+            while ($pid !== 0 && isset($byId[$pid]) && !isset($visited[$pid])) {
+                $visited[$pid] = true;
+                $level++;
+                $pid = (int) $byId[$pid]->parent_id;
+
+                // Safety cap for malformed trees.
+                if ($level > 20) {
+                    break;
+                }
+            }
+
+            $g->level = $level;
+        }
+
+        return $groups;
+    }
+
+    /**
      * Mark a batch of users as opted out.
      *
      * Already opted-out users are skipped so re-adding a selection is safe.

@@ -18,9 +18,8 @@
     <scriptfile>pkg_script.php</scriptfile>
 
     <files>
-        <folder type="component" id="com_userreminder" client="administrator">packages/pkg_userreminder/com_userreminder_admin.zip</folder>
-        <folder type="component" id="com_userreminder" client="site">packages/pkg_userreminder/com_userreminder_site.zip</folder>
-        <folder type="plugin" id="userreminder" group="system" enable="1">packages/pkg_userreminder/plg_system_userreminder.zip</folder>
+        <folder type="component" id="com_userreminder">packages/pkg_userreminder/com_userreminder.zip</folder>
+        <folder type="plugin" id="userreminder" group="task" enable="1">packages/pkg_userreminder/plg_task_userreminder.zip</folder>
     </files>
 
     <updateservers>

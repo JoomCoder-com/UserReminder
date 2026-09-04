@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+	<fields name="filter">
+		<field
+			name="search"
+			type="text"
+			inputmode="search"
+			label="COM_USERREMINDER_LOG_FILTER_SEARCH_LABEL"
+			description="COM_USERREMINDER_LOG_FILTER_SEARCH_DESC"
+			hint="JSEARCH_FILTER"
+		/>
+	</fields>
+	<fields name="list">
+		<field
+			name="fullordering"
+			type="list"
+			label="JGLOBAL_SORT_BY"
+			class="js-select-submit-on-change"
+			default="id DESC"
+			validate="options"
+		>
+			<option value="">JGLOBAL_SORT_BY</option>
+			<option value="id ASC">JGRID_HEADING_ID_ASC</option>
+			<option value="id DESC">JGRID_HEADING_ID_DESC</option>
+			<option value="date ASC">COM_USERREMINDER_ACTION_DATE_ASC</option>
+			<option value="date DESC">COM_USERREMINDER_ACTION_DATE_DESC</option>
+			<option value="username ASC">JGLOBAL_USERNAME_ASC</option>
+			<option value="username DESC">JGLOBAL_USERNAME_DESC</option>
+		</field>
+
+		<field
+			name="limit"
+			type="limitbox"
+			label="JGLOBAL_LIST_LIMIT"
+			default="25"
+			class="js-select-submit-on-change"
+		/>
+	</fields>
+</form>

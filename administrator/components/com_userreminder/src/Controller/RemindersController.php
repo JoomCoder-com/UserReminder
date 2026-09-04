@@ -25,6 +25,8 @@ use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
  */
 class RemindersController extends BaseController
 {
+    use AclTrait;
+
     /**
      * Send registration reminders (types 1 + 2).
      *
@@ -35,21 +37,14 @@ class RemindersController extends BaseController
     public function sendReminders(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
-        try {
-            /** @var SendService $send */
-            $send = Factory::getContainer()->get(SendService::class);
-        } catch (\Throwable) {
-            $send = new SendService(Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class));
-        }
-
-        $app   = Factory::getApplication();
-        $input = $app->getInput();
+        $app    = Factory::getApplication();
+        $input  = $app->getInput();
         $offset = (int) $input->get('email_number_new', 0);
-        $params = \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder');
-        $batch  = (int) $params->get('number_email', 50);
 
-        $stats = $send->processRegistrationReminders(true, $offset, $batch);
+        $stats = SendService::instance()
+            ->processRegistrationReminders(true, $offset, 0);
 
         $app->enqueueMessage(
             Text::sprintf(
@@ -74,12 +69,17 @@ class RemindersController extends BaseController
     public function sendTestMail(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\RemindersModel $model */
-        $model = $this->getModel('Reminders');
-        $model->sendTestMail();
+        $app = Factory::getApplication();
 
-        Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_TEST_SENT'), 'info');
+        $sent = SendService::instance()
+            ->sendTestMail([SendService::TYPE_NOT_ACTIVATED, SendService::TYPE_NEVER_LOGGED]);
+
+        $app->enqueueMessage(
+            $sent ? Text::_('COM_USERREMINDER_TEST_SENT') : Text::_('COM_USERREMINDER_TEST_SEND_ERROR'),
+            $sent ? 'info' : 'error'
+        );
 
         $this->setRedirect(Route::_('index.php?option=com_userreminder&view=reminders', false));
     }

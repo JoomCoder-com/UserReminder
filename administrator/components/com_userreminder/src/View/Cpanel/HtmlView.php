@@ -13,10 +13,8 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Cpanel;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
@@ -33,7 +31,7 @@ class HtmlView extends BaseHtmlView
      *
      * @since  4.0.0
      */
-    protected $systemPluginEnabled = false;
+    protected $taskReady = false;
 
     /**
      * @var  array  Dashboard payload from CpanelModel::getDashboard().
@@ -68,9 +66,9 @@ class HtmlView extends BaseHtmlView
             $model->clearDashboardCache();
         }
 
-        $this->dashboard           = $model->getDashboard($forceRefresh);
-        $this->systemPluginEnabled = UserReminderHelper::isSystemPluginEnabled();
-        $this->params              = ComponentHelper::getParams('com_userreminder');
+        $this->dashboard  = $model->getDashboard($forceRefresh);
+        $this->taskReady  = UserReminderHelper::isTaskPluginEnabled() && UserReminderHelper::isScheduledTaskEnabled();
+        $this->params     = ComponentHelper::getParams('com_userreminder');
 
         // Pass chart data to JS via script options — dashboard.js reads it.
         $trend  = $this->dashboard['analytics']['trend'] ?? [];
@@ -81,6 +79,12 @@ class HtmlView extends BaseHtmlView
             'trend'  => $trend,
             'byType' => $byType,
             'aging'  => $aging,
+            'labels' => [
+                'sent'     => Text::_('COM_USERREMINDER_DASH_TREND_30D'),
+                'type1'    => Text::_('COM_USERREMINDER_DASH_TYPE_1'),
+                'type2'    => Text::_('COM_USERREMINDER_DASH_TYPE_2'),
+                'type3'    => Text::_('COM_USERREMINDER_DASH_TYPE_3'),
+            ],
         ]);
 
         UserReminderHelper::addSubmenu('cpanel');
@@ -97,18 +101,22 @@ class HtmlView extends BaseHtmlView
 
         $bar = Toolbar::getInstance();
 
+        // Send registration reminders (types 1 + 2) now.
+        $bar->standardButton('sendReminders', Text::_('COM_USERREMINDER_DASH_ACTION_SEND_REMINDERS'), 'display.sendReminders')
+            ->icon('icon-mail')
+            ->buttonClass('btn btn-success');
+
+        // Send active user (inactivity) reminders now.
+        $bar->standardButton('sendInactiveReminders', Text::_('COM_USERREMINDER_DASH_ACTION_SEND_ACTIVE'), 'display.sendInactiveReminders')
+            ->icon('icon-mail');
+
         // Refresh — clears 10-min cache and reloads.
         $bar->standardButton('refresh', Text::_('COM_USERREMINDER_DASH_REFRESH'), 'display.refresh')
-            ->icon('icon-refresh')
-            ->buttonClass('btn btn-primary');
+            ->icon('icon-refresh');
 
         // Quick prune (12-mo retention) — runs LogModel::pruneOld().
         $bar->standardButton('prune', Text::_('COM_USERREMINDER_DASH_PRUNE'), 'log.pruneOld')
-            ->icon('icon-trash')
-            ->buttonClass('btn btn-outline-danger');
-
-        $bar->standardButton('cpanel', Text::_('JTOOLBAR_HELP'), 'display.cpanel')
-            ->icon('icon-help');
+            ->icon('icon-trash');
 
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');
@@ -117,38 +125,12 @@ class HtmlView extends BaseHtmlView
 
     private function loadDashboardAssets(): void
     {
-        // Common sidebar + base CSS.
-        UserReminderHelper::loadCommonAssets();
-
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+        $wa->getRegistry()->addRegistryFile('media/com_userreminder/joomla.asset.json');
 
         // Chart.js — self-hosted, optional. dashboard.js degrades to CSS bars if missing.
-        try {
-            $wa->registerAndUseScript(
-                'com_userreminder.chart',
-                'com_userreminder/chart.umd.min.js',
-                [],
-                ['defer' => true]
-            );
-        } catch (\Throwable) {
-            // Joomla 4 fallback via HTMLHelper.
-            try {
-                HTMLHelper::_('script', 'com_userreminder/chart.umd.min.js', ['relative' => true, 'version' => 'auto']);
-            } catch (\Throwable) {
-            }
-        }
+        $wa->useScript('com_userreminder.dashboard');
 
-        try {
-            $wa->registerAndUseScript(
-                'com_userreminder.dashboard',
-                'com_userreminder/dashboard.js',
-                ['com_userreminder.chart'],
-                ['defer' => true]
-            );
-        } catch (\Throwable) {
-            HTMLHelper::_('script', 'com_userreminder/dashboard.js', ['relative' => true, 'version' => 'auto']);
-        }
-
-        HTMLHelper::_('stylesheet', 'com_userreminder/userreminder.css', ['relative' => true, 'version' => 'auto']);
+        $wa->useStyle('com_userreminder.style');
     }
 }

@@ -111,7 +111,7 @@ class HtmlView extends BaseHtmlView
             ->icon('icon-envelope');
 
         $toolbar->standardButton('sendReminders', Text::_('COM_USERREMINDER_TOOLBAR_SEND'), 'reminders.sendReminders')
-            ->icon('icon-paper-plane');
+            ->icon('icon-mail');
 
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');

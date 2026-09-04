@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mailtemplate>
+    <mail>
+        <name>com_userreminder.userreminder.reminder_activation</name>
+        <title>COM_USERREMINDER_MAIL_USERREMINDER_REMINDER_ACTIVATION_TITLE</title>
+        <description>COM_USERREMINDER_MAIL_USERREMINDER_REMINDER_ACTIVATION_DESC</description>
+        <template>
+            <subject><![CDATA[USERREMINDER_REMINDER_DETAILS_FOR]]></subject>
+            <body><![CDATA[USERREMINDER_SEND_MSG_REMINDER]]></body>
+            <htmlbody><![CDATA[Hello {NAME},<br /><br />We have noticed that you have not completed registering at {SITENAME}.<br /><br />Your account is created and must be activated before you can use it.<br /><br />To activate the account click on the following link or copy-paste it in your browser:<br />{ACTIVATE_URL}<br /><br />After activation you may login to {SITELINK} using the following username and password:<br /><br />Username: {USERNAME}<br />Forgot your Password? : {PASSWORD_RESET_URL}<br /><br />If you no longer wish to receive these reminders then unsubscribe here {OPTOUT_URL}]]></htmlbody>
+            <tags>
+                <tag>NAME</tag>
+                <tag>SITENAME</tag>
+                <tag>SITELINK</tag>
+                <tag>USERNAME</tag>
+                <tag>PASSWORD_RESET_URL</tag>
+                <tag>OPTOUT_URL</tag>
+                <tag>ACTIVATE_URL</tag>
+            </tags>
+        </template>
+    </mail>
+</mailtemplate>

@@ -12,8 +12,11 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Log;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Pagination\Pagination;
+use Joomla\CMS\Registry\Registry;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
@@ -25,8 +28,46 @@ use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
  */
 class HtmlView extends BaseHtmlView
 {
-    protected $items;
+    /**
+     * The search tools form
+     *
+     * @var  Form|null
+     *
+     * @since  4.2.0
+     */
+    public $filterForm;
+
+    /**
+     * The active search filters
+     *
+     * @var  array
+     *
+     * @since  4.2.0
+     */
+    public $activeFilters = [];
+
+    /**
+     * @var  Pagination
+     *
+     * @since  4.0.0
+     */
     protected $pagination;
+
+    /**
+     * @var  array
+     *
+     * @since  4.0.0
+     */
+    protected $items;
+
+    /**
+     * The model state
+     *
+     * @var  Registry
+     *
+     * @since  4.2.0
+     */
+    protected $state;
 
     public function display($tpl = null): void
     {
@@ -35,8 +76,13 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        $this->items      = $this->get('Items');
-        $this->pagination = $this->get('Pagination');
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\LogModel $model */
+        $model               = $this->getModel();
+        $this->items         = $model->getItems();
+        $this->pagination    = $model->getPagination();
+        $this->state         = $model->getState();
+        $this->filterForm    = $model->getFilterForm();
+        $this->activeFilters = $model->getActiveFilters();
 
         UserReminderHelper::addSubmenu('log');
 
@@ -50,13 +96,14 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title(Text::_('COM_USERREMINDER_TOOLBAR_LOG'), 'userreminder');
 
         $bar = Toolbar::getInstance();
+
         $bar->standardButton('prune', Text::_('COM_USERREMINDER_DASH_PRUNE'), 'log.pruneOld')
             ->icon('icon-clock')
             ->buttonClass('btn btn-outline-secondary');
 
-        $bar->standardButton('clear', Text::_('COM_USERREMINDER_LOG_CLEAR'), 'log.clear')
+        $bar->confirmButton('clear', Text::_('COM_USERREMINDER_LOG_CLEAR'), 'COM_USERREMINDER_LOG_CLEAR_CONFIRM')
             ->icon('icon-trash')
-            ->listCheck(true);
+            ->buttonClass('btn btn-outline-danger');
 
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');

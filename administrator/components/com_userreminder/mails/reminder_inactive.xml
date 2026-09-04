@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mailtemplate>
+    <mail>
+        <name>com_userreminder.userreminder.reminder_inactive</name>
+        <title>COM_USERREMINDER_MAIL_USERREMINDER_REMINDER_INACTIVE_TITLE</title>
+        <description>COM_USERREMINDER_MAIL_USERREMINDER_REMINDER_INACTIVE_DESC</description>
+        <template>
+            <subject><![CDATA[USERREMINDER_EXISTINGUSERREMINDER_DETAILS_FOR]]></subject>
+            <body><![CDATA[USERREMINDER_SEND_MSG_EXISTINGUSERREMINDER]]></body>
+            <htmlbody><![CDATA[Hello {NAME},<br /><br />We have noticed that you have not visited {SITENAME} for a while.<br /><br />Come back and see what is new: {SITELINK}<br /><br />If you no longer wish to receive these reminders then unsubscribe here {OPTOUT_URL}]]></htmlbody>
+            <tags>
+                <tag>NAME</tag>
+                <tag>SITENAME</tag>
+                <tag>SITELINK</tag>
+                <tag>USERNAME</tag>
+                <tag>PASSWORD_RESET_URL</tag>
+                <tag>OPTOUT_URL</tag>
+            </tags>
+        </template>
+    </mail>
+</mailtemplate>

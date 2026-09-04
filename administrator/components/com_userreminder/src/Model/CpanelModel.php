@@ -11,8 +11,11 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Database\DatabaseInterface;
 use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
@@ -79,25 +82,14 @@ class CpanelModel extends BaseDatabaseModel
      */
     public function clearDashboardCache(): void
     {
-        try {
-            $cache = Factory::getCache(self::CACHE_GROUP, 'callback');
-            $cache->clean(self::CACHE_GROUP);
-        } catch (\Throwable) {
-            // Fallback: try via CacheControllerFactory (Joomla 5)
+        foreach (['callback', 'output'] as $type) {
             try {
-                $factory = Factory::getContainer()->get(\Joomla\CMS\Cache\CacheControllerFactoryInterface::class);
-                $ctrl    = $factory->createCacheController('callback', ['defaultgroup' => self::CACHE_GROUP]);
+                $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
+                $ctrl    = $factory->createCacheController($type, ['defaultgroup' => self::CACHE_GROUP]);
                 $ctrl->clean();
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                Log::add('User Reminder: could not clean dashboard cache: ' . $e->getMessage(), Log::WARNING, 'com_userreminder');
             }
-        }
-
-        // Also clear the Joomla output cache for this group if present.
-        try {
-            $factory = Factory::getContainer()->get(\Joomla\CMS\Cache\CacheControllerFactoryInterface::class);
-            $ctrl    = $factory->createCacheController('output', ['defaultgroup' => self::CACHE_GROUP]);
-            $ctrl->clean();
-        } catch (\Throwable) {
         }
     }
 
@@ -609,8 +601,9 @@ class CpanelModel extends BaseDatabaseModel
         $alerts = [];
         $app    = Factory::getApplication();
 
-        $pluginEnabled = UserReminderHelper::isSystemPluginEnabled();
-        if (!$pluginEnabled) {
+        // Ready = Task - UserReminder plugin enabled AND an enabled scheduled task exists.
+        $taskReady = UserReminderHelper::isTaskPluginEnabled() && UserReminderHelper::isScheduledTaskEnabled();
+        if (!$taskReady) {
             $alerts[] = [
                 'level' => 'danger',
                 'icon'  => 'fa-plug',
@@ -618,27 +611,14 @@ class CpanelModel extends BaseDatabaseModel
             ];
         }
 
-        $schedulerEnabled = (int) $params->get('enabledScheduledExecution', 0) === 1;
-        $queueTotal       = $pendingActivation + $neverLoggedIn + $inactiveUsers;
+        $queueTotal = $pendingActivation + $neverLoggedIn + $inactiveUsers;
 
-        if (!$schedulerEnabled && $queueTotal > 0) {
+        if (!$taskReady && $queueTotal > 0) {
             $alerts[] = [
                 'level' => 'warning',
                 'icon'  => 'fa-clock',
                 'key'   => 'scheduler_off',
             ];
-        }
-
-        if ($schedulerEnabled) {
-            $runActivation = (int) $params->get('enabledScheduledActivationReminders', 0) === 1;
-            $runUser       = (int) $params->get('enabledScheduledUserReminders', 0) === 1;
-            if (!$runActivation && !$runUser) {
-                $alerts[] = [
-                    'level' => 'warning',
-                    'icon'  => 'fa-exclamation-triangle',
-                    'key'   => 'scheduler_nothing',
-                ];
-            }
         }
 
         if ((int) $params->get('debugUserReminder', 0) === 1) {
@@ -671,12 +651,10 @@ class CpanelModel extends BaseDatabaseModel
             ];
         }
 
-        // BCC check — param semantics are inverted in SendService (0 = BCC), warn either way if address is empty but BCC is expected.
+        // BCC check — warn when BCC is on but no address is configured.
         $bccEnabled = (int) $params->get('enabledBccToAdmin', 1);
         $bccAddress = trim((string) $params->get('bccEmailAddress', ''));
-        // If user explicitly disabled BCC (1 per config label) then no warning; if they enabled via either semantic and address empty -> warn.
-        // We treat both 0 and 1 as "maybe wants BCC" and only warn if address looks missing when any reminder path is active.
-        if ($bccAddress === '' && $bccEnabled === 0) {
+        if ($bccAddress === '' && $bccEnabled === 1) {
             $alerts[] = [
                 'level' => 'warning',
                 'icon'  => 'fa-copy',
@@ -696,8 +674,8 @@ class CpanelModel extends BaseDatabaseModel
 
         // Health summary for the right-hand health card (compact).
         $health = [
-            'pluginEnabled'    => $pluginEnabled,
-            'schedulerEnabled' => $schedulerEnabled,
+            'pluginEnabled'    => $taskReady,
+            'schedulerEnabled' => $taskReady,
             'debugOn'          => (int) $params->get('debugUserReminder', 0) === 1,
             'deleteEnabled'    => array_sum($deleteFlags) > 0,
             'mailOk'           => $mailFrom !== '' && filter_var($mailFrom, FILTER_VALIDATE_EMAIL),
@@ -716,14 +694,13 @@ class CpanelModel extends BaseDatabaseModel
         int $maxReminders,
         int $batchSize
     ): array {
-        $typeMap = [1 => 'Daily', 2 => 'Weekly', 3 => 'Monthly'];
-        $type    = (int) $params->get('scheduledExecutionType', 1);
-        $timeVal = (string) $params->get('scheduledExecutionTime', '');
+        $task = UserReminderHelper::getSchedulerTask();
 
         $scheduleText = '—';
-        if ((int) $params->get('enabledScheduledExecution', 0) === 1) {
-            $label = $typeMap[$type] ?? 'Daily';
-            $scheduleText = $label . ($timeVal !== '' ? ' @ ' . $timeVal : '');
+        $nextRun      = '';
+        if ($task !== null && (int) $task->state === 1) {
+            $scheduleText = Text::_('COM_USERREMINDER_DASH_ON');
+            $nextRun      = (string) $task->next_execution;
         }
 
         return [
@@ -733,6 +710,7 @@ class CpanelModel extends BaseDatabaseModel
             'batchSize'        => $batchSize,
             'maxPerRun'        => (int) $params->get('maxemailstosend', 20),
             'scheduleText'     => $scheduleText,
+            'nextRun'          => $nextRun,
             'activationOn'     => (int) $params->get('enableActivateReminder', 0) === 1,
             'loginOn'          => (int) $params->get('enableLoginReminder', 0) === 1,
             'deleteUsers'      => (int) $params->get('enableDeleteUsers', 0) === 1,
@@ -751,11 +729,9 @@ class CpanelModel extends BaseDatabaseModel
             'enableDeleteUsers'          => (int) $params->get('enableDeleteUsers', 0),
             'enableDeleteUsersLogin'     => (int) $params->get('enableDeleteUsersLogin', 0),
             'enableDeleteExistingUsers'  => (int) $params->get('enableDeleteExistingUsers', 0),
-            'enabledScheduledExecution'  => (int) $params->get('enabledScheduledExecution', 0),
-            'scheduledExecutionType'     => (int) $params->get('scheduledExecutionType', 1),
-            'scheduledExecutionTime'     => (string) $params->get('scheduledExecutionTime', ''),
+            'scheduledTask'              => UserReminderHelper::getSchedulerTask()->next_execution ?? 'off',
             'debugUserReminder'          => (int) $params->get('debugUserReminder', 0),
-            'ver'                        => '4.1.0',
+            'ver'                        => '4.2.0',
         ];
 
         return md5(json_encode($relevant));
@@ -764,19 +740,13 @@ class CpanelModel extends BaseDatabaseModel
     private function getCached(string $key): mixed
     {
         try {
-            $cache = Factory::getCache(self::CACHE_GROUP, 'callback');
-            $cache->setCaching(true);
+            $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
+            $cache   = $factory->createCacheController('output', ['defaultgroup' => self::CACHE_GROUP]);
             $cache->setLifeTime(self::CACHE_TTL);
 
-            $data = $cache->get($key);
+            $data = $cache->get(['userreminder.dashboard', $key]);
 
-            // Joomla callback cache stores via callables — direct get may return false.
-            // Try output cache as fallback.
-            if ($data === false) {
-                return null;
-            }
-
-            if (is_array($data)) {
+            if (is_array($data) && isset($data['generatedAt'])) {
                 return $data;
             }
 
@@ -789,11 +759,12 @@ class CpanelModel extends BaseDatabaseModel
     private function storeCached(string $key, array $data): void
     {
         try {
-            $cache = Factory::getCache(self::CACHE_GROUP, 'callback');
-            $cache->setCaching(true);
+            $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
+            $cache   = $factory->createCacheController('output', ['defaultgroup' => self::CACHE_GROUP]);
             $cache->setLifeTime(self::CACHE_TTL);
-            $cache->store($data, $key);
+            $cache->store($data, ['userreminder.dashboard', $key]);
         } catch (\Throwable) {
+            // Cache is best-effort — a failed store only costs one uncached dashboard render.
         }
     }
 }

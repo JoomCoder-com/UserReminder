@@ -18,6 +18,7 @@ use Joomla\CMS\Router\Route;
 /** @var \JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers\HtmlView $this */
 
 HTMLHelper::_('behavior.multiselect');
+Text::script('COM_USERREMINDER_OPTOUT_REMOVE_PICKED');
 
 $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->getRegistry()->addRegistryFile('media/com_userreminder/joomla.asset.json');
@@ -93,8 +94,16 @@ $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
                             </th>
                             <td><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) ($row->email ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($row->lastvisitDate ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($row->registerDate ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td>
+                                <?php echo !empty($row->lastvisitDate)
+                                    ? HTMLHelper::_('date', $row->lastvisitDate, Text::_('DATE_FORMAT_LC4'))
+                                    : '—'; ?>
+                            </td>
+                            <td>
+                                <?php echo !empty($row->registerDate)
+                                    ? HTMLHelper::_('date', $row->registerDate, Text::_('DATE_FORMAT_LC4'))
+                                    : '—'; ?>
+                            </td>
                             <td class="text-center"><?php echo (int) $row->id; ?></td>
                         </tr>
                     <?php endforeach; ?>

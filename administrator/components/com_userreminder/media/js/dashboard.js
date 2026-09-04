@@ -17,6 +17,15 @@
         }
 
         var hasChart = typeof window.Chart !== 'undefined';
+        var labels = data.labels || {};
+
+        // Bootstrap's .d-flex is display:flex !important, so it beats an inline
+        // display:none. Toggle the class itself instead of fighting it.
+        var showTrendFallback = function (show) {
+            if (!trendFallback) { return; }
+            trendFallback.classList.toggle('d-flex', show);
+            trendFallback.style.display = show ? '' : 'none';
+        };
 
         // Trend — 30 bars.
         var trendCanvas = document.getElementById('ur-trend-canvas');
@@ -28,7 +37,7 @@
             var hasData = values.some(function (v) { return v > 0; });
 
             if (hasChart && hasData) {
-                if (trendFallback) { trendFallback.style.display = 'none'; }
+                showTrendFallback(false);
                 trendCanvas.style.display = 'block';
                 try {
                     // eslint-disable-next-line no-new
@@ -37,7 +46,7 @@
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Sent',
+                                label: labels.sent || 'Sent',
                                 data: values,
                                 backgroundColor: 'rgba(13,110,253,0.85)',
                                 borderColor: 'rgba(13,110,253,1)',
@@ -61,13 +70,13 @@
                     });
                 } catch (e) {
                     // Fall back to CSS bars on error.
-                    if (trendFallback) { trendFallback.style.display = 'flex'; }
+                    showTrendFallback(true);
                     trendCanvas.style.display = 'none';
                 }
             } else {
                 // No chart or no data — show fallback (or empty message already rendered).
-                if (!hasChart && trendFallback) {
-                    trendFallback.style.display = 'flex';
+                if (!hasChart) {
+                    showTrendFallback(true);
                 }
                 if (!hasData && trendCanvas) {
                     trendCanvas.style.display = 'none';
@@ -93,7 +102,11 @@
                     new window.Chart(donutCanvas, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Not activated', 'Never logged in', 'Inactive'],
+                            labels: [
+                                labels.type1 || 'Not activated',
+                                labels.type2 || 'Never logged in',
+                                labels.type3 || 'Inactive'
+                            ],
                             datasets: [{
                                 data: [t1, t2, t3],
                                 backgroundColor: ['#ffb340', '#0dcaf0', '#6c757d'],
