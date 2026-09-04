@@ -150,6 +150,50 @@
                description="COM_USERREMINDER_REMOVE_FROM_GROUPS_DESC"/>
     </fieldset>
 
+    <fieldset name="mail_container" label="COM_USERREMINDER_FIELDSET_MAIL_CONTAINER">
+        <field name="mail_container" type="radio" default="1"
+               layout="joomla.form.field.radio.switcher"
+               label="COM_USERREMINDER_MAIL_CONTAINER"
+               description="COM_USERREMINDER_MAIL_CONTAINER_TEXT">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field name="mail_container_logo" type="radio" default="0"
+               showon="mail_container:1"
+               layout="joomla.form.field.radio.switcher"
+               label="COM_USERREMINDER_MAIL_CONTAINER_LOGO"
+               description="COM_USERREMINDER_MAIL_CONTAINER_LOGO_TEXT">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field name="mail_container_logofile" type="media" default=""
+               showon="mail_container:1[AND]mail_container_logo:1"
+               label="COM_USERREMINDER_MAIL_CONTAINER_LOGOFILE"
+               description="COM_USERREMINDER_MAIL_CONTAINER_LOGOFILE_TEXT"/>
+
+        <field name="mail_container_header" type="text" default=""
+               showon="mail_container:1"
+               label="COM_USERREMINDER_MAIL_CONTAINER_HEADER"
+               description="COM_USERREMINDER_MAIL_CONTAINER_HEADER_TEXT"/>
+
+        <field name="mail_container_footer" type="textarea" default="" rows="4"
+               showon="mail_container:1"
+               label="COM_USERREMINDER_MAIL_CONTAINER_FOOTER"
+               description="COM_USERREMINDER_MAIL_CONTAINER_FOOTER_TEXT"/>
+
+        <field name="mail_container_footer_bg" type="color" default="#112855"
+               showon="mail_container:1"
+               label="COM_USERREMINDER_MAIL_CONTAINER_FOOTER_BG"
+               description="COM_USERREMINDER_MAIL_CONTAINER_FOOTER_BG_TEXT"/>
+
+        <field name="mail_container_footer_color" type="color" default="#cccccc"
+               showon="mail_container:1"
+               label="COM_USERREMINDER_MAIL_CONTAINER_FOOTER_COLOR"
+               description="COM_USERREMINDER_MAIL_CONTAINER_FOOTER_COLOR_TEXT"/>
+    </fieldset>
+
     <fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL">
         <field name="rules" type="rules" component="com_userreminder" filter="rules"
                validate="rules" label="JCONFIG_PERMISSIONS_LABEL" section="component"/>

@@ -69,6 +69,17 @@ class com_userreminderInstallerScript extends InstallerScript
     ];
 
     /**
+     * Source of the custom HTML mail container layout (shipped with the
+     * component) and its target in the site-wide layout override folder.
+     *
+     * @var  string
+     *
+     * @since  4.2.1
+     */
+    private const MAIL_LAYOUT_SOURCE = JPATH_ADMINISTRATOR . '/components/com_userreminder/layouts/joomla/mail/userreminder.php';
+    private const MAIL_LAYOUT_TARGET = JPATH_ROOT . '/layouts/joomla/mail/userreminder.php';
+
+    /**
      * Run after install / update.
      *
      * @param   string  $type    Install type.
@@ -93,12 +104,139 @@ class com_userreminderInstallerScript extends InstallerScript
         // HTML) unless the admin already picked a style.
         $this->enableHtmlMailStyle();
 
+        // Install the custom mail container layout and point com_mails at it.
+        $this->installMailLayout();
+        $this->selectMailLayout();
+
         if ($type === 'update') {
             // Copy customized legacy email params into the mail templates, once.
             $this->migrateLegacyParams();
         }
 
         return true;
+    }
+
+    /**
+     * Run on uninstall — remove the mail container layout and restore the
+     * stock com_mails layout when we were the ones who changed it.
+     *
+     * @param   object  $parent  Installer adapter.
+     *
+     * @return  bool
+     *
+     * @since  4.2.1
+     */
+    public function uninstall($parent): bool
+    {
+        try {
+            if (is_file(self::MAIL_LAYOUT_TARGET)) {
+                \Joomla\Filesystem\File::delete(self::MAIL_LAYOUT_TARGET);
+            }
+
+            $db     = Factory::getDbo();
+            $query  = $db->getQuery(true)
+                ->select($db->quoteName(['extension_id', 'params']))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_mails'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+            $db->setQuery($query);
+
+            if ($row = $db->loadObject()) {
+                $params = new \Joomla\Registry\Registry((string) $row->params);
+
+                if ($params->get('mail_htmllayout') === 'userreminder') {
+                    $params->remove('mail_htmllayout');
+
+                    $db->setQuery(
+                        $db->getQuery(true)
+                            ->update($db->quoteName('#__extensions'))
+                            ->set($db->quoteName('params') . ' = ' . $db->quote((string) $params))
+                            ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id)
+                    );
+                    $db->execute();
+                }
+            }
+        } catch (\Throwable) {
+            // Best effort.
+        }
+
+        return true;
+    }
+
+    /**
+     * Copy the custom mail container layout into the site layout override
+     * folder (JPATH_ROOT/layouts/joomla/mail/userreminder.php).
+     *
+     * @return  void
+     *
+     * @since  4.2.1
+     */
+    private function installMailLayout(): void
+    {
+        try {
+            if (!is_file(self::MAIL_LAYOUT_SOURCE)) {
+                return;
+            }
+
+            $dir = \dirname(self::MAIL_LAYOUT_TARGET);
+
+            if (!is_dir($dir)) {
+                \mkdir($dir, 0755, true);
+            }
+
+            \Joomla\Filesystem\File::copy(self::MAIL_LAYOUT_SOURCE, self::MAIL_LAYOUT_TARGET);
+        } catch (\Throwable) {
+            // Non-fatal — the stock container is used when the layout is missing.
+        }
+    }
+
+    /**
+     * Point com_mails at our container layout. The layout itself falls back to
+     * the stock joomla.mail.mailtemplate container for non-User-Reminder
+     * emails, so this is safe to set globally.
+     *
+     * Only applies when the admin has not already configured a layout.
+     *
+     * @return  void
+     *
+     * @since  4.2.1
+     */
+    private function selectMailLayout(): void
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['extension_id', 'params']))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_mails'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+            $db->setQuery($query);
+
+            $row = $db->loadObject();
+
+            if (!$row) {
+                return;
+            }
+
+            $params = new \Joomla\Registry\Registry((string) $row->params);
+
+            if ($params->exists('mail_htmllayout')) {
+                return;
+            }
+
+            $params->set('mail_htmllayout', 'userreminder');
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__extensions'))
+                    ->set($db->quoteName('params') . ' = ' . $db->quote((string) $params))
+                    ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id)
+            );
+            $db->execute();
+        } catch (\Throwable) {
+            // Non-fatal — System → Mail Templates → Options can set it manually.
+        }
     }
 
     /**

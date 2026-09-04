@@ -14,13 +14,15 @@ namespace JoomCoder\Component\UserReminder\Administrator\Service;
 use Joomla\CMS\Application\ApplicationHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Mail\Mail;
 use Joomla\CMS\Mail\MailTemplate;
-use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Filesystem\Path;
 use Joomla\Registry\Registry;
 use JoomCoder\Component\UserReminder\Administrator\Helper\ActivationUrlHelper;
 
@@ -350,9 +352,7 @@ final class SendService
         }
 
         try {
-            /** @var MailerFactoryInterface $mailerFactory */
-            $mailerFactory = Factory::getContainer()->get(MailerFactoryInterface::class);
-            $mailer        = $mailerFactory->createMailer();
+            $mailer = MailCapture::createMailer();
 
             $mailer->setSender($mailfrom, $fromname);
 
@@ -370,6 +370,13 @@ final class SendService
                 'OPTOUT_URL'       => $optOutUrl,
                 'ACTIVATE_URL'     => ActivationUrlHelper::get($row, $params),
             ]);
+
+            // Custom HTML container (header / footer / logo), configured under
+            // User Reminder → Options → Email Container. The layout only
+            // applies to our emails — everything else keeps Joomla's stock
+            // container (see layouts/joomla/mail/userreminder.php).
+            $mailTemplate->addLayoutTemplateData($this->containerLayoutData($params, $mailer, $sitename, $siteUrl));
+
             $mailTemplate->addRecipient($email);
 
             $sent = $mailTemplate->send();
@@ -423,6 +430,108 @@ final class SendService
         }
 
         return $ok;
+    }
+
+    /**
+     * Sanitize a hex color (falls back to the given default when invalid).
+     *
+     * @param   mixed   $value    Raw value from the params.
+     * @param   string  $default  Fallback color.
+     *
+     * @return  string
+     *
+     * @since   4.2.1
+     */
+    private function normalizeColor($value, string $default): string
+    {
+        $color = trim((string) $value);
+
+        return preg_match('/^#[0-9a-fA-F]{3,8}$/', $color) ? $color : $default;
+    }
+
+    /**
+     * Append a line to the mail capture log (same file MailCapture uses).
+     *
+     * @param   string  $message  Message to append.
+     *
+     * @return  void
+     *
+     * @since   4.2.1
+     */
+    public static function debugLog(string $message): void
+    {
+        try {
+            $app = Factory::getApplication();
+            $log = rtrim($app->get('log_path', JPATH_ADMINISTRATOR . '/logs'), '/\\')
+                . '/userreminder-mail.log';
+
+            @file_put_contents($log, '[' . Factory::getDate()->toSql() . '] ' . $message . "\n", FILE_APPEND | LOCK_EX);
+        } catch (\Throwable) {
+            // Never let logging break a send.
+        }
+    }
+
+    /**
+     * Build the extra layout data for the custom HTML mail container.
+     *
+     * @param   Registry  $params   Component params.
+     * @param   Mail      $mailer   The mailer — the logo is attached inline.
+     * @param   string    $sitename Site name.
+     * @param   string    $siteUrl  Site root URL.
+     *
+     * @return  array
+     *
+     * @since   4.2.1
+     */
+    private function containerLayoutData(Registry $params, Mail $mailer, string $sitename, string $siteUrl): array
+    {
+        if ((int) $params->get('mail_container', 1) !== 1) {
+            return [];
+        }
+
+        $header = trim((string) $params->get('mail_container_header', ''));
+
+        $footer = trim((string) $params->get('mail_container_footer', ''));
+
+        if ($footer === '') {
+            $footer = '&copy; {SITENAME} {YEAR}<br /><a href="{SITELINK}">{SITELINK}</a>';
+        }
+
+        $footer = strtr($footer, [
+            '{SITENAME}' => htmlspecialchars($sitename, ENT_QUOTES),
+            '{SITELINK}' => $siteUrl,
+            '{YEAR}'     => (string) date('Y'),
+        ]);
+
+        $data = [
+            'ur_container'     => 1,
+            'ur_header'        => $header !== '' ? $header : $sitename,
+            'ur_footer'        => $footer,
+            'ur_footer_bg'     => $this->normalizeColor($params->get('mail_container_footer_bg', '#112855'), '#112855'),
+            'ur_footer_color'  => $this->normalizeColor($params->get('mail_container_footer_color', '#cccccc'), '#cccccc'),
+        ];
+
+        // Attach the configured logo inline (embedded image, no external URL).
+        if ((int) $params->get('mail_container_logo', 0) === 1) {
+            $file = (string) $params->get('mail_container_logofile', '');
+
+            if ($file !== '') {
+                try {
+                    $path = Path::check(JPATH_ROOT . '/' . HTMLHelper::_('cleanImageURL', $file)->url);
+
+                    if (is_file(urldecode($path))) {
+                        $mailer->addAttachment($path, 'ur-logo', 'base64', mime_content_type($path), 'inline');
+                        $data['ur_logo'] = 'ur-logo';
+                    } else {
+                        self::debugLog("mail logo file not found: {$path}");
+                    }
+                } catch (\Throwable $e) {
+                    self::debugLog('mail logo could not be attached: ' . get_class($e) . ' - ' . $e->getMessage());
+                }
+            }
+        }
+
+        return $data;
     }
 
     /**
