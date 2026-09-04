@@ -24,7 +24,10 @@ use Joomla\CMS\Router\Route;
 class OptOutUsersController extends BaseController
 {
     /**
-     * Save the picked users to the opt-out list.
+     * Add the staged users (from the "Select Users" toolbar modal) to the opt-out list.
+     *
+     * Staged picks arrive as userids[] so they never collide with the list
+     * cid[] checkboxes used by the remove task.
      *
      * @return  void
      *
@@ -34,19 +37,26 @@ class OptOutUsersController extends BaseController
     {
         $this->checkToken();
 
-        $app  = Factory::getApplication();
-        $cid  = (array) $app->getInput()->get('cid', [], 'array');
+        $app     = Factory::getApplication();
+        $userIds = (array) $app->getInput()->get('userids', [], 'array');
+
+        if (empty($userIds)) {
+            // Fallback for direct posts using the list checkbox name.
+            $userIds = (array) $app->getInput()->get('cid', [], 'array');
+        }
 
         /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptOutUsersModel $model */
         $model = $this->getModel('OptOutUsers');
 
-        if ($model->addOptUsers($cid)) {
-            $app->enqueueMessage(Text::_('COM_USERREMINDER_OPTUSER_ADDED'), 'success');
+        $added = $model->addOptUsers($userIds);
+
+        if ($added > 0) {
+            $app->enqueueMessage(Text::sprintf('COM_USERREMINDER_OPTUSER_ADDED_N', $added), 'success');
         } else {
             $app->enqueueMessage(Text::_('COM_USERREMINDER_OPTUSER_FAILED'), 'error');
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=optoutusers&layout=userlist', false));
+        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=optoutusers', false));
     }
 
     /**
@@ -98,6 +108,6 @@ class OptOutUsersController extends BaseController
             $app->enqueueMessage(Text::_('COM_USERREMINDER_OPTUSER_FAILED'), 'error');
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=optoutusers', false));
+        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=optoutusers&layout=usergroup', false));
     }
 }

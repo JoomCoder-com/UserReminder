@@ -13,16 +13,23 @@ namespace JoomCoder\Component\UserReminder\Site\View\Optout;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Uri\Uri;
 
 /**
- * Site opt-out view. Two layouts: default (confirm prompt) and result (success/failure).
+ * Site opt-out view. Read-only: it never writes, it only asks the model for
+ * the current status and renders the matching layout.
+ *
+ * Layouts:
+ * - default: confirmation card (or already/invalid state) with POST forms.
+ * - result: outcome of a POST task, driven by the status query parameter
+ *   after the controller's POST-redirect-GET.
  *
  * @since  4.0.0
  */
 class HtmlView extends BaseHtmlView
 {
     /**
+     * Raw opt-out code from the request.
+     *
      * @var  string
      *
      * @since  4.0.0
@@ -30,37 +37,36 @@ class HtmlView extends BaseHtmlView
     public $code = '';
 
     /**
-     * @var  bool
+     * Subscription status. One of: active, optedout, invalid (default layout)
+     * or done, already, resubscribed, notoptedout, invalid (result layout).
      *
-     * @since  4.0.0
-     */
-    public $success = false;
-
-    /**
      * @var  string
      *
      * @since  4.0.0
      */
-    public $confirmUrl = '';
+    public $status = 'invalid';
 
     public function display($tpl = null): void
     {
         $app   = Factory::getApplication();
         $input = $app->getInput();
 
-        $this->code = (string) $input->get('uid', '', 'string');
+        $this->code = trim((string) $input->get('uid', '', 'string'));
+
+        /** @var \JoomCoder\Component\UserReminder\Site\Model\OptoutModel $model */
+        $model = $this->getModel();
 
         if ($this->getLayout() === 'result') {
-            /** @var \JoomCoder\Component\UserReminder\Site\Model\OptoutModel $model */
-            $model = $this->getModel();
-            $this->success = $model->optOut($this->code);
+            $status = (string) $input->get('status', '', 'cmd');
+
+            $allowed = ['done', 'already', 'resubscribed', 'notoptedout', 'invalid'];
+
+            $this->status = \in_array($status, $allowed, true) ? $status : 'invalid';
         } else {
-            $this->confirmUrl = Uri::current() . '?' . http_build_query([
-                'option' => 'com_userreminder',
-                'task'   => 'optoutnow',
-                'uid'    => $this->code,
-            ]);
+            $this->status = $this->code === '' ? 'invalid' : $model->getStatus($this->code);
         }
+
+        $app->getDocument()->setTitle($app->getLanguage()->_('COM_USERREMINDER_OPTOUT_TITLE'));
 
         parent::display($tpl);
     }

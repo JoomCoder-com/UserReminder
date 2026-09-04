@@ -11,106 +11,91 @@ namespace JoomCoder\Component\UserReminder\Site\Service;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Application\SiteApplication;
-use Joomla\CMS\Categories\CategoryFactoryInterface;
-use Joomla\CMS\Component\Router\RouterView;
-use Joomla\CMS\Component\Router\RouterViewConfiguration;
-use Joomla\CMS\Component\Router\Rules\MenuRules;
-use Joomla\CMS\Component\Router\Rules\NomenuRules;
-use Joomla\CMS\Component\Router\Rules\StandardRules;
-use Joomla\CMS\Menu\AbstractMenu;
-use Joomla\Database\DatabaseInterface;
+use Joomla\CMS\Component\Router\RouterBase;
 
 /**
  * SEF router for com_userreminder on the site.
  *
- * Generates URLs of the form:
- *   /component/userreminder/optout/<code>/confirm
+ * Canonical URLs (also used in reminder emails):
+ *   index.php?option=com_userreminder&view=optout&uid=<code>
+ *   index.php?option=com_userreminder&view=optout&layout=result&status=<status>&uid=<code>
  *
- * The raw URLs the reminder emails generate are kept as a fallback when SEF
- * is disabled:
- *   index.php?option=com_userreminder&task=optout&uid=<code>
+ * With SEF enabled these become:
+ *   /component/userreminder/<code>
+ *   /component/userreminder/<code>/result
+ *
+ * Task URLs (task=optout.unsubscribe / task=optout.resubscribe) are left
+ * untouched so form POSTs keep working.
  *
  * @since  4.0.0
  */
-class Router extends RouterView
+class Router extends RouterBase
 {
-    public function __construct(
-        SiteApplication $app,
-        AbstractMenu $menu,
-        ?CategoryFactoryInterface $categoryFactory = null,
-        ?DatabaseInterface $db = null
-    ) {
-        $optout = new RouterViewConfiguration('optout');
-        $optout->setKey('uid');
-
-        $this->registerView($optout);
-
-        parent::__construct($app, $menu);
-
-        $this->attachRule(new MenuRules($this));
-        $this->attachRule(new StandardRules($this));
-        $this->attachRule(new NomenuRules($this));
-    }
-
     /**
      * Build a SEF URL from a query array.
      *
-     * @param   array  &$query
+     * @param   array  &$query  The query array (view/uid/layout consumed, status kept).
      *
-     * @return  array
+     * @return  array  URL segments.
      *
      * @since   4.0.0
      */
     public function build(&$query): array
     {
-        if (!isset($query['view']) || $query['view'] !== 'optout') {
-            return parent::build($query);
+        if (!isset($query['view']) || $query['view'] !== 'optout' || isset($query['task'])) {
+            return [];
         }
 
-        $segments = ['optout'];
+        $segments = [];
+
+        unset($query['view']);
 
         if (!empty($query['uid'])) {
             $segments[] = $query['uid'];
             unset($query['uid']);
         }
 
-        if (!empty($query['layout']) && $query['layout'] === 'confirm') {
-            $segments[] = 'confirm';
+        if (!empty($query['layout']) && $query['layout'] === 'result') {
+            $segments[] = 'result';
+            unset($query['layout']);
+        } elseif (isset($query['layout'])) {
             unset($query['layout']);
         }
-
-        unset($query['view']);
 
         return $segments;
     }
 
     /**
-     * Parse a SEF URL back into a query array.
+     * Parse SEF URL segments back into a query array.
      *
-     * @param   array  &$segments
+     * @param   array  &$segments  URL segments.
      *
-     * @return  array
+     * @return  array  Query variables (view, uid, layout).
      *
      * @since   4.0.0
      */
     public function parse(&$segments): array
     {
-        if (empty($segments) || $segments[0] !== 'optout') {
+        $vars  = [];
+        $total = \count($segments);
+
+        if ($total < 1 || $total > 2) {
             return [];
         }
 
-        $vars = ['view' => 'optout'];
-
-        if (isset($segments[1]) && $segments[1] !== 'confirm') {
-            $vars['uid'] = $segments[1];
+        if ($total === 2 && $segments[1] !== 'result') {
+            return [];
         }
 
-        if (isset($segments[2]) && $segments[2] === 'confirm') {
-            $vars['layout'] = 'confirm';
-        } elseif (isset($segments[1]) && $segments[1] === 'confirm') {
-            $vars['layout'] = 'confirm';
+        $vars['view'] = 'optout';
+        $vars['uid']  = $segments[0];
+
+        if ($total === 2) {
+            $vars['layout'] = 'result';
         }
+
+        // Consume the segments so the app router sees a fully parsed path.
+        $segments = [];
 
         return $vars;
     }

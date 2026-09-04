@@ -13,12 +13,19 @@ namespace JoomCoder\Component\UserReminder\Site\Controller;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Route;
 
 /**
  * Site controller for the opt-out flow.
  *
- * URL pattern in reminder emails: index.php?option=com_userreminder&task=optoutnow&uid=CODE
- * and a SEF variant: /component/userreminder/optout/CODE/confirm
+ * Canonical URL (as generated in reminder emails):
+ *   index.php?option=com_userreminder&view=optout&uid=CODE
+ *
+ * Writes only happen here, on POST with a valid session token, followed by a
+ * redirect (POST-redirect-GET) so bots, prefetchers and refreshes can never
+ * trigger a state change:
+ *   task=optout.unsubscribe  -> optOut()  -> layout=result&status=done|already|invalid
+ *   task=optout.resubscribe  -> optIn()   -> layout=result&status=resubscribed|notoptedout|invalid
  *
  * @since  4.0.0
  */
@@ -27,8 +34,8 @@ class OptoutController extends BaseController
     /**
      * Display the confirmation prompt.
      *
-     * @param   bool  $cachable  ignored (POST-only behaviour)
-     * @param   array $urlparams ignored
+     * @param   bool   $cachable   Ignored.
+     * @param   array  $urlparams  Ignored.
      *
      * @return  void
      *
@@ -36,33 +43,63 @@ class OptoutController extends BaseController
      */
     public function display($cachable = false, $urlparams = []): void
     {
-        $app   = Factory::getApplication();
-        $input = $app->getInput();
-        $uid   = (string) $input->get('uid', '', 'string');
-
-        // Hand off to the view which renders the alert with confirm / cancel buttons.
-        $app->getDocument()->setTitle($app->getLanguage()->_('COM_USERREMINDER_OPTOUT_TITLE'));
-
         $this->input->set('view', 'optout');
-        $this->input->set('uid', $uid);
-        $this->input->set('hidemainmenu', 0);
+
+        Factory::getApplication()->getDocument()
+            ->setTitle(Factory::getApplication()->getLanguage()->_('COM_USERREMINDER_OPTOUT_TITLE'));
 
         parent::display($cachable, $urlparams);
     }
 
     /**
-     * Commit the opt-out: insert into #__userreminder_optout, show success/failure.
+     * Commit the opt-out on POST, then redirect to the result layout.
      *
      * @return  void
      *
      * @since   4.0.0
      */
-    public function optoutnow(): void
+    public function unsubscribe(): void
     {
-        $this->input->set('view', 'optout');
-        $this->input->set('layout', 'result');
-        $this->input->set('hidemainmenu', 0);
+        $this->checkToken('post');
 
-        parent::display();
+        $code = trim((string) $this->input->get('uid', '', 'string'));
+
+        /** @var \JoomCoder\Component\UserReminder\Site\Model\OptoutModel $model */
+        $model = $this->getModel('Optout');
+
+        $status = $model->optOut($code);
+
+        $this->setRedirect(
+            Route::_(
+                'index.php?option=com_userreminder&view=optout&layout=result&status=' . $status . '&uid=' . urlencode($code),
+                false
+            )
+        );
+    }
+
+    /**
+     * Remove the opt-out on POST (resubscribe), then redirect to the result layout.
+     *
+     * @return  void
+     *
+     * @since   4.0.0
+     */
+    public function resubscribe(): void
+    {
+        $this->checkToken('post');
+
+        $code = trim((string) $this->input->get('uid', '', 'string'));
+
+        /** @var \JoomCoder\Component\UserReminder\Site\Model\OptoutModel $model */
+        $model = $this->getModel('Optout');
+
+        $status = $model->optIn($code);
+
+        $this->setRedirect(
+            Route::_(
+                'index.php?option=com_userreminder&view=optout&layout=result&status=' . $status . '&uid=' . urlencode($code),
+                false
+            )
+        );
     }
 }

@@ -11,58 +11,81 @@ namespace JoomCoder\Component\UserReminder\Site\Model;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 
 /**
- * Site opt-out model — performs the opt-out write when the user confirms.
+ * Site opt-out model.
+ *
+ * Read methods (getStatus) never write. Write methods (optOut / optIn) are
+ * only called from POST tasks in the OptoutController, never from the view.
  *
  * @since  4.0.0
  */
 class OptoutModel extends BaseDatabaseModel
 {
     /**
-     * Mark the user identified by $code as opted out.
+     * Code is unknown — no reminder row carries it.
+     *
+     * @since  4.0.0
+     */
+    public const STATUS_INVALID = 'invalid';
+
+    /**
+     * Code is valid and the user still receives reminders.
+     *
+     * @since  4.0.0
+     */
+    public const STATUS_ACTIVE = 'active';
+
+    /**
+     * Code is valid but the user is already opted out.
+     *
+     * @since  4.0.0
+     */
+    public const STATUS_OPTED_OUT = 'optedout';
+
+    /**
+     * Resolve the subscription status for an opt-out code without writing.
      *
      * @param   string  $code  Opt-out code (hash from #__userreminder.optoutcode).
      *
-     * @return  bool  true on success, false if the code is invalid / user missing.
+     * @return  string  One of the STATUS_* constants.
      *
      * @since   4.0.0
      */
-    public function optOut(string $code): bool
+    public function getStatus(string $code): string
     {
-        $code = trim($code);
-        if ($code === '') {
-            return false;
-        }
-
-        $db  = $this->getDbo();
-        $qn  = static fn(string $col) => $db->quoteName($col);
-
-        $query = $db->getQuery(true)
-            ->select($qn('userid'))
-            ->from($qn('#__userreminder'))
-            ->where($qn('optoutcode') . ' = ' . $db->quote($code));
-
-        $db->setQuery($query);
-        $userId = (int) $db->loadResult();
+        $userId = $this->getUserIdByCode($code);
 
         if ($userId <= 0) {
-            return false;
+            return self::STATUS_INVALID;
         }
 
-        // Check if already opted out — idempotent success.
-        $check = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__userreminder_optout'))
-            ->where($db->quoteName('user_id') . ' = ' . $userId);
-        $db->setQuery($check);
-        if ((int) $db->loadResult() > 0) {
-            return true;
+        return $this->isOptedOut($userId) ? self::STATUS_OPTED_OUT : self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Mark the user identified by $code as opted out (idempotent).
+     *
+     * @param   string  $code  Opt-out code (hash from #__userreminder.optoutcode).
+     *
+     * @return  string  done|already|invalid
+     *
+     * @since   4.0.0
+     */
+    public function optOut(string $code): string
+    {
+        $userId = $this->getUserIdByCode($code);
+
+        if ($userId <= 0) {
+            return self::STATUS_INVALID;
         }
 
-        // Idempotent insert — ignore duplicate keys.
+        if ($this->isOptedOut($userId)) {
+            return 'already';
+        }
+
+        $db     = $this->getDbo();
         $insert = $db->getQuery(true)
             ->insert($db->quoteName('#__userreminder_optout'))
             ->columns($db->quoteName('user_id'))
@@ -72,11 +95,100 @@ class OptoutModel extends BaseDatabaseModel
 
         try {
             $db->execute();
-            return true;
+
+            return 'done';
         } catch (\Throwable) {
             // Race condition: another request inserted in the meantime — treat as success.
-            $db->setQuery($check);
-            return (int) $db->loadResult() > 0;
+            return $this->isOptedOut($userId) ? 'already' : self::STATUS_INVALID;
         }
+    }
+
+    /**
+     * Remove the user identified by $code from the opt-out list (resubscribe).
+     *
+     * @param   string  $code  Opt-out code (hash from #__userreminder.optoutcode).
+     *
+     * @return  string  resubscribed|notoptedout|invalid
+     *
+     * @since   4.0.0
+     */
+    public function optIn(string $code): string
+    {
+        $userId = $this->getUserIdByCode($code);
+
+        if ($userId <= 0) {
+            return self::STATUS_INVALID;
+        }
+
+        if (!$this->isOptedOut($userId)) {
+            return 'notoptedout';
+        }
+
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__userreminder_optout'))
+            ->where($db->quoteName('user_id') . ' = ' . (int) $userId);
+
+        $db->setQuery($query);
+
+        try {
+            $db->execute();
+
+            return 'resubscribed';
+        } catch (\Throwable) {
+            return self::STATUS_INVALID;
+        }
+    }
+
+    /**
+     * Find the reminder user id for an opt-out code.
+     *
+     * @param   string  $code  Raw code from the request.
+     *
+     * @return  int  User id, or 0 when the code is empty/unknown.
+     *
+     * @since   4.0.0
+     */
+    private function getUserIdByCode(string $code): int
+    {
+        $code = trim($code);
+
+        if ($code === '') {
+            return 0;
+        }
+
+        $db = $this->getDbo();
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('userid'))
+            ->from($db->quoteName('#__userreminder'))
+            ->where($db->quoteName('optoutcode') . ' = ' . $db->quote($code));
+
+        $db->setQuery($query);
+
+        return (int) $db->loadResult();
+    }
+
+    /**
+     * Check whether a user id is on the opt-out list.
+     *
+     * @param   int  $userId  Joomla user id.
+     *
+     * @return  bool
+     *
+     * @since   4.0.0
+     */
+    private function isOptedOut(int $userId): bool
+    {
+        $db = $this->getDbo();
+
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__userreminder_optout'))
+            ->where($db->quoteName('user_id') . ' = ' . (int) $userId);
+
+        $db->setQuery($query);
+
+        return (int) $db->loadResult() > 0;
     }
 }

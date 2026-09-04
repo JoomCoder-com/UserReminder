@@ -340,7 +340,7 @@ final class SendService
         $siteUrl     = Uri::root();
 
         $optOutCode  = $row->optoutcode ?: ApplicationHelper::getHash(UserHelper::genRandomPassword());
-        $optOutUrl   = $siteUrl . 'index.php?option=com_userreminder&task=optoutnow&uid=' . $optOutCode;
+        $optOutUrl   = $siteUrl . 'index.php?option=com_userreminder&view=optout&uid=' . $optOutCode;
         $passwordReset = $siteUrl . ($params->get('passwordReset', 'index.php?option=com_users&view=reset'));
 
         $tokens = [

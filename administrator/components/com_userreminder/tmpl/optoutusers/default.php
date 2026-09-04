@@ -9,42 +9,29 @@
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Router\Route;
 
-/** @var \Joomla\CMS\Pagination\Pagination $pagination */
-$pagination = $this->pagination;
+/** @var \JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers\HtmlView $this */
 
-HTMLHelper::_('bootstrap.tooltip');
-HTMLHelper::_('formbehavior.chosen', 'select');
+HTMLHelper::_('behavior.multiselect');
+
+$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+$wa->getRegistry()->addRegistryFile('media/com_userreminder/joomla.asset.json');
+$wa->useScript('com_userreminder.optoutusers-select');
+
+$listOrder = $this->escape($this->state->get('list.ordering', 'a.name'));
+$listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
 ?>
 <form action="<?php echo Route::_('index.php?option=com_userreminder&view=optoutusers'); ?>" method="post" name="adminForm" id="adminForm">
     <div id="j-main-container" class="j-main-container">
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <div class="input-group">
-                    <input type="text" name="filter_search" id="filter_search"
-                           value="<?php echo htmlspecialchars($this->filterSearch, ENT_QUOTES); ?>"
-                           class="form-control"
-                           placeholder="<?php echo Text::_('COM_USERREMINDER_USERS_SEARCH_USERS'); ?>">
-                    <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('filter_search').value='';this.form.submit();">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <ul class="nav nav-tabs" id="submenu">
+        <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
                 <a class="nav-link active" href="<?php echo Route::_('index.php?option=com_userreminder&view=optoutusers'); ?>">
                     <?php echo Text::_('COM_USERREMINDER_OPTOUT_USERS2'); ?>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="<?php echo Route::_('index.php?option=com_userreminder&view=optoutusers&layout=userlist'); ?>">
-                    <?php echo Text::_('COM_USERREMINDER_USER_LIST'); ?>
                 </a>
             </li>
             <li class="nav-item">
@@ -54,56 +41,74 @@ HTMLHelper::_('formbehavior.chosen', 'select');
             </li>
         </ul>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th width="1%">
-                        <input type="checkbox" name="checkall-toggle" value="" title="<?php echo Text::_('JGLOBAL_CHECK_ALL'); ?>" onclick="Joomla.checkAll(this)">
-                    </th>
-                    <th><?php echo Text::_('COM_USERREMINDER_NAME'); ?></th>
-                    <th><?php echo Text::_('COM_USERREMINDER_USERNAME'); ?></th>
-                    <th><?php echo Text::_('COM_USERREMINDER_EMAIL'); ?></th>
-                    <th><?php echo Text::_('COM_USERREMINDER_LASTLOGINDATE'); ?></th>
-                    <th><?php echo Text::_('COM_USERREMINDER_REGISTRATIONDATE'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($this->items)): ?>
+        <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
+
+        <?php if (empty($this->items)) : ?>
+            <div class="alert alert-info">
+                <span class="icon-info-circle" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('INFO'); ?></span>
+                <?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
+            </div>
+        <?php else : ?>
+            <table class="table table-striped" id="optoutusersList">
+                <caption class="visually-hidden">
+                    <?php echo Text::_('COM_USERREMINDER_OPTOUT_USERS2'); ?>,
+                    <span id="orderedBy"><?php echo Text::_('JGLOBAL_SORTED_BY'); ?> </span>,
+                    <span id="filteredBy"><?php echo Text::_('JGLOBAL_FILTERED_BY'); ?></span>
+                </caption>
+                <thead>
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
-                            <?php echo Text::_('COM_USERREMINDER_NO_ITEMS'); ?>
-                        </td>
+                        <th class="w-1 text-center">
+                            <?php echo HTMLHelper::_('grid.checkall'); ?>
+                        </th>
+                        <th scope="col">
+                            <?php echo HTMLHelper::_('searchtools.sort', 'COM_USERREMINDER_NAME', 'a.name', $listDirn, $listOrder); ?>
+                        </th>
+                        <th scope="col">
+                            <?php echo HTMLHelper::_('searchtools.sort', 'COM_USERREMINDER_USERNAME', 'a.username', $listDirn, $listOrder); ?>
+                        </th>
+                        <th scope="col">
+                            <?php echo HTMLHelper::_('searchtools.sort', 'COM_USERREMINDER_EMAIL', 'a.email', $listDirn, $listOrder); ?>
+                        </th>
+                        <th scope="col">
+                            <?php echo HTMLHelper::_('searchtools.sort', 'COM_USERREMINDER_LASTLOGINDATE', 'a.lastvisitDate', $listDirn, $listOrder); ?>
+                        </th>
+                        <th scope="col">
+                            <?php echo HTMLHelper::_('searchtools.sort', 'COM_USERREMINDER_REGISTRATIONDATE', 'a.registerDate', $listDirn, $listOrder); ?>
+                        </th>
+                        <th scope="col" class="w-1 text-center">
+                            <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.id', $listDirn, $listOrder); ?>
+                        </th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($this->items as $i => $row): ?>
-                        <tr>
-                            <td class="center">
-                                <?php echo HTMLHelper::_('grid.id', $i, $row->id); ?>
+                </thead>
+                <tbody>
+                    <?php foreach ($this->items as $i => $row) : ?>
+                        <tr class="row<?php echo $i % 2; ?>">
+                            <td class="text-center">
+                                <?php echo HTMLHelper::_('grid.id', $i, (int) $row->id); ?>
                             </td>
-                            <td>
-                                <a href="<?php echo Route::_('index.php?option=com_users&task=user.edit&id=' . (int) $row->id); ?>" target="_blank">
-                                    <?php echo htmlspecialchars((string) ($row->name ?? ''), ENT_QUOTES); ?>
+                            <th scope="row">
+                                <a href="<?php echo Route::_('index.php?option=com_users&task=user.edit&id=' . (int) $row->id); ?>">
+                                    <?php echo htmlspecialchars((string) ($row->name ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                 </a>
-                            </td>
-                            <td><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($row->email ?? ''), ENT_QUOTES); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($row->lastvisitDate ?? ''), ENT_QUOTES); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($row->registerDate ?? ''), ENT_QUOTES); ?></td>
+                            </th>
+                            <td><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->email ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->lastvisitDate ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($row->registerDate ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td class="text-center"><?php echo (int) $row->id; ?></td>
                         </tr>
                     <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="6">
-                        <?php echo $pagination ? $pagination->getListFooter() : ''; ?>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
+                </tbody>
+            </table>
+
+            <?php echo $this->pagination->getListFooter(); ?>
+        <?php endif; ?>
 
         <input type="hidden" name="task" value="">
         <input type="hidden" name="boxchecked" value="0">
         <?php echo HTMLHelper::_('form.token'); ?>
+
+        <?php // Batch-style "Select Users" dialog (toolbar popup button target). ?>
+        <template id="userreminder-select-users-dialog"><?php echo $this->loadTemplate('select_body'); ?></template>
     </div>
 </form>

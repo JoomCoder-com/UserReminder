@@ -33,6 +33,14 @@
       }
     },
     {
+      "name": "com_userreminder.optoutusers-select",
+      "type": "script",
+      "uri": "com_userreminder/optoutusers-select.js",
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
       "name": "com_userreminder.style",
       "type": "style",
       "uri": "com_userreminder/userreminder.css"

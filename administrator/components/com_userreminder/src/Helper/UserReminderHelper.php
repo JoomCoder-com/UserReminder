@@ -117,7 +117,7 @@ final class UserReminderHelper
             'label'  => Text::_('COM_USERREMINDER_SUBMENU_OPTOUT'),
             'url'    => 'index.php?option=com_userreminder&view=optoutusers',
             'icon'   => 'fas fa-user-slash',
-            'active' => in_array($vName, ['optoutusers', 'optoutusers.userlist', 'optoutusers.usergroup'], true),
+            'active' => in_array($vName, ['optoutusers', 'optoutusers.default', 'optoutusers.usergroup'], true),
         ];
 
         $items[] = [

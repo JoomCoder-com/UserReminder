@@ -9,24 +9,20 @@
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\HTML\HTMLHelper;
 
-HTMLHelper::_('bootstrap.tooltip');
-HTMLHelper::_('formbehavior.chosen', 'select');
+/** @var \JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers\HtmlView $this */
+
+HTMLHelper::_('behavior.multiselect');
 ?>
 <form action="<?php echo Route::_('index.php?option=com_userreminder&view=optoutusers&layout=usergroup'); ?>" method="post" name="adminForm" id="adminForm">
     <div id="j-main-container" class="j-main-container">
-        <ul class="nav nav-tabs" id="submenu">
+        <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
                 <a class="nav-link" href="<?php echo Route::_('index.php?option=com_userreminder&view=optoutusers'); ?>">
                     <?php echo Text::_('COM_USERREMINDER_OPTOUT_USERS2'); ?>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="<?php echo Route::_('index.php?option=com_userreminder&view=optoutusers&layout=userlist'); ?>">
-                    <?php echo Text::_('COM_USERREMINDER_USER_LIST'); ?>
                 </a>
             </li>
             <li class="nav-item">
@@ -36,48 +32,47 @@ HTMLHelper::_('formbehavior.chosen', 'select');
             </li>
         </ul>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th width="1%">
-                        <input type="checkbox" name="checkall-toggle" value="" title="<?php echo Text::_('JGLOBAL_CHECK_ALL'); ?>" onclick="Joomla.checkAll(this)">
-                    </th>
-                    <th><?php echo Text::_('COM_USERREMINDER_GROUP_TITLE'); ?></th>
-                    <th width="20%"><?php echo Text::_('COM_USERREMINDER_USER_IN_GROUP'); ?></th>
-                    <th width="5%"><?php echo Text::_('JGRID_HEADING_ID'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($this->groupList)): ?>
+        <?php if (empty($this->groupList)) : ?>
+            <div class="alert alert-info">
+                <span class="icon-info-circle" aria-hidden="true"></span><span class="visually-hidden"><?php echo Text::_('INFO'); ?></span>
+                <?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?>
+            </div>
+        <?php else : ?>
+            <table class="table table-striped" id="optoutgroupsList">
+                <caption class="visually-hidden"><?php echo Text::_('COM_USERREMINDER_OPTUSER_GROUP'); ?></caption>
+                <thead>
                     <tr>
-                        <td colspan="4" class="text-center text-muted">
-                            <?php echo Text::_('COM_USERREMINDER_NO_ITEMS'); ?>
-                        </td>
+                        <th class="w-1 text-center">
+                            <?php echo HTMLHelper::_('grid.checkall'); ?>
+                        </th>
+                        <th scope="col"><?php echo Text::_('COM_USERREMINDER_GROUP_TITLE'); ?></th>
+                        <th scope="col" class="w-1 text-center"><?php echo Text::_('JGRID_HEADING_ID'); ?></th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($this->groupList as $i => $row): ?>
-                        <tr>
-                            <td class="center">
-                                <input type="checkbox" name="cid[]"
-                                       value="<?php echo (int) $row->id; ?>"
-                                       <?php echo in_array((int) $row->id, $this->optgroups, true) ? 'checked="checked"' : ''; ?>
-                                       onclick="Joomla.isChecked(this.checked);">
+                </thead>
+                <tbody>
+                    <?php foreach ($this->groupList as $i => $row) : ?>
+                        <tr class="row<?php echo $i % 2; ?>">
+                            <td class="text-center">
+                                <input type="checkbox" id="cb<?php echo $i; ?>" name="cid[]"
+                                    value="<?php echo (int) $row->id; ?>"
+                                    <?php echo \in_array((int) $row->id, $this->optgroups, true) ? 'checked' : ''; ?>
+                                    onclick="Joomla.isChecked(this.checked);">
                             </td>
-                            <td>
-                                <?php echo str_repeat('<span class="gi">|&mdash;</span>', (int) $row->level); ?>
-                                <a href="<?php echo Route::_('index.php?option=com_users&task=group.edit&id=' . (int) $row->id); ?>" target="_blank">
-                                    <?php echo htmlspecialchars($row->title, ENT_QUOTES); ?>
+                            <th scope="row">
+                                <?php echo str_repeat('&mdash; ', (int) $row->level); ?>
+                                <a href="<?php echo Route::_('index.php?option=com_users&task=group.edit&id=' . (int) $row->id); ?>">
+                                    <?php echo htmlspecialchars((string) $row->title, ENT_QUOTES, 'UTF-8'); ?>
                                 </a>
-                            </td>
-                            <td class="center">&nbsp;</td>
-                            <td class="center"><?php echo (int) $row->id; ?></td>
+                            </th>
+                            <td class="text-center"><?php echo (int) $row->id; ?></td>
                         </tr>
                     <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        <?php endif; ?>
 
         <input type="hidden" name="task" value="">
+        <input type="hidden" name="boxchecked" value="0">
         <?php echo HTMLHelper::_('form.token'); ?>
     </div>
 </form>

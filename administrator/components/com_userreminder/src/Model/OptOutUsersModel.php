@@ -11,26 +11,34 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
 
 /**
  * Opt-out users list model.
  *
- * Single view, two layouts: default (current opt-outs) and userlist (picker
- * for users not yet opted-out). Search by name/username/email is supported
- * via the standard `filter.search` request variable.
+ * Standard SearchTools list of opted-out users. Search and ordering state is
+ * handled the Joomla way via the filter form (forms/filter_optoutusers.xml).
  *
  * @since  4.0.0
  */
 class OptOutUsersModel extends ListModel
 {
+    /**
+     * The filter form name.
+     *
+     * @var  string
+     *
+     * @since  4.0.0
+     */
+    protected $filterFormName = 'filter_optoutusers';
+
     public function __construct($config = [])
     {
         if (empty($config['filter_fields'])) {
-            $config['filter_fields'] = ['id', 'name', 'username', 'email', 'lastvisitDate', 'registerDate'];
+            $config['filter_fields'] = [
+                'a.id', 'a.name', 'a.username', 'a.email', 'a.registerDate', 'a.lastvisitDate',
+            ];
         }
 
         parent::__construct($config);
@@ -38,15 +46,14 @@ class OptOutUsersModel extends ListModel
 
     protected function populateState($ordering = 'a.name', $direction = 'asc'): void
     {
-        parent::populateState($ordering, $direction);
-
-        $search = trim((string) Factory::getApplication()->input->get('filter_search', '', 'string'));
+        $search = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search', '', 'string');
         $this->setState('filter.search', $search);
+
+        parent::populateState($ordering, $direction);
     }
 
     /**
-     * The list query depends on the active layout: 'optout' returns users that
-     * are opted-out, 'userlist' returns users that are NOT opted-out.
+     * Users on the opt-out list, with standard search and ordering.
      *
      * @return  QueryInterface
      *
@@ -59,19 +66,11 @@ class OptOutUsersModel extends ListModel
 
         // Lean SELECT — never SELECT a.* on #__users (wide table, kills covering + temp tables).
         $query->select('a.id, a.name, a.username, a.email, a.registerDate, a.lastvisitDate, a.block, a.activation')
-            ->from($db->quoteName('#__users', 'a'));
+            ->from($db->quoteName('#__users', 'a'))
+            ->innerJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id');
 
-        $layout = Factory::getApplication()->input->get('layout', 'optout', 'string');
+        $search = (string) $this->getState('filter.search', '');
 
-        if ($layout === 'userlist') {
-            // Sargable / anti-join: LEFT JOIN .. IS NULL beats NOT IN (SELECT) on large tables.
-            $query->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL');
-        } else {
-            $query->innerJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id');
-        }
-
-        $search = $this->getState('filter.search');
         if ($search !== '') {
             $search = '%' . $db->escape($search, true) . '%';
             $query->where(
@@ -81,19 +80,40 @@ class OptOutUsersModel extends ListModel
             );
         }
 
-        $ordering  = $this->getState('list.ordering', 'a.name');
-        $direction = $this->getState('list.direction', 'ASC');
+        $ordering  = (string) $this->getState('list.ordering', 'a.name');
+        $direction = (string) $this->getState('list.direction', 'ASC');
 
         // Whitelist ordering to avoid injection via state.
         $allowedOrder = ['a.name', 'a.username', 'a.email', 'a.registerDate', 'a.lastvisitDate', 'a.id'];
-        if (!in_array($ordering, $allowedOrder, true)) {
+
+        if (!\in_array($ordering, $allowedOrder, true)) {
             $ordering = 'a.name';
         }
+
         $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
 
         $query->order($db->quoteName($ordering) . ' ' . $direction);
 
         return $query;
+    }
+
+    /**
+     * Return all opted-out user ids (used to hide them from the picker modal).
+     *
+     * @return  int[]
+     *
+     * @since   4.0.0
+     */
+    public function getOptedOutIds(): array
+    {
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('user_id'))
+            ->from($db->quoteName('#__userreminder_optout'));
+
+        $db->setQuery($query);
+
+        return array_map('intval', (array) $db->loadColumn());
     }
 
     /**
@@ -118,36 +138,50 @@ class OptOutUsersModel extends ListModel
     /**
      * Mark a batch of users as opted out.
      *
+     * Already opted-out users are skipped so re-adding a selection is safe.
+     *
      * @param   int[]  $userIds
      *
-     * @return  bool
+     * @return  int  Number of users added.
      *
      * @since   4.0.0
      */
-    public function addOptUsers(array $userIds): bool
+    public function addOptUsers(array $userIds): int
     {
-        $userIds = array_filter(array_map('intval', $userIds));
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
 
         if (empty($userIds)) {
-            return false;
+            return 0;
         }
 
-        $db    = $this->getDbo();
+        $db = $this->getDbo();
+
         $query = $db->getQuery(true)
-            ->insert($db->quoteName('#__userreminder_optout'))
-            ->columns($db->quoteName('user_id'));
-
-        foreach ($userIds as $id) {
-            $query->values((int) $id);
-        }
+            ->select($db->quoteName('user_id'))
+            ->from($db->quoteName('#__userreminder_optout'))
+            ->where($db->quoteName('user_id') . ' IN (' . implode(',', $userIds) . ')');
 
         $db->setQuery($query);
 
-        try {
-            return (bool) $db->execute();
-        } catch (\Throwable) {
-            return false;
+        $existing = array_map('intval', (array) $db->loadColumn());
+        $new      = array_values(array_diff($userIds, $existing));
+
+        if (empty($new)) {
+            return 0;
         }
+
+        $insert = $db->getQuery(true)
+            ->insert($db->quoteName('#__userreminder_optout'))
+            ->columns($db->quoteName('user_id'));
+
+        foreach ($new as $id) {
+            $insert->values((int) $id);
+        }
+
+        $db->setQuery($insert);
+        $db->execute();
+
+        return \count($new);
     }
 
     /**
