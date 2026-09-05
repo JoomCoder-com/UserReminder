@@ -89,8 +89,13 @@ final class SendService
         $rows = $this->db->loadObjectList() ?: [];
 
         $stats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'errors' => 0];
+        $maxSends = (int) $params->get('maxemailstosend', 0);
 
         foreach ($rows as $row) {
+            if ($maxSends > 0 && $stats['sent'] >= $maxSends) {
+                break;
+            }
+
             $stats['processed']++;
             $type = (int) $row->type === self::TYPE_NOT_ACTIVATED
                 ? self::TYPE_NOT_ACTIVATED
@@ -153,8 +158,13 @@ final class SendService
         $rows = $this->db->loadObjectList() ?: [];
 
         $stats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'removedGroups' => 0, 'errors' => 0];
+        $maxSends = (int) $params->get('maxemailstosend', 0);
 
         foreach ($rows as $row) {
+            if ($maxSends > 0 && $stats['sent'] >= $maxSends) {
+                break;
+            }
+
             $stats['processed']++;
             $row->type = self::TYPE_INACTIVE_USER;
 
@@ -211,6 +221,12 @@ final class SendService
 
         $days = max(1, (int) $params->get('numberOfDays', 1));
 
+        // Without "send first reminder immediately", a user's first reminder
+        // waits until the account is at least `$days` old.
+        $firstSendAgeFilter = (int) $params->get('enabledSendImed', 0) === 1
+            ? null
+            : $db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)';
+
         $notActivated = $db->getQuery(true)
             ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate')
             ->select('b.datesent, b.remindernumber, b.optoutcode')
@@ -221,8 +237,11 @@ final class SendService
             ->where('o.user_id IS NULL')
             ->where('a.activation <> ' . $db->quote(''))
             ->where('a.block >= 1')
-            ->where('a.lastvisitDate IS NULL')
-            ->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
+            ->where('a.lastvisitDate IS NULL');
+
+        if ($firstSendAgeFilter !== null) {
+            $notActivated->where($firstSendAgeFilter);
+        }
 
         $neverLogged = $db->getQuery(true)
             ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate')
@@ -235,6 +254,10 @@ final class SendService
             ->where('a.block = 0')
             ->where('a.lastvisitDate IS NULL')
             ->where('a.activation = ' . $db->quote(''));
+
+        if ($firstSendAgeFilter !== null) {
+            $neverLogged->where($firstSendAgeFilter);
+        }
 
         return $notActivated->union($neverLogged);
     }
@@ -265,6 +288,13 @@ final class SendService
         $maxReminders   = (int) $params->get('numberOfReminders', 1);
 
         if ($reminderNumber === 0) {
+            // Defensive: mirrors the SQL age filter in the candidate query in
+            // case the row reaches this method through another path.
+            if ((int) $params->get('enabledSendImed', 0) !== 1
+                && $this->isWithinCoolDown($row->registerDate, max(1, (int) $params->get('numberOfDays', 1)))) {
+                return 'skip';
+            }
+
             return 'send';
         }
 

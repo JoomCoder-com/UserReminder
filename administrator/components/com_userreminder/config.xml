@@ -1,153 +1,175 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config>
     <fieldset name="basic" label="COM_USERREMINDER_FIELDSET_BASIC">
-        <field name="test_user" type="user" label="COM_USERREMINDER_TEST_USER"
-               description="COM_USERREMINDER_TEST_USER_DESC"/>
+        <fieldset name="basic_testing" label="COM_USERREMINDER_FIELDSET_TESTING"
+                  description="COM_USERREMINDER_FIELDSET_TESTING_DESC">
+            <field name="test_user" type="user" label="COM_USERREMINDER_TEST_USER"
+                   description="COM_USERREMINDER_TEST_USER_DESC"/>
 
-        <field name="numberOfDays" type="list" default="1" class="form-select"
-               label="COM_USERREMINDER_DAYS" description="COM_USERREMINDER_DAYS_TEXT">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="5">5</option>
-            <option value="7">7</option>
-            <option value="10">10</option>
-            <option value="15">15</option>
-            <option value="30">30</option>
-            <option value="60">60</option>
-            <option value="90">90</option>
-        </field>
+            <field name="debugUserReminder" type="radio" default="0"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_DEBUG"
+                   description="COM_USERREMINDER_DEBUG_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
 
-        <field name="enabledSendImed" type="radio" default="0"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_EMAIL_IMED"
-               description="COM_USERREMINDER_EMAIL_IMED_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+        <fieldset name="basic_cadence" label="COM_USERREMINDER_FIELDSET_CADENCE"
+                  description="COM_USERREMINDER_FIELDSET_CADENCE_DESC">
+            <field name="numberOfDays" type="list" default="1" class="form-select"
+                   label="COM_USERREMINDER_DAYS" description="COM_USERREMINDER_DAYS_TEXT">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="7">7</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+            </field>
 
-        <field name="numberOfReminders" type="list" default="1" class="form-select"
-               label="COM_USERREMINDER_NUMBER_REMINDERS"
-               description="COM_USERREMINDER_NUMBER_REMINDERS_TEXT">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="1000">1000</option>
-        </field>
+            <field name="numberOfReminders" type="list" default="1" class="form-select"
+                   label="COM_USERREMINDER_NUMBER_REMINDERS"
+                   description="COM_USERREMINDER_NUMBER_REMINDERS_TEXT">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="1000">1000</option>
+            </field>
 
-        <field name="enabledBccToAdmin" type="radio" default="1"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_EMAIL_ADMIN"
-               description="COM_USERREMINDER_EMAIL_ADMIN_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+            <field name="enabledSendImed" type="radio" default="0"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_EMAIL_IMED"
+                   description="COM_USERREMINDER_EMAIL_IMED_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
+    </fieldset>
 
-        <field name="bccEmailAddress" type="text" default=""
-               label="COM_USERREMINDER_BCC_EMAIL_ADDRESS"
-               description="COM_USERREMINDER_BCC_EMAIL_ADDRESS_TEXT"/>
+    <fieldset name="delivery" label="COM_USERREMINDER_FIELDSET_DELIVERY">
+        <fieldset name="delivery_batching" label="COM_USERREMINDER_FIELDSET_BATCHING"
+                  description="COM_USERREMINDER_FIELDSET_BATCHING_DESC">
+            <field name="number_email" type="number" default="50"
+                   label="COM_USERREMINDER_NUMBER_EMAIL_IN_A_RECORDSET"
+                   description="COM_USERREMINDER_NUMBER_EMAIL_IN_A_RECORDSET_TEXT"/>
 
-        <field name="maxemailstosend" type="number" default="20"
-               label="COM_USERREMINDER_MAXEMAILS"
-               description="COM_USERREMINDER_MAXEMAILS_TEXT"/>
+            <field name="maxemailstosend" type="number" default="20"
+                   label="COM_USERREMINDER_MAXEMAILS"
+                   description="COM_USERREMINDER_MAXEMAILS_TEXT"/>
+        </fieldset>
 
-        <field name="number_email" type="number" default="50"
-               label="COM_USERREMINDER_NUMBER_EMAIL_IN_A_RECORDSET"
-               description="COM_USERREMINDER_NUMBER_EMAIL_IN_A_RECORDSET_TEXT"/>
+        <fieldset name="delivery_bcc" label="COM_USERREMINDER_FIELDSET_BCC"
+                  description="COM_USERREMINDER_FIELDSET_BCC_DESC">
+            <field name="enabledBccToAdmin" type="radio" default="1"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_EMAIL_ADMIN"
+                   description="COM_USERREMINDER_EMAIL_ADMIN_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
 
-        <field name="passwordReset" type="text" default=""
-               label="COM_USERREMINDER_PASSWORD_RESET"
-               description="COM_USERREMINDER_PASSWORD_RESET_DESC"/>
+            <field name="bccEmailAddress" type="text" default=""
+                   showon="enabledBccToAdmin:1"
+                   label="COM_USERREMINDER_BCC_EMAIL_ADDRESS"
+                   description="COM_USERREMINDER_BCC_EMAIL_ADDRESS_TEXT"/>
+        </fieldset>
+    </fieldset>
 
+    <fieldset name="links" label="COM_USERREMINDER_FIELDSET_LINKS">
         <field name="activateURL" type="text" default=""
                label="COM_USERREMINDER_ACTIVATION_LINK_TEXT"
                description="COM_USERREMINDER_ACTIVATION_LINK_TEXT_HELP"/>
 
-        <field name="debugUserReminder" type="radio" default="0"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_DEBUG"
-               description="COM_USERREMINDER_DEBUG_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+        <field name="passwordReset" type="text" default=""
+               label="COM_USERREMINDER_PASSWORD_RESET"
+               description="COM_USERREMINDER_PASSWORD_RESET_DESC"/>
     </fieldset>
 
-    <fieldset name="not_activated" label="COM_USERREMINDER_FIELDSET_NOT_ACTIVATED">
-        <field name="enableActivateReminder" type="radio" default="0"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_LOGIN_ENABLED"
-               description="COM_USERREMINDER_LOGIN_ENABLED_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+    <fieldset name="reminders" label="COM_USERREMINDER_FIELDSET_REMINDERS">
+        <fieldset name="reminders_not_activated" label="COM_USERREMINDER_FIELDSET_NOT_ACTIVATED"
+                  description="COM_USERREMINDER_FIELDSET_NOT_ACTIVATED_DESC">
+            <field name="enableActivateReminder" type="radio" default="0"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_LOGIN_ENABLED"
+                   description="COM_USERREMINDER_LOGIN_ENABLED_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
 
-        <field name="enableDeleteUsers" type="radio" default="0"
-               showon="enableActivateReminder:1"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_ACTIONDELETE"
-               description="COM_USERREMINDER_DELETEUSERS_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+            <field name="enableDeleteUsers" type="radio" default="0"
+                   showon="enableActivateReminder:1"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_ACTIONDELETE"
+                   description="COM_USERREMINDER_DELETEUSERS_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
 
-        <field name="useCBActivation" type="radio" default="0"
-               showon="enableActivateReminder:1"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_CB_REG"
-               description="COM_USERREMINDER_CB_REG_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
-    </fieldset>
+            <field name="useCBActivation" type="radio" default="0"
+                   showon="enableActivateReminder:1"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_CB_REG"
+                   description="COM_USERREMINDER_CB_REG_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
 
-    <fieldset name="never_logged_in" label="COM_USERREMINDER_FIELDSET_NEVER_LOGGED">
-        <field name="enableLoginReminder" type="radio" default="0"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_LOGIN_ENABLED"
-               description="COM_USERREMINDER_LOGIN_ENABLED_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+        <fieldset name="reminders_never_logged" label="COM_USERREMINDER_FIELDSET_NEVER_LOGGED"
+                  description="COM_USERREMINDER_FIELDSET_NEVER_LOGGED_DESC">
+            <field name="enableLoginReminder" type="radio" default="0"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_LOGIN_ENABLED"
+                   description="COM_USERREMINDER_LOGIN_ENABLED_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
 
-        <field name="enableDeleteUsersLogin" type="radio" default="0"
-               showon="enableLoginReminder:1"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_DELETEUSERS_LOGIN"
-               description="COM_USERREMINDER_DELETEUSERS_LOGIN_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
-    </fieldset>
+            <field name="enableDeleteUsersLogin" type="radio" default="0"
+                   showon="enableLoginReminder:1"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_DELETEUSERS_LOGIN"
+                   description="COM_USERREMINDER_DELETEUSERS_LOGIN_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
 
-    <fieldset name="existing_user" label="COM_USERREMINDER_FIELDSET_EXISTING_USER">
-        <field name="numberOfDaysExistingUser" type="list" default="180" class="form-select"
-               label="COM_USERREMINDER_DAYS_EXISTINGUSER"
-               description="COM_USERREMINDER_DAYS_EXISTINGUSER_TEXT">
-            <option value="30">30</option>
-            <option value="60">60</option>
-            <option value="90">90</option>
-            <option value="180">180</option>
-            <option value="360">360</option>
-            <option value="720">720</option>
-        </field>
+        <fieldset name="reminders_inactive" label="COM_USERREMINDER_FIELDSET_EXISTING_USER"
+                  description="COM_USERREMINDER_FIELDSET_EXISTING_USER_DESC">
+            <field name="numberOfDaysExistingUser" type="list" default="180" class="form-select"
+                   label="COM_USERREMINDER_DAYS_EXISTINGUSER"
+                   description="COM_USERREMINDER_DAYS_EXISTINGUSER_TEXT">
+                <option value="30">30</option>
+                <option value="60">60</option>
+                <option value="90">90</option>
+                <option value="180">180</option>
+                <option value="360">360</option>
+                <option value="720">720</option>
+            </field>
 
-        <field name="enableDeleteExistingUsers" type="radio" default="0"
-               layout="joomla.form.field.radio.switcher"
-               label="COM_USERREMINDER_DELETEUSERS"
-               description="COM_USERREMINDER_DELETEUSERS_TEXT">
-            <option value="0">JNO</option>
-            <option value="1">JYES</option>
-        </field>
+            <field name="enableDeleteExistingUsers" type="radio" default="0"
+                   layout="joomla.form.field.radio.switcher"
+                   label="COM_USERREMINDER_DELETEUSERS"
+                   description="COM_USERREMINDER_DELETEUSERS_TEXT">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
 
-        <field name="removefromusergroups" type="usergrouplist" multiple="true"
-               showon="enableDeleteExistingUsers:0"
-               label="COM_USERREMINDER_REMOVE_FROM_GROUPS"
-               description="COM_USERREMINDER_REMOVE_FROM_GROUPS_DESC"/>
+            <field name="removefromusergroups" type="usergrouplist" multiple="true"
+                   showon="enableDeleteExistingUsers:0"
+                   label="COM_USERREMINDER_REMOVE_FROM_GROUPS"
+                   description="COM_USERREMINDER_REMOVE_FROM_GROUPS_DESC"/>
+        </fieldset>
     </fieldset>
 
     <fieldset name="mail_container" label="COM_USERREMINDER_FIELDSET_MAIL_CONTAINER">

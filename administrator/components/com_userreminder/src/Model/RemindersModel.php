@@ -79,8 +79,13 @@ class RemindersModel extends ListModel
             ->where('o.user_id IS NULL')
             ->where('a.block >= 1')
             ->where('a.activation <> ' . $db->quote(''))
-            ->where('a.lastvisitDate IS NULL')
-            ->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
+            ->where('a.lastvisitDate IS NULL');
+
+        // With "send first reminder immediately" the registration-age window
+        // does not apply to first sends, so don't filter freshly registered users out.
+        if ((int) $params->get('enabledSendImed', 0) !== 1) {
+            $query->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
+        }
 
         // Optional search — mirrors OptOutUsersModel pattern, only when filter is set.
         $search = (string) $this->getState('filter.search', '');

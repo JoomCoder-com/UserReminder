@@ -113,13 +113,16 @@ class CpanelModel extends BaseDatabaseModel
         $batchSize    = max(1, (int) $params->get('number_email', 50));
 
         // Cutoff datetimes — sargable: column < cutoff, never DATE_ADD(col) < NOW().
-        $cutoffReg      = Factory::getDate()->modify('-' . $days . ' days')->toSql();
+        // With "send first reminder immediately", the registration-age cutoff
+        // does not apply to first sends — null means "no age filter".
+        $imed           = (int) $params->get('enabledSendImed', 0) === 1;
+        $cutoffReg      = $imed ? null : Factory::getDate()->modify('-' . $days . ' days')->toSql();
         $cutoffExisting = Factory::getDate()->modify('-' . $existingDays . ' days')->toSql();
-        $cutoffCoolDown = $cutoffReg; // same window for "due now"
+        $cutoffCoolDown = Factory::getDate()->modify('-' . $days . ' days')->toSql();
 
         // Core KPIs — all COUNTs, no ORDER BY, no SELECT *.
         $pendingActivation = $this->countPendingActivation($db, $cutoffReg);
-        $neverLoggedIn     = $this->countNeverLoggedIn($db);
+        $neverLoggedIn     = $this->countNeverLoggedIn($db, $cutoffReg);
         $inactiveUsers     = $this->countInactiveUsers($db, $cutoffExisting);
         $dueNow            = $this->countDueNow($db, $cutoffReg, $cutoffExisting, $cutoffCoolDown, $maxReminders, $days, $existingDays);
         $sent              = $this->countSent($db);
@@ -174,7 +177,7 @@ class CpanelModel extends BaseDatabaseModel
         ];
     }
 
-    private function countPendingActivation(DatabaseInterface $db, string $cutoff): int
+    private function countPendingActivation(DatabaseInterface $db, ?string $cutoff): int
     {
         try {
             $query = $db->getQuery(true)
@@ -184,8 +187,12 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('o.user_id IS NULL')
                 ->where('a.block >= 1')
                 ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
+                ->where('a.lastvisitDate IS NULL');
+
+            if ($cutoff !== null) {
+                $query->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
+            }
+
             $db->setQuery($query);
 
             return (int) $db->loadResult();
@@ -194,7 +201,7 @@ class CpanelModel extends BaseDatabaseModel
         }
     }
 
-    private function countNeverLoggedIn(DatabaseInterface $db): int
+    private function countNeverLoggedIn(DatabaseInterface $db, ?string $cutoff): int
     {
         try {
             $query = $db->getQuery(true)
@@ -205,6 +212,11 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('a.block = 0')
                 ->where('a.activation = ' . $db->quote(''))
                 ->where('a.lastvisitDate IS NULL');
+
+            if ($cutoff !== null) {
+                $query->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
+            }
+
             $db->setQuery($query);
 
             return (int) $db->loadResult();
@@ -238,7 +250,7 @@ class CpanelModel extends BaseDatabaseModel
      */
     private function countDueNow(
         DatabaseInterface $db,
-        string $cutoffReg,
+        ?string $cutoffReg,
         string $cutoffExisting,
         string $cutoffCoolDown,
         int $maxReminders,
@@ -257,16 +269,21 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('o.user_id IS NULL')
                 ->where('a.block >= 1')
                 ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg))
-                ->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
+                ->where('a.lastvisitDate IS NULL');
+
+            if ($cutoffReg !== null) {
+                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
+            }
+
+            $q->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
                 ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
             $db->setQuery($q);
             $total += (int) $db->loadResult();
         } catch (\Throwable) {
         }
 
-        // Type 2: never logged in, block=0, no cooldown check (first send immediate) but respect maxReminders.
+        // Type 2: never logged in, block=0, respect the registration-age window
+        // unless "send first reminder immediately" is on, plus maxReminders.
         try {
             $q = $db->getQuery(true)
                 ->select('COUNT(a.id)')
@@ -276,8 +293,13 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('o.user_id IS NULL')
                 ->where('a.block = 0')
                 ->where('a.activation = ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
+                ->where('a.lastvisitDate IS NULL');
+
+            if ($cutoffReg !== null) {
+                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
+            }
+
+            $q->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
                 ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
             $db->setQuery($q);
             $total += (int) $db->loadResult();
@@ -434,12 +456,13 @@ class CpanelModel extends BaseDatabaseModel
      *
      * @return  array
      */
-    private function getAging(DatabaseInterface $db, string $cutoffReg, string $cutoffExisting, int $days, int $existingDays): array
+    private function getAging(DatabaseInterface $db, ?string $cutoffReg, string $cutoffExisting, int $days, int $existingDays): array
     {
         $pending = ['1-7' => 0, '8-30' => 0, '30+' => 0];
         $inactive = ['just' => 0, '2x' => 0, '4x' => 0];
 
-        // Pending aging based on registerDate (only users already past the initial window).
+        // Pending aging based on registerDate (with the immediate-send option,
+        // the youngest bucket covers everything newer than 7 days).
         try {
             $d7  = Factory::getDate()->modify('-7 days')->toSql();
             $d30 = Factory::getDate()->modify('-30 days')->toSql();
@@ -453,8 +476,12 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('a.block >= 1')
                 ->where('a.activation <> ' . $db->quote(''))
                 ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg))
                 ->where($db->quoteName('a.registerDate') . ' >= ' . $db->quote($d7));
+
+            if ($cutoffReg !== null) {
+                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
+            }
+
             $db->setQuery($q);
             $pending['1-7'] = (int) $db->loadResult();
 
@@ -545,7 +572,7 @@ class CpanelModel extends BaseDatabaseModel
         }
     }
 
-    private function getOldestPending(DatabaseInterface $db, string $cutoffReg, int $limit): array
+    private function getOldestPending(DatabaseInterface $db, ?string $cutoffReg, int $limit): array
     {
         try {
             $q = $db->getQuery(true)
@@ -557,9 +584,13 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('o.user_id IS NULL')
                 ->where('a.block >= 1')
                 ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg))
-                ->order($db->quoteName('a.registerDate') . ' ASC');
+                ->where('a.lastvisitDate IS NULL');
+
+            if ($cutoffReg !== null) {
+                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
+            }
+
+            $q->order($db->quoteName('a.registerDate') . ' ASC');
             $db->setQuery($q, 0, $limit);
 
             return $db->loadAssocList() ?: [];
@@ -723,6 +754,7 @@ class CpanelModel extends BaseDatabaseModel
     {
         $relevant = [
             'numberOfDays'               => (int) $params->get('numberOfDays', 1),
+            'enabledSendImed'            => (int) $params->get('enabledSendImed', 0),
             'numberOfDaysExistingUser'   => (int) $params->get('numberOfDaysExistingUser', 180),
             'numberOfReminders'          => (int) $params->get('numberOfReminders', 1),
             'number_email'               => (int) $params->get('number_email', 50),
