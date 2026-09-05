@@ -76,8 +76,11 @@ class LogController extends BaseController
         }
 
         // Return to where the user came from — prefer cpanel if that was the view.
+        // The return URL is attacker-influenced input: only accept relative
+        // index.php URLs of this component, never absolute or protocol URLs.
         $return = $this->input->get('return', '', 'base64');
-        if ($return !== '') {
+
+        if ($return !== '' && preg_match('#^index\.php\?option=com_userreminder&view=(log|cpanel)$#i', base64_decode($return) ?: '')) {
             $url = base64_decode($return);
         } else {
             $referer = $this->input->get('view', 'cpanel', 'cmd');

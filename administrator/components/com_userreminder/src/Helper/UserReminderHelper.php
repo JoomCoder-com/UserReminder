@@ -86,6 +86,32 @@ final class UserReminderHelper
     }
 
     /**
+     * Ids of the opt-out user groups (#__userreminder_optout_usergroups) —
+     * members of these groups never receive reminders. Shared by the send
+     * pipeline (SendService) and the dashboard counts (CpanelModel).
+     *
+     * @return  int[]
+     *
+     * @since   4.2.1
+     */
+    public static function getOptOutGroups(): array
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('group_id'))
+                    ->from($db->quoteName('#__userreminder_optout_usergroups'))
+            );
+
+            return array_values(array_filter(array_map('intval', (array) $db->loadColumn())));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Fetch the first configured User Reminder scheduled task.
      *
      * @return  object|null  Row with title/state/next_execution/params or null.
@@ -110,6 +136,34 @@ final class UserReminderHelper
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Translate legacy log descriptions that were stored as raw language keys.
+     * Older rows were written by the scheduler context before the component
+     * language was loaded, so Text::_() returned e.g.
+     * "COM_USERREMINDER_LOG_PREFIX COM_USERREMINDER_LOGIN_REMINDER_SENT".
+     * Translate every COM_USERREMINDER_* token found in the string.
+     *
+     * @param   string|null  $text  Raw description as stored in #__userreminder_log.
+     *
+     * @return  string
+     *
+     * @since   4.2.2
+     */
+    public static function translateLogText(?string $text): string
+    {
+        $text = (string) $text;
+
+        if ($text === '' || !str_contains($text, 'COM_USERREMINDER_')) {
+            return $text;
+        }
+
+        return (string) preg_replace_callback(
+            '/COM_USERREMINDER_[A-Z0-9_]+/',
+            static fn(array $m): string => Text::_($m[0]),
+            $text
+        );
     }
 
     /**

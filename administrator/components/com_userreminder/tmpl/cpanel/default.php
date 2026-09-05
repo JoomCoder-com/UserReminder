@@ -13,6 +13,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /** @var \JoomCoder\Component\UserReminder\Administrator\View\Cpanel\HtmlView $this */
 
@@ -133,7 +134,7 @@ $kpis = [
                             </span>
                             <div style="min-width:0;">
                                 <div class="fs-3 fw-bold lh-1"><?php echo number_format($k[1]); ?></div>
-                                <div class="small text-uppercase text-muted fw-semibold text-truncate"><?php echo Text::_($k[0]); ?></div>
+                                <div class="small text-muted fw-semibold text-truncate"><?php echo Text::_($k[0]); ?></div>
                             </div>
                         </div>
                         <?php if ($k[5] !== null): ?>
@@ -155,13 +156,13 @@ $kpis = [
     <div class="row g-3 mb-4">
         <div class="col-12 col-lg-8">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-body d-flex align-items-center justify-content-between fw-semibold">
-                    <span><i class="fas fa-chart-bar me-2 text-primary"></i><?php echo Text::_('COM_USERREMINDER_DASH_ANALYTICS_TITLE'); ?></span>
+                <div class="card-header bg-body border-bottom d-flex align-items-center justify-content-between fw-semibold">
+                    <span class="fs-5"><i class="fas fa-chart-bar me-2 text-primary"></i><?php echo Text::_('COM_USERREMINDER_DASH_ANALYTICS_TITLE'); ?></span>
                     <small class="text-muted fw-normal"><?php echo htmlspecialchars($generatedAt, ENT_QUOTES); ?> · <?php echo Text::_('COM_USERREMINDER_DASH_CACHED'); ?></small>
                 </div>
                 <div class="card-body">
                     <h6 class="mb-2"><i class="fas fa-chart-line me-1 text-muted"></i> <?php echo Text::_('COM_USERREMINDER_DASH_TREND_30D'); ?></h6>
-                    <div class="ur-chart mb-3">
+                    <div class="ur-chart mb-4">
                         <canvas id="ur-trend-canvas" style="display:none;" aria-label="<?php echo Text::_('COM_USERREMINDER_DASH_TREND_30D'); ?>" role="img"></canvas>
                         <div id="ur-trend-fallback" class="d-flex align-items-end gap-1 h-100 pb-2">
                             <?php if (empty($trend) || array_sum(array_column($trend, 'count')) === 0): ?>
@@ -207,7 +208,7 @@ $kpis = [
                                     </div>
                                 <?php endforeach; ?>
                             </div>
-                            <div>
+<div>
                                 <div class="small fw-semibold text-muted mb-2"><?php echo Text::_('COM_USERREMINDER_DASH_AGING_INACTIVE'); ?></div>
                                 <?php foreach (['just' => 'COM_USERREMINDER_DASH_AGING_INACTIVE_JUST', '2x' => 'COM_USERREMINDER_DASH_AGING_INACTIVE_2X', '4x' => 'COM_USERREMINDER_DASH_AGING_INACTIVE_4X'] as $key => $lang): ?>
                                     <?php $cnt = (int) ($inactiveAging[$key] ?? 0); $pct = round(($cnt / $inactiveMax) * 100); ?>
@@ -227,7 +228,7 @@ $kpis = [
         </div>
         <div class="col-12 col-lg-4 d-flex flex-column gap-3">
             <div class="card shadow-sm">
-                <div class="card-header bg-body fw-semibold"><i class="fas fa-heartbeat me-2 text-success"></i><?php echo Text::_('COM_USERREMINDER_DASH_HEALTH_TITLE'); ?></div>
+                <div class="card-header bg-body border-bottom fw-semibold"><span class="fs-5"><i class="fas fa-heartbeat me-2 text-success"></i><?php echo Text::_('COM_USERREMINDER_DASH_HEALTH_TITLE'); ?></span></div>
                 <ul class="list-group list-group-flush small">
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-plug me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_HEALTH_PLUGIN'); ?></span>
@@ -259,59 +260,85 @@ $kpis = [
                 <?php endif; ?>
             </div>
             <div class="card shadow-sm flex-fill">
-                <div class="card-header bg-body fw-semibold"><i class="fas fa-cog me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_TITLE'); ?></div>
-                <div class="card-body p-0">
-                    <table class="table table-sm small mb-0">
-                        <tbody>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_DAYS'); ?></td><td class="text-end fw-semibold"><?php echo (int) ($config['days'] ?? $thresholds['days'] ?? 0); ?></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_EXISTING_DAYS'); ?></td><td class="text-end fw-semibold"><?php echo (int) ($config['existingDays'] ?? $thresholds['existingDays'] ?? 0); ?></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_MAX_REMINDERS'); ?></td><td class="text-end fw-semibold"><?php echo (int) ($config['maxReminders'] ?? $thresholds['maxReminders'] ?? 0); ?></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_BATCH'); ?></td><td class="text-end fw-semibold"><?php echo (int) ($config['batchSize'] ?? $thresholds['batchSize'] ?? 0); ?></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_MAX_PER_RUN'); ?></td><td class="text-end fw-semibold"><?php echo (int) ($config['maxPerRun'] ?? 0); ?></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_SCHEDULE'); ?></td><td class="text-end"><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($config['scheduleText'] ?? '—', ENT_QUOTES); ?></span><?php if (!empty($config['nextRun'])): ?><div class="small text-muted text-nowrap mt-1"><?php echo HTMLHelper::_('date', $config['nextRun'], Text::_('DATE_FORMAT_LC2')); ?></div><?php endif; ?></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_ACTIVATION'); ?></td><td class="text-end"><span class="badge bg-<?php echo !empty($config['activationOn']) ? 'success' : 'secondary'; ?>"><?php echo !empty($config['activationOn']) ? Text::_('COM_USERREMINDER_DASH_ENABLED') : Text::_('COM_USERREMINDER_DASH_DISABLED'); ?></span></td></tr>
-                            <tr><td class="text-muted"><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_LOGIN'); ?></td><td class="text-end"><span class="badge bg-<?php echo !empty($config['loginOn']) ? 'success' : 'secondary'; ?>"><?php echo !empty($config['loginOn']) ? Text::_('COM_USERREMINDER_DASH_ENABLED') : Text::_('COM_USERREMINDER_DASH_DISABLED'); ?></span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="card-footer">
-                    <a class="btn btn-sm btn-outline-primary w-100" href="<?php echo Route::_('index.php?option=com_config&view=component&component=com_userreminder'); ?>">
-                        <i class="fas fa-cog me-1"></i> <?php echo Text::_('COM_USERREMINDER_CPANEL_PARAMS'); ?>
+                <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center fw-semibold">
+                    <span class="fs-5"><i class="fas fa-cog me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_TITLE'); ?></span>
+                    <a class="btn btn-sm btn-outline-primary" href="<?php echo Route::_('index.php?option=com_config&view=component&component=com_userreminder'); ?>" title="<?php echo Text::_('COM_USERREMINDER_CPANEL_PARAMS'); ?>">
+                        <i class="fas fa-cog" aria-hidden="true"></i>
+                        <span class="visually-hidden"><?php echo Text::_('COM_USERREMINDER_CPANEL_PARAMS'); ?></span>
                     </a>
                 </div>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-calendar-day me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_DAYS'); ?></span>
+                        <strong><?php echo (int) ($config['days'] ?? $thresholds['days'] ?? 0); ?></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-hourglass-end me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_EXISTING_DAYS'); ?></span>
+                        <strong><?php echo (int) ($config['existingDays'] ?? $thresholds['existingDays'] ?? 0); ?></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-repeat me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_MAX_REMINDERS'); ?></span>
+                        <strong><?php echo (int) ($config['maxReminders'] ?? $thresholds['maxReminders'] ?? 0); ?></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-layer-group me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_BATCH'); ?></span>
+                        <strong><?php echo (int) ($config['batchSize'] ?? $thresholds['batchSize'] ?? 0); ?></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-tachometer-alt me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_MAX_PER_RUN'); ?></span>
+                        <strong><?php echo (int) ($config['maxPerRun'] ?? 0); ?></strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-clock-rotate-left me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_SCHEDULE'); ?></span>
+                        <span class="text-end">
+                            <span class="badge bg-light text-dark border"><?php echo htmlspecialchars($config['scheduleText'] ?? '—', ENT_QUOTES); ?></span>
+                            <?php if (!empty($config['nextRun'])): ?>
+                                <div class="small text-muted text-nowrap mt-1"><?php echo HTMLHelper::_('date', $config['nextRun'], Text::_('DATE_FORMAT_LC2')); ?></div>
+                            <?php endif; ?>
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-user-clock me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_ACTIVATION'); ?></span>
+                        <span class="badge bg-<?php echo !empty($config['activationOn']) ? 'success' : 'secondary'; ?>"><?php echo !empty($config['activationOn']) ? Text::_('COM_USERREMINDER_DASH_ENABLED') : Text::_('COM_USERREMINDER_DASH_DISABLED'); ?></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-user-plus me-2 text-muted"></i><?php echo Text::_('COM_USERREMINDER_DASH_CONFIG_LOGIN'); ?></span>
+                        <span class="badge bg-<?php echo !empty($config['loginOn']) ? 'success' : 'secondary'; ?>"><?php echo !empty($config['loginOn']) ? Text::_('COM_USERREMINDER_DASH_ENABLED') : Text::_('COM_USERREMINDER_DASH_DISABLED'); ?></span>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
 
     <!-- Recent + detail tables -->
     <div class="row g-3">
-        <div class="col-12">
+        <div class="col-12 col-lg-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-body d-flex justify-content-between align-items-center fw-semibold">
-                    <span><i class="fas fa-clipboard-list me-2 text-primary"></i><?php echo Text::_('COM_USERREMINDER_DASH_RECENT_LOGS'); ?></span>
-                    <a class="btn btn-sm btn-outline-secondary" href="<?php echo Route::_('index.php?option=com_userreminder&view=log'); ?>"><?php echo Text::_('COM_USERREMINDER_DASH_VIEW_LOG'); ?> <i class="fas fa-arrow-right ms-1"></i></a>
+                <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center fw-semibold">
+                    <span class="fs-5"><i class="fas fa-clipboard-list me-2 text-primary"></i><?php echo Text::_('COM_USERREMINDER_DASH_RECENT_LOGS'); ?></span>
+                    <a class="btn btn-sm btn-outline-secondary py-0" href="<?php echo Route::_('index.php?option=com_userreminder&view=log'); ?>"><?php echo Text::_('COM_USERREMINDER_DASH_KPI_VIEW_ALL'); ?></a>
                 </div>
                 <div class="card-body p-0">
                     <?php if (empty($recentLogs)): ?>
                         <div class="p-4 text-center text-muted fst-italic"><?php echo Text::_('COM_USERREMINDER_DASH_RECENT_LOGS_EMPTY'); ?></div>
                     <?php else: ?>
                         <div class="table-responsive">
-                            <table class="table table-sm table-striped align-middle mb-0">
-                                <thead class="small text-uppercase text-muted">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="small text-muted">
                                     <tr>
-                                        <th><?php echo Text::_('COM_USERREMINDER_USER_ID'); ?></th>
-                                        <th><?php echo Text::_('COM_USERREMINDER_USER_NAME'); ?></th>
-                                        <th><?php echo Text::_('COM_USERREMINDER_ACTION_DESCRIPTION'); ?></th>
-                                        <th><?php echo Text::_('COM_USERREMINDER_ACTION_DATE'); ?></th>
+                                        <th class="ps-3 py-2"><?php echo Text::_('COM_USERREMINDER_USER_ID'); ?></th>
+                                        <th class="py-2"><?php echo Text::_('COM_USERREMINDER_USER_NAME'); ?></th>
+                                        <th class="py-2"><?php echo Text::_('COM_USERREMINDER_ACTION_DESCRIPTION'); ?></th>
+                                        <th class="py-2 pe-3"><?php echo Text::_('COM_USERREMINDER_ACTION_DATE'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($recentLogs as $row): ?>
                                         <tr>
-                                            <td><?php echo (int) ($row['userId'] ?? $row['user_id'] ?? 0); ?></td>
-                                            <td><?php echo htmlspecialchars($row['username'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="text-truncate" style="max-width: 240px;"><?php echo htmlspecialchars($row['description'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="text-nowrap small text-muted"><?php echo !empty($row['date']) ? HTMLHelper::_('date', $row['date'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
+                                            <td class="ps-3 py-2"><?php echo (int) ($row['userId'] ?? $row['user_id'] ?? 0); ?></td>
+                                            <td class="py-2"><?php echo htmlspecialchars($row['username'] ?? '', ENT_QUOTES); ?></td>
+                                            <td class="text-truncate py-2" style="max-width: 240px;"><?php echo htmlspecialchars(UserReminderHelper::translateLogText($row['description'] ?? ''), ENT_QUOTES); ?></td>
+                                            <td class="text-nowrap small text-muted py-2 pe-3"><?php echo !empty($row['date']) ? HTMLHelper::_('date', $row['date'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -321,10 +348,10 @@ $kpis = [
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6 col-lg-4">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-body d-flex justify-content-between align-items-center fw-semibold">
-                    <span class="small"><i class="fas fa-user-clock me-1 text-warning"></i> <?php echo Text::_('COM_USERREMINDER_DASH_OLDEST_PENDING'); ?></span>
+                <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center fw-semibold">
+                    <span class="fs-5"><i class="fas fa-user-clock me-1 text-warning"></i> <?php echo Text::_('COM_USERREMINDER_DASH_OLDEST_PENDING'); ?></span>
                     <a class="btn btn-sm btn-outline-secondary py-0" href="<?php echo Route::_('index.php?option=com_userreminder&view=reminders'); ?>"><?php echo Text::_('COM_USERREMINDER_DASH_KPI_VIEW_ALL'); ?></a>
                 </div>
                 <div class="card-body p-0">
@@ -333,15 +360,15 @@ $kpis = [
                     <?php else: ?>
                         <div class="table-responsive">
                             <table class="table table-sm align-middle mb-0">
-                                <thead class="small text-uppercase text-muted">
-                                    <tr><th><?php echo Text::_('COM_USERREMINDER_NAME'); ?></th><th><?php echo Text::_('COM_USERREMINDER_EMAIL'); ?></th><th><?php echo Text::_('COM_USERREMINDER_REGISTRATIONDATE'); ?></th></tr>
+                                <thead class="small text-muted">
+                                    <tr><th class="ps-3 py-2"><?php echo Text::_('COM_USERREMINDER_NAME'); ?></th><th class="py-2"><?php echo Text::_('COM_USERREMINDER_EMAIL'); ?></th><th class="py-2 pe-3"><?php echo Text::_('COM_USERREMINDER_REGISTRATIONDATE'); ?></th></tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($oldestPending as $u): ?>
                                         <tr>
-                                            <td class="text-truncate" style="max-width:130px;"><?php echo htmlspecialchars($u['name'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="text-truncate small" style="max-width:150px;"><?php echo htmlspecialchars($u['email'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="small text-muted text-nowrap"><?php echo !empty($u['registerDate']) ? HTMLHelper::_('date', $u['registerDate'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
+                                            <td class="text-truncate ps-3 py-2" style="max-width:130px;"><?php echo htmlspecialchars($u['name'] ?? '', ENT_QUOTES); ?></td>
+                                            <td class="text-truncate small py-2" style="max-width:150px;"><?php echo htmlspecialchars($u['email'] ?? '', ENT_QUOTES); ?></td>
+                                            <td class="small text-muted text-nowrap py-2 pe-3"><?php echo !empty($u['registerDate']) ? HTMLHelper::_('date', $u['registerDate'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -351,10 +378,10 @@ $kpis = [
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6 col-lg-4">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-body d-flex justify-content-between align-items-center fw-semibold">
-                    <span class="small"><i class="fas fa-user-check me-1 text-secondary"></i> <?php echo Text::_('COM_USERREMINDER_DASH_LONGEST_INACTIVE'); ?></span>
+                <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center fw-semibold">
+                    <span class="fs-5"><i class="fas fa-user-check me-1 text-secondary"></i> <?php echo Text::_('COM_USERREMINDER_DASH_LONGEST_INACTIVE'); ?></span>
                     <a class="btn btn-sm btn-outline-secondary py-0" href="<?php echo Route::_('index.php?option=com_userreminder&view=activeusers'); ?>"><?php echo Text::_('COM_USERREMINDER_DASH_KPI_VIEW_ALL'); ?></a>
                 </div>
                 <div class="card-body p-0">
@@ -363,15 +390,15 @@ $kpis = [
                     <?php else: ?>
                         <div class="table-responsive">
                             <table class="table table-sm align-middle mb-0">
-                                <thead class="small text-uppercase text-muted">
-                                    <tr><th><?php echo Text::_('COM_USERREMINDER_NAME'); ?></th><th><?php echo Text::_('COM_USERREMINDER_EMAIL'); ?></th><th><?php echo Text::_('COM_USERREMINDER_LASTLOGINDATE'); ?></th></tr>
+                                <thead class="small text-muted">
+                                    <tr><th class="ps-3 py-2"><?php echo Text::_('COM_USERREMINDER_NAME'); ?></th><th class="py-2"><?php echo Text::_('COM_USERREMINDER_EMAIL'); ?></th><th class="py-2 pe-3"><?php echo Text::_('COM_USERREMINDER_LASTLOGINDATE'); ?></th></tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($longestInactive as $u): ?>
                                         <tr>
-                                            <td class="text-truncate" style="max-width:130px;"><?php echo htmlspecialchars($u['name'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="text-truncate small" style="max-width:150px;"><?php echo htmlspecialchars($u['email'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="small text-muted text-nowrap"><?php echo !empty($u['lastvisitDate']) ? HTMLHelper::_('date', $u['lastvisitDate'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
+                                            <td class="text-truncate ps-3 py-2" style="max-width:130px;"><?php echo htmlspecialchars($u['name'] ?? '', ENT_QUOTES); ?></td>
+                                            <td class="text-truncate small py-2" style="max-width:150px;"><?php echo htmlspecialchars($u['email'] ?? '', ENT_QUOTES); ?></td>
+                                            <td class="small text-muted text-nowrap py-2 pe-3"><?php echo !empty($u['lastvisitDate']) ? HTMLHelper::_('date', $u['lastvisitDate'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>

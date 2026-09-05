@@ -42,6 +42,16 @@ final class SendService
     public const TYPE_NEVER_LOGGED  = 2;
     public const TYPE_INACTIVE_USER = 3;
 
+    /**
+     * Lazily loaded ids of the opt-out user groups
+     * (#__userreminder_optout_usergroups).
+     *
+     * @var  int[]|null
+     *
+     * @since  4.2.1
+     */
+    private ?array $excludedGroups = null;
+
     public function __construct(private DatabaseInterface $db)
     {
     }
@@ -151,8 +161,11 @@ final class SendService
             ->where('o.user_id IS NULL')
             ->where('a.lastvisitDate IS NOT NULL')
             ->where('a.block = 0')
-            ->where($this->db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)')
-            ->order('a.lastvisitDate ASC');
+            ->where($this->db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
+
+        $this->applyGroupExclusion($query);
+
+        $query->order('a.lastvisitDate ASC');
 
         $this->db->setQuery($query, $offset, $limit);
         $rows = $this->db->loadObjectList() ?: [];
@@ -207,6 +220,58 @@ final class SendService
     }
 
     /**
+     * Load the ids of the opt-out user groups once per run.
+     *
+     * @return  int[]
+     *
+     * @since   4.2.1
+     */
+    private function getExcludedGroups(): array
+    {
+        if ($this->excludedGroups === null) {
+            $query = $this->db->getQuery(true)
+                ->select($this->db->quoteName('group_id'))
+                ->from($this->db->quoteName('#__userreminder_optout_usergroups'));
+
+            $this->db->setQuery($query);
+
+            $this->excludedGroups = array_values(
+                array_filter(array_map('intval', (array) $this->db->loadColumn()))
+            );
+        }
+
+        return $this->excludedGroups;
+    }
+
+    /**
+     * Add the opt-out group exclusion to a candidate query.
+     *
+     * Members of the configured groups (#__userreminder_optout_usergroups,
+     * managed under Opt-out → User Groups) never receive reminders.
+     *
+     * @param   \Joomla\Database\QueryInterface  $query  Query on #__users aliased as "a".
+     *
+     * @return  void
+     *
+     * @since   4.2.1
+     */
+    private function applyGroupExclusion(\Joomla\Database\QueryInterface $query): void
+    {
+        $groups = $this->getExcludedGroups();
+
+        if (empty($groups)) {
+            return;
+        }
+
+        $sub = $this->db->getQuery(true)
+            ->select($this->db->quoteName('gm.user_id'))
+            ->from($this->db->quoteName('#__user_usergroup_map', 'gm'))
+            ->where($this->db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
+
+        $query->where($this->db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
+    }
+
+    /**
      * Build the SQL that selects users needing activation or "never logged in" reminders.
      *
      * @param   Registry  $params
@@ -228,7 +293,7 @@ final class SendService
             : $db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)';
 
         $notActivated = $db->getQuery(true)
-            ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate')
+            ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate, a.username')
             ->select('b.datesent, b.remindernumber, b.optoutcode')
             ->select((string) self::TYPE_NOT_ACTIVATED . ' AS type')
             ->from($db->quoteName('#__users', 'a'))
@@ -243,8 +308,10 @@ final class SendService
             $notActivated->where($firstSendAgeFilter);
         }
 
+        $this->applyGroupExclusion($notActivated);
+
         $neverLogged = $db->getQuery(true)
-            ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate')
+            ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate, a.username')
             ->select('b.datesent, b.remindernumber, b.optoutcode')
             ->select((string) self::TYPE_NEVER_LOGGED . ' AS type')
             ->from($db->quoteName('#__users', 'a'))
@@ -258,6 +325,8 @@ final class SendService
         if ($firstSendAgeFilter !== null) {
             $neverLogged->where($firstSendAgeFilter);
         }
+
+        $this->applyGroupExclusion($neverLogged);
 
         return $notActivated->union($neverLogged);
     }
@@ -348,11 +417,6 @@ final class SendService
      */
     public function sendOne(object $row, int $type, Registry $params): bool
     {
-        // Debug mode never actually sends.
-        if ((int) $params->get('debugUserReminder', 0) === 1) {
-            return true;
-        }
-
         $app    = Factory::getApplication();
         $sitename = $app->get('sitename');
         $mailfrom = $app->get('mailfrom');
@@ -482,6 +546,9 @@ final class SendService
     /**
      * Append a line to the mail capture log (same file MailCapture uses).
      *
+     * Only writes when the component's debug mode is on — the log can contain
+     * tokenised links and personal data, so it must stay opt-in.
+     *
      * @param   string  $message  Message to append.
      *
      * @return  void
@@ -490,6 +557,10 @@ final class SendService
      */
     public static function debugLog(string $message): void
     {
+        if (!MailCapture::debugEnabled()) {
+            return;
+        }
+
         try {
             $app = Factory::getApplication();
             $log = rtrim($app->get('log_path', JPATH_ADMINISTRATOR . '/logs'), '/\\')
@@ -616,6 +687,11 @@ final class SendService
      */
     private function writeLog(object $row, int $type): void
     {
+        // The scheduler task runs outside the admin UI — make sure the
+        // component language is loaded or Text::_() returns the raw key,
+        // which would then be stored verbatim in the log table.
+        Factory::getApplication()->getLanguage()->load('com_userreminder', JPATH_ADMINISTRATOR);
+
         $description = match ($type) {
             self::TYPE_NOT_ACTIVATED => Text::_('COM_USERREMINDER_ACTIVATE_REMINDER_SENT'),
             self::TYPE_NEVER_LOGGED  => Text::_('COM_USERREMINDER_LOGIN_REMINDER_SENT'),

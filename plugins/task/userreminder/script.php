@@ -9,8 +9,6 @@
 
 defined('_JEXEC') or die;
 
-file_put_contents(sys_get_temp_dir() . '/ur_postflight_probe.txt', 'script loaded' . PHP_EOL, FILE_APPEND);
-
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
 
@@ -36,8 +34,6 @@ class PlgTaskUserreminderInstallerScript extends InstallerScript
      */
     public function postflight($type, $parent): bool
     {
-        file_put_contents(sys_get_temp_dir() . '/ur_postflight_probe.txt', $type . PHP_EOL, FILE_APPEND);
-
         if ($type === 'uninstall') {
             return true;
         }

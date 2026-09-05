@@ -84,7 +84,10 @@ final class MailCapture extends Mail
     }
 
     /**
-     * Dump the rendered message to the log, then send for real.
+     * In debug mode: capture the rendered message to the log and never send.
+     * Otherwise: send for real, without logging (the capture contains
+     * recipient addresses, full bodies and tokenised links, so it must
+     * never be written on production sends).
      *
      * @return  bool
      *
@@ -92,9 +95,29 @@ final class MailCapture extends Mail
      */
     public function send()
     {
-        $this->captureToLog();
+        if (self::debugEnabled()) {
+            $this->captureToLog();
+
+            return true;
+        }
 
         return parent::send();
+    }
+
+    /**
+     * Whether User Reminder debug mode is enabled.
+     *
+     * @return  bool
+     *
+     * @since   4.2.1
+     */
+    public static function debugEnabled(): bool
+    {
+        try {
+            return (int) \Joomla\CMS\Component\ComponentHelper::getParams('com_userreminder')->get('debugUserReminder', 0) === 1;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

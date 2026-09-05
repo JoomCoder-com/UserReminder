@@ -13,6 +13,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
+use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /** @var \JoomCoder\Component\UserReminder\Administrator\View\Log\HtmlView $this */
 
@@ -63,7 +64,7 @@ $listDirn  = $this->escape($this->state->get('list.direction', 'DESC'));
                                 <?php echo HTMLHelper::_('grid.id', $i, (int) $row->id); ?>
                             </td>
                             <th scope="row"><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES, 'UTF-8'); ?></th>
-                            <td><?php echo htmlspecialchars((string) ($row->description ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(UserReminderHelper::translateLogText((string) ($row->description ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
                                 <?php echo !empty($row->date)
                                     ? HTMLHelper::_('date', $row->date, Text::_('DATE_FORMAT_LC4'))

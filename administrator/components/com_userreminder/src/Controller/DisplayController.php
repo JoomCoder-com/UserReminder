@@ -49,6 +49,27 @@ class DisplayController extends BaseController
     /**
      * Show the cpanel/dashboard view.
      *
+     * Every view in this component exposes personal data (names, usernames,
+     * email addresses), so display is gated on core.manage — the same action
+     * the access.xml declares for component administration.
+     *
+     * @param   bool  $cachable
+     * @param   array $urlparams
+     *
+     * @return  void
+     *
+     * @since   4.0.0
+     */
+    public function display($cachable = false, $urlparams = []): void
+    {
+        $this->requireAuthorised('core.manage');
+
+        parent::display($cachable, $urlparams);
+    }
+
+    /**
+     * Show the cpanel/dashboard view.
+     *
      * @param   bool  $cachable
      * @param   array $urlparams
      *
@@ -72,6 +93,7 @@ class DisplayController extends BaseController
     public function refresh(): void
     {
         $this->checkToken();
+        $this->requireAuthorised('core.manage');
 
         /** @var \JoomCoder\Component\UserReminder\Administrator\Model\CpanelModel $model */
         $model = $this->getModel('Cpanel', 'Administrator');

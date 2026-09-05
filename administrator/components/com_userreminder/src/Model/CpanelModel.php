@@ -36,6 +36,34 @@ class CpanelModel extends BaseDatabaseModel
 
     public const CACHE_GROUP = 'com_userreminder.dashboard';
 
+    /**
+     * Add the opt-out group exclusion to a query on #__users aliased as "a",
+     * mirroring SendService::applyGroupExclusion() so dashboard counts match
+     * what the send pipeline actually targets.
+     *
+     * @param   DatabaseInterface                $db     Database.
+     * @param   \Joomla\Database\QueryInterface  $query  Query on #__users as "a".
+     *
+     * @return  void
+     *
+     * @since   4.2.1
+     */
+    private function applyGroupExclusion(DatabaseInterface $db, \Joomla\Database\QueryInterface $query): void
+    {
+        $groups = UserReminderHelper::getOptOutGroups();
+
+        if (empty($groups)) {
+            return;
+        }
+
+        $sub = $db->getQuery(true)
+            ->select($db->quoteName('gm.user_id'))
+            ->from($db->quoteName('#__user_usergroup_map', 'gm'))
+            ->where($db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
+
+        $query->where($db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
+    }
+
     public function getForm($data = [], $loadData = true, $formName = null): ?\Joomla\CMS\Form\Form
     {
         return null;
@@ -135,7 +163,7 @@ class CpanelModel extends BaseDatabaseModel
         $aging  = $this->getAging($db, $cutoffReg, $cutoffExisting, $days, $existingDays);
 
         // Preview tables — capped, explicit columns.
-        $recentLogs    = $this->getRecentLogs($db, 10);
+        $recentLogs    = $this->getRecentLogs($db, 5);
         $oldestPending = $this->getOldestPending($db, $cutoffReg, 5);
         $longestInactive = $this->getLongestInactive($db, $cutoffExisting, 5);
 
@@ -193,6 +221,8 @@ class CpanelModel extends BaseDatabaseModel
                 $query->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
             }
 
+            $this->applyGroupExclusion($db, $query);
+
             $db->setQuery($query);
 
             return (int) $db->loadResult();
@@ -217,6 +247,8 @@ class CpanelModel extends BaseDatabaseModel
                 $query->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
             }
 
+            $this->applyGroupExclusion($db, $query);
+
             $db->setQuery($query);
 
             return (int) $db->loadResult();
@@ -236,6 +268,9 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('a.block = 0')
                 ->where('a.lastvisitDate IS NOT NULL')
                 ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting));
+
+            $this->applyGroupExclusion($db, $query);
+
             $db->setQuery($query);
 
             return (int) $db->loadResult();
@@ -277,6 +312,7 @@ class CpanelModel extends BaseDatabaseModel
 
             $q->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
                 ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
+            $this->applyGroupExclusion($db, $q);
             $db->setQuery($q);
             $total += (int) $db->loadResult();
         } catch (\Throwable) {
@@ -301,6 +337,7 @@ class CpanelModel extends BaseDatabaseModel
 
             $q->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
                 ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
+            $this->applyGroupExclusion($db, $q);
             $db->setQuery($q);
             $total += (int) $db->loadResult();
         } catch (\Throwable) {
@@ -319,6 +356,7 @@ class CpanelModel extends BaseDatabaseModel
                 ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting))
                 ->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
                 ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
+            $this->applyGroupExclusion($db, $q);
             $db->setQuery($q);
             $total += (int) $db->loadResult();
         } catch (\Throwable) {
@@ -590,6 +628,8 @@ class CpanelModel extends BaseDatabaseModel
                 $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
             }
 
+            $this->applyGroupExclusion($db, $q);
+
             $q->order($db->quoteName('a.registerDate') . ' ASC');
             $db->setQuery($q, 0, $limit);
 
@@ -611,8 +651,11 @@ class CpanelModel extends BaseDatabaseModel
                 ->where('o.user_id IS NULL')
                 ->where('a.block = 0')
                 ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting))
-                ->order($db->quoteName('a.lastvisitDate') . ' ASC');
+                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting));
+
+            $this->applyGroupExclusion($db, $q);
+
+            $q->order($db->quoteName('a.lastvisitDate') . ' ASC');
             $db->setQuery($q, 0, $limit);
 
             return $db->loadAssocList() ?: [];
@@ -761,7 +804,7 @@ class CpanelModel extends BaseDatabaseModel
             'enableDeleteUsers'          => (int) $params->get('enableDeleteUsers', 0),
             'enableDeleteUsersLogin'     => (int) $params->get('enableDeleteUsersLogin', 0),
             'enableDeleteExistingUsers'  => (int) $params->get('enableDeleteExistingUsers', 0),
-            'scheduledTask'              => UserReminderHelper::getSchedulerTask()->next_execution ?? 'off',
+            'scheduledTask'              => UserReminderHelper::getSchedulerTask()?->next_execution ?? 'off',
             'debugUserReminder'          => (int) $params->get('debugUserReminder', 0),
             'ver'                        => '4.2.0',
         ];

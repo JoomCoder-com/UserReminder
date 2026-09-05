@@ -101,7 +101,11 @@ class HtmlView extends BaseHtmlView
             ->icon('icon-clock')
             ->buttonClass('btn btn-outline-secondary');
 
-        $bar->confirmButton('clear', Text::_('COM_USERREMINDER_LOG_CLEAR'), 'COM_USERREMINDER_LOG_CLEAR_CONFIRM')
+        // Signature is confirmButton($name, $text, $task) — the confirmation
+        // message goes through ->message(), otherwise the task is broken and
+        // the button silently does nothing.
+        $bar->confirmButton('clear', 'COM_USERREMINDER_LOG_CLEAR', 'log.clear')
+            ->message('COM_USERREMINDER_LOG_CLEAR_CONFIRM')
             ->icon('icon-trash')
             ->buttonClass('btn btn-outline-danger');
 

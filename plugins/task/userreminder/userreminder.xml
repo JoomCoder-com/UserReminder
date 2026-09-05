@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <extension type="plugin" group="task" method="upgrade">
     <name>plg_task_userreminder</name>
     <author>JoomCoder</author>
@@ -7,7 +7,7 @@
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
     <authorEmail>support@joomcoder.com</authorEmail>
     <authorUrl>https://www.joomcoder.com</authorUrl>
-    <version>4.2.0</version>
+    <version>4.2.1</version>
     <description>PLG_TASK_USERREMINDER_XML_DESCRIPTION</description>
     <namespace path="src">JoomCoder\Plugin\Task\UserReminder</namespace>
 

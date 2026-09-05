@@ -68,6 +68,19 @@ class ActiveUsersModel extends ListModel
             ->where('a.lastvisitDate IS NOT NULL')
             ->where($db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
 
+        // Members of the opt-out user groups never receive reminders — keep the
+        // list in sync with what the send pipeline targets (SendService).
+        $groups = \JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper::getOptOutGroups();
+
+        if (!empty($groups)) {
+            $sub = $db->getQuery(true)
+                ->select($db->quoteName('gm.user_id'))
+                ->from($db->quoteName('#__user_usergroup_map', 'gm'))
+                ->where($db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
+
+            $query->where($db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
+        }
+
         $search = (string) $this->getState('filter.search', '');
         if ($search !== '') {
             $search = '%' . $db->escape($search, true) . '%';
