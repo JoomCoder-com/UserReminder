@@ -19,12 +19,12 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
 use Joomla\CMS\Mail\MailTemplate;
-use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Filesystem\Path;
 use Joomla\Registry\Registry;
 use JoomCoder\Component\UserReminder\Administrator\Helper\ActivationUrlHelper;
+use JoomCoder\Component\UserReminder\Administrator\Helper\SiteUrl;
 
 /**
  * SendService — pure email-sending pipeline shared by the admin UI and the
@@ -54,6 +54,38 @@ final class SendService
 
     public function __construct(private DatabaseInterface $db)
     {
+    }
+
+    /**
+     * Populate the request context when it is missing.
+     *
+     * Joomla 4's CLI does not populate $_SERVER['HTTP_HOST'] (only the
+     * --live-site option does), and core's MailTemplate::send() needs it to
+     * absolutize relative URLs (MailHelper::convertRelativeToAbsoluteUrls) —
+     * without it every cron run fatalled. Fall back to the live_site config,
+     * then to http://localhost.
+     *
+     * @return  void
+     *
+     * @since   6.0.0
+     */
+    private function ensureRequestContext(): void
+    {
+        if (isset($_SERVER['HTTP_HOST'])) {
+            return;
+        }
+
+        $live = trim((string) Factory::getApplication()->get('live_site', ''), " \t/");
+
+        if ($live !== '' && ($parts = parse_url('//' . str_replace('//', '/', $live))) !== false) {
+            $_SERVER['HTTP_HOST']   = ($parts['host'] ?? 'localhost') . (isset($parts['port']) ? ':' . $parts['port'] : '');
+            $_SERVER['REQUEST_URI'] = ($parts['path'] ?? '') . '/';
+        } else {
+            $_SERVER['HTTP_HOST']   = 'localhost';
+            $_SERVER['REQUEST_URI'] = '/';
+        }
+
+        $_SERVER['SCRIPT_NAME'] = $_SERVER['REQUEST_URI'];
     }
 
     /**
@@ -87,6 +119,7 @@ final class SendService
      */
     public function processRegistrationReminders(bool $logToTable, int $offset = 0, int $limit = 0): array
     {
+        $this->ensureRequestContext();
         $params = ComponentHelper::getParams('com_userreminder');
         $limit  = $limit > 0 ? $limit : (int) $params->get('number_email', 50);
 
@@ -146,6 +179,7 @@ final class SendService
      */
     public function processInactiveUserReminders(bool $logToTable, int $offset = 0, int $limit = 0): array
     {
+        $this->ensureRequestContext();
         $params = ComponentHelper::getParams('com_userreminder');
         $limit  = $limit > 0 ? $limit : (int) $params->get('number_email', 50);
 
@@ -433,7 +467,7 @@ final class SendService
         $name        = $user->get('name', $row->name ?? '');
         $username    = $user->get('username', $row->username ?? '');
         $email       = $user->get('email', $row->email);
-        $siteUrl     = Uri::root();
+        $siteUrl     = SiteUrl::root();
 
         $optOutCode  = $row->optoutcode ?: ApplicationHelper::getHash(UserHelper::genRandomPassword());
         $optOutUrl   = $siteUrl . 'index.php?option=com_userreminder&view=optout&uid=' . $optOutCode;
@@ -469,7 +503,11 @@ final class SendService
             // User Reminder → Options → Email Container. The layout only
             // applies to our emails — everything else keeps Joomla's stock
             // container (see layouts/joomla/mail/userreminder.php).
-            $mailTemplate->addLayoutTemplateData($this->containerLayoutData($params, $mailer, $sitename, $siteUrl));
+            // MailTemplate::addLayoutTemplateData() is Joomla 5+; on Joomla 4
+            // the template's HTML body is sent as-is.
+            if (method_exists($mailTemplate, 'addLayoutTemplateData')) {
+                $mailTemplate->addLayoutTemplateData($this->containerLayoutData($params, $mailer, $sitename, $siteUrl));
+            }
 
             $mailTemplate->addRecipient($email);
 

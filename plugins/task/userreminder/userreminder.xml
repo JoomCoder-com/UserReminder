@@ -7,7 +7,7 @@
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
     <authorEmail>support@joomcoder.com</authorEmail>
     <authorUrl>https://www.joomcoder.com</authorUrl>
-    <version>6.0.0</version>
+    <version>##VERSION##</version>
     <description>PLG_TASK_USERREMINDER_XML_DESCRIPTION</description>
     <namespace path="src">JoomCoder\Plugin\Task\UserReminder</namespace>
 

@@ -38,6 +38,12 @@ UPDATE `#__userreminder_log`
    SET `description` = REPLACE(`description`, 'USERREMINDER_USER_REMINDER_SENT', 'User reminder sent')
  WHERE `description` LIKE '%USERREMINDER_USER_REMINDER_SENT%';
 
+-- The legacy 5.2.x scheduler also stored a raw language-key prefix in front of
+-- every description. Strip it so no raw keys remain in the table.
+UPDATE `#__userreminder_log`
+   SET `description` = TRIM(REPLACE(`description`, 'COM_USERREMINDER_LOG_PREFIX', ''))
+ WHERE `description` LIKE '%COM_USERREMINDER_LOG_PREFIX%';
+
 -- ------------------------------------------------------------- engine/charset
 
 -- MyISAM → InnoDB + utf8 → utf8mb4 (no-op on already-converted tables).

@@ -7,7 +7,7 @@
     <authorUrl>https://www.joomcoder.com</authorUrl>
     <copyright>Copyright (C) 2020 - 2026 JoomCoder. All rights reserved.</copyright>
     <license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
-    <version>6.0.0</version>
+    <version>##VERSION##</version>
     <description>COM_USERREMINDER_SITE_DESCRIPTION</description>
 
     <namespace path="src">JoomCoder\Component\UserReminder</namespace>

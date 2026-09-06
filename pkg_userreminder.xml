@@ -12,7 +12,7 @@
     <author>JoomCoder</author>
     <packager>JoomCoder</packager>
     <packagerurl>https://www.joomcoder.com</packagerurl>
-    <description>UserReminder package — install admin + site + scheduler in one shot.</description>
+    <description><![CDATA[User Reminder automatically emails users who did not complete registration, never logged in, or have not visited your site for a while. This package installs the component and its scheduled-task plugin in one go.]]></description>
     <blockChildUninstall>true</blockChildUninstall>
 
     <scriptfile>pkg_script.php</scriptfile>

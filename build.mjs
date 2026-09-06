@@ -8,7 +8,7 @@
  *   4. Zip inner extension zips, then the package zip, into releases/.
  *
  * Usage:  npm run build [-- --version=x.y.z]
- * (version defaults to <version> in administrator/components/com_userreminder/userreminder.xml)
+ * (version defaults to "version" in package.json; all manifests carry ##VERSION## placeholders)
  */
 
 import archiver from 'archiver';
@@ -42,19 +42,19 @@ const PLUGIN = path.join(ROOT, 'plugins', 'task', 'userreminder');
 const JS_SOURCES = ['dashboard.js', 'optoutusers-select.js', 'userreminder-sidebar.js'];
 
 function resolveVersion() {
+  // --version=x.y.z wins; otherwise the version lives in package.json.
   const arg = process.argv.find((a) => a.startsWith('--version='));
   if (arg) {
     return arg.split('=')[1];
   }
 
-  const manifest = readFileSync(path.join(ADMIN, 'userreminder.xml'), 'utf8');
-  const match = manifest.match(/<version>([^<]+)<\/version>/);
+  const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
-  if (!match) {
-    throw new Error('Version not found in administrator/components/com_userreminder/userreminder.xml (pass --version=x.y.z).');
+  if (pkg.version) {
+    return pkg.version;
   }
 
-  return match[1].trim();
+  throw new Error('No version: set "version" in package.json or pass --version=x.y.z.');
 }
 
 function copyTree(src, dest, { exclude = [] } = {}) {
@@ -151,7 +151,7 @@ await bundleJs(path.join(ADMIN, 'media', 'js'), path.join(COMP_DIR, 'media', 'js
 
 // --- 3. Version -------------------------------------------------------------
 
-for (const xml of collectFiles(STAGING, '.xml')) {
+for (const xml of [...collectFiles(STAGING, '.xml'), ...collectFiles(STAGING, '.json')]) {
   writeFileSync(xml, readFileSync(xml, 'utf8').replaceAll('##VERSION##', version));
 }
 

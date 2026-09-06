@@ -14,7 +14,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\Helper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Uri\Uri;
+use JoomCoder\Component\UserReminder\Administrator\Helper\SiteUrl;
 
 /**
  * Builds the per-user activation URL used in reminder emails.
@@ -63,11 +63,18 @@ final class ActivationUrlHelper
                 $code = '';
             }
 
-            return Uri::root() . $cbUrl . $code;
+            return SiteUrl::root() . $cbUrl . $code;
         }
 
         $base = $params->get('activateURL', 'index.php?option=com_users&task=registration.activate&token=');
 
-        return Route::link('site', $base . $row->activation, false, $tlsMode, true);
+        // Route needs a request context (live_site on the CLI); fall back to a
+        // plain SiteUrl-built link when it is unavailable (cron without
+        // --live-site).
+        try {
+            return Route::link('site', $base . $row->activation, false, $tlsMode, true);
+        } catch (\Throwable) {
+            return SiteUrl::root() . $base . $row->activation;
+        }
     }
 }
