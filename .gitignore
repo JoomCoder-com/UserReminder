@@ -703,3 +703,6 @@
 /README.txt
 /robots.txt.dist
 /web.config.txt
+
+/node_modules/
+/package-lock.json

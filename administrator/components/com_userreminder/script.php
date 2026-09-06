@@ -111,6 +111,11 @@ class com_userreminderInstallerScript extends InstallerScript
         if ($type === 'update') {
             // Copy customized legacy email params into the mail templates, once.
             $this->migrateLegacyParams();
+
+            // Index/PK surgery for the 6.0.0 rebuild. Done here (not in the
+            // SQL file) because MySQL aborts on duplicate index names and the
+            // 5.2.x schema carries a UNIQUE KEY that must become the PK.
+            $this->migrateSchema6();
         }
 
         return true;
@@ -332,6 +337,96 @@ class com_userreminderInstallerScript extends InstallerScript
             } catch (\Throwable) {
                 // Never block the install on a registration failure.
             }
+        }
+    }
+
+    /**
+     * Bring the 5.2.x table indexes up to the 6.0.0 schema.
+     *
+     * Every statement is existence-checked against information_schema and
+     * wrapped, so a site that cannot be migrated keeps working exactly as
+     * before. Idempotent — no-ops on already-rebuilt schemas.
+     *
+     * @return  void
+     *
+     * @since   6.0.0
+     */
+    private function migrateSchema6(): void
+    {
+        $db = Factory::getDbo();
+
+        // Legacy 5.2.x UNIQUE KEY `userid` → PRIMARY KEY (`userid`).
+        if ($this->indexExists('#__userreminder', 'userid')) {
+            try {
+                $db->setQuery('ALTER TABLE ' . $db->quoteName('#__userreminder') . ' DROP INDEX ' . $db->quoteName('userid'))->execute();
+            } catch (\Throwable) {
+            }
+        }
+
+        if (!$this->indexExists('#__userreminder', 'PRIMARY')) {
+            try {
+                $db->setQuery('ALTER TABLE ' . $db->quoteName('#__userreminder') . ' ADD PRIMARY KEY (' . $db->quoteName('userid') . ')')->execute();
+            } catch (\Throwable) {
+            }
+        }
+
+        $indexes = [
+            '#__userreminder'    => [
+                'idx_ur_sent_type' => '(`datesent`, `remindernumber`, `type`)',
+            ],
+            '#__userreminder_log' => [
+                'idx_userreminder_log_userId_date' => '(`userId`, `date`)',
+                'idx_ur_log_date'                  => '(`date`)',
+                'idx_ur_log_date_id'               => '(`date`, `id`)',
+            ],
+        ];
+
+        foreach ($indexes as $table => $defs) {
+            foreach ($defs as $name => $columns) {
+                if ($this->indexExists($table, $name)) {
+                    continue;
+                }
+
+                try {
+                    $db->setQuery(
+                        'ALTER TABLE ' . $db->quoteName($table)
+                        . ' ADD INDEX ' . $db->quoteName($name) . ' ' . $columns
+                    )->execute();
+                } catch (\Throwable) {
+                    // Leave the site on the previous index state.
+                }
+            }
+        }
+    }
+
+    /**
+     * Whether an index (or the PRIMARY key) exists on a table in the current
+     * database, # substituted.
+     *
+     * @param   string  $table  Table name with the #__ placeholder.
+     * @param   string  $index  Index name to look for.
+     *
+     * @return  bool
+     *
+     * @since   6.0.0
+     */
+    private function indexExists(string $table, string $index): bool
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('information_schema.STATISTICS'))
+                ->where($db->quoteName('TABLE_SCHEMA') . ' = DATABASE()')
+                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)))
+                ->where($db->quoteName('INDEX_NAME') . ' = ' . $db->quote($index));
+
+            $db->setQuery($query);
+
+            return (int) $db->loadResult() > 0;
+        } catch (\Throwable) {
+            return false;
         }
     }
 

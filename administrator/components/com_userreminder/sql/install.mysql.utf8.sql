@@ -42,6 +42,6 @@ CREATE TABLE IF NOT EXISTS `#__userreminder_optout_usergroups` (
 
 -- Record the schema version so update SQL is skipped on fresh installs.
 INSERT IGNORE INTO `#__schemas` (`extension_id`, `version_id`)
-    SELECT `extension_id`, '4.1.0'
+    SELECT `extension_id`, '6.0.0'
       FROM `#__extensions`
      WHERE `element` = 'com_userreminder' AND `type` = 'component';

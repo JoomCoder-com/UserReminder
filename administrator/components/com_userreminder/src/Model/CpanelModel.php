@@ -806,7 +806,7 @@ class CpanelModel extends BaseDatabaseModel
             'enableDeleteExistingUsers'  => (int) $params->get('enableDeleteExistingUsers', 0),
             'scheduledTask'              => UserReminderHelper::getSchedulerTask()?->next_execution ?? 'off',
             'debugUserReminder'          => (int) $params->get('debugUserReminder', 0),
-            'ver'                        => '4.2.0',
+            'ver'                        => '6.0.0',
         ];
 
         return md5(json_encode($relevant));

@@ -1,0 +1,12 @@
+{
+  "name": "userreminder-build",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1",
+    "vite": "^7.1.9"
+  }
+}
