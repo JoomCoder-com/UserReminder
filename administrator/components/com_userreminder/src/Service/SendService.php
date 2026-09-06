@@ -52,6 +52,25 @@ final class SendService
      */
     private ?array $excludedGroups = null;
 
+    /**
+     * Pending log rows, flushed to #__userreminder_log in one multi-row
+     * INSERT per batch instead of one query per sent email.
+     *
+     * @var  string[]
+     *
+     * @since  6.0.0
+     */
+    private array $logBuffer = [];
+
+    /**
+     * How many log rows to buffer before an intermediate flush.
+     *
+     * @var  int
+     *
+     * @since  6.0.0
+     */
+    private const LOG_BATCH = 25;
+
     public function __construct(private DatabaseInterface $db)
     {
     }
@@ -163,6 +182,8 @@ final class SendService
             }
         }
 
+        $this->flushLog();
+
         return $stats;
     }
 
@@ -249,6 +270,8 @@ final class SendService
                 $stats['errors']++;
             }
         }
+
+        $this->flushLog();
 
         return $stats;
     }
@@ -687,30 +710,21 @@ final class SendService
     {
         $optOutCode = ApplicationHelper::getHash(UserHelper::genRandomPassword());
 
-        $query = $this->db->getQuery(true)
-            ->update($this->db->quoteName('#__userreminder'))
-            ->set($this->db->quoteName('datesent') . ' = NOW()')
-            ->set($this->db->quoteName('remindernumber') . ' = remindernumber + 1')
-            ->set($this->db->quoteName('type') . ' = ' . $type)
-            ->set($this->db->quoteName('optoutcode') . ' = ' . $this->db->quote($optOutCode))
-            ->where($this->db->quoteName('userid') . ' = ' . $userId);
-
-        $this->db->setQuery($query);
-        if (!$this->db->execute() || $this->db->getAffectedRows() === 0) {
-            $insert = $this->db->getQuery(true)
-                ->insert($this->db->quoteName('#__userreminder'))
-                ->columns([
-                    $this->db->quoteName('userid'),
-                    $this->db->quoteName('datesent'),
-                    $this->db->quoteName('remindernumber'),
-                    $this->db->quoteName('type'),
-                    $this->db->quoteName('optoutcode'),
-                ])
-                ->values(implode(',', [$userId, 'NOW()', 1, (int) $type, $this->db->quote($optOutCode)]));
-
-            $this->db->setQuery($insert);
-            $this->db->execute();
-        }
+        // Single-statement upsert — one round trip instead of
+        // UPDATE-then-INSERT per user.
+        $this->db->setQuery(
+            'INSERT INTO ' . $this->db->quoteName('#__userreminder')
+            . ' (' . $this->db->quoteName('userid') . ', ' . $this->db->quoteName('datesent')
+            . ', ' . $this->db->quoteName('remindernumber') . ', ' . $this->db->quoteName('type')
+            . ', ' . $this->db->quoteName('optoutcode') . ')'
+            . ' VALUES (' . (int) $userId . ', NOW(), 1, ' . (int) $type . ', '
+            . $this->db->quote($optOutCode) . ')'
+            . ' ON DUPLICATE KEY UPDATE '
+            . $this->db->quoteName('datesent') . ' = NOW()'
+            . ', ' . $this->db->quoteName('remindernumber') . ' = ' . $this->db->quoteName('remindernumber') . ' + 1'
+            . ', ' . $this->db->quoteName('type') . ' = ' . (int) $type
+            . ', ' . $this->db->quoteName('optoutcode') . ' = ' . $this->db->quote($optOutCode)
+        )->execute();
     }
 
     /**
@@ -736,6 +750,32 @@ final class SendService
             default                  => Text::_('COM_USERREMINDER_USER_REMINDER_SENT'),
         };
 
+        $this->logBuffer[] = implode(',', [
+            (int) $row->id,
+            $this->db->quote($row->username ?? ''),
+            $this->db->quote(Text::_('COM_USERREMINDER_LOG_PREFIX') . ' ' . $description),
+            $this->db->quote(Factory::getDate()->toSql()),
+        ]);
+
+        if (count($this->logBuffer) >= self::LOG_BATCH) {
+            $this->flushLog();
+        }
+    }
+
+    /**
+     * Flush the buffered log rows to #__userreminder_log in a single
+     * multi-row INSERT (no-op when nothing was buffered).
+     *
+     * @return  void
+     *
+     * @since  6.0.0
+     */
+    private function flushLog(): void
+    {
+        if (!$this->logBuffer) {
+            return;
+        }
+
         $query = $this->db->getQuery(true)
             ->insert($this->db->quoteName('#__userreminder_log'))
             ->columns([
@@ -743,16 +783,16 @@ final class SendService
                 $this->db->quoteName('username'),
                 $this->db->quoteName('description'),
                 $this->db->quoteName('date'),
-            ])
-            ->values(implode(',', [
-                (int) $row->id,
-                $this->db->quote($row->username ?? ''),
-                $this->db->quote(Text::_('COM_USERREMINDER_LOG_PREFIX') . ' ' . $description),
-                $this->db->quote(Factory::getDate()->toSql()),
-            ]));
+            ]);
+
+        foreach ($this->logBuffer as $values) {
+            $query->values($values);
+        }
 
         $this->db->setQuery($query);
         $this->db->execute();
+
+        $this->logBuffer = [];
     }
 
     /**
@@ -768,13 +808,31 @@ final class SendService
         // Delete reminder rows where the user has now activated AND logged in
         // (type 1 = not activated, type 2 = never logged) — no need to keep
         // the reminder record around once the user is healthy.
-        $delete = $this->db->getQuery(true)
-            ->delete($this->db->quoteName('#__userreminder'))
-            ->where('userid IN (SELECT id FROM ' . $this->db->quoteName('#__users')
-                . ' WHERE lastvisitDate IS NOT NULL AND block = 0)');
+        // Batched so row locks stay short on sites with many stale rows.
+        $batch = 5000;
 
-        $this->db->setQuery($delete);
-        $this->db->execute();
+        do {
+            $ids = $this->db->setQuery(
+                $this->db->getQuery(true)
+                    ->select($this->db->quoteName('r.userid'))
+                    ->from($this->db->quoteName('#__userreminder', 'r'))
+                    ->innerJoin($this->db->quoteName('#__users', 'u') . ' ON u.id = r.userid')
+                    ->where('u.lastvisitDate IS NOT NULL')
+                    ->where('u.block = 0'),
+                0,
+                $batch
+            )->loadColumn() ?: [];
+
+            if (!$ids) {
+                break;
+            }
+
+            $this->db->setQuery(
+                $this->db->getQuery(true)
+                    ->delete($this->db->quoteName('#__userreminder'))
+                    ->where('userid IN (' . implode(',', array_map('intval', $ids)) . ')')
+            )->execute();
+        } while (count($ids) === $batch);
     }
 
     /**

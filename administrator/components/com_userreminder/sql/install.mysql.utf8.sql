@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS `#__userreminder` (
     `type`           INT(11) NOT NULL DEFAULT 0,
     `optoutcode`     VARCHAR(255) NOT NULL DEFAULT '',
     PRIMARY KEY (`userid`),
-    KEY `idx_ur_sent_type` (`datesent`, `remindernumber`, `type`)
+    KEY `idx_ur_sent_type` (`datesent`, `remindernumber`, `type`),
+    KEY `idx_ur_optoutcode` (`optoutcode`(32))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__userreminder_log` (

@@ -328,6 +328,7 @@ class com_userreminderInstallerScript extends InstallerScript
         $indexes = [
             '#__userreminder'    => [
                 'idx_ur_sent_type' => '(`datesent`, `remindernumber`, `type`)',
+                'idx_ur_optoutcode' => '(`optoutcode`(32))',
             ],
             '#__userreminder_log' => [
                 'idx_userreminder_log_userId_date' => '(`userId`, `date`)',
