@@ -16,12 +16,12 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
 
 /**
- * ActiveUsers list model — users who registered and have been inactive for X
+ * Activeusers list model — users who registered and have been inactive for X
  * days.
  *
  * @since  4.0.0
  */
-class ActiveUsersModel extends ListModel
+class ActiveusersModel extends ListModel
 {
     /**
      * The prefix to use with controller messages.

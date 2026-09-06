@@ -22,7 +22,7 @@ use Joomla\Database\QueryInterface;
  *
  * @since  4.0.0
  */
-class OptOutUsersModel extends ListModel
+class OptoutusersModel extends ListModel
 {
     /**
      * The filter form name.

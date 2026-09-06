@@ -7,7 +7,7 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-namespace JoomCoder\Component\UserReminder\Administrator\View\ActiveUsers;
+namespace JoomCoder\Component\UserReminder\Administrator\View\Activeusers;
 
 \defined('_JEXEC') or die;
 

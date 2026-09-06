@@ -100,7 +100,7 @@ class RemindersModel extends ListModel
             $query->where($db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
         }
 
-        // Optional search — mirrors OptOutUsersModel pattern, only when filter is set.
+        // Optional search — mirrors OptoutusersModel pattern, only when filter is set.
         $search = (string) $this->getState('filter.search', '');
         if ($search !== '') {
             $search = '%' . $db->escape($search, true) . '%';

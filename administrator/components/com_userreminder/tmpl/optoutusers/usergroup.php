@@ -13,7 +13,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
-/** @var \JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers\HtmlView $this */
+/** @var \JoomCoder\Component\UserReminder\Administrator\View\Optoutusers\HtmlView $this */
 
 HTMLHelper::_('behavior.multiselect');
 ?>

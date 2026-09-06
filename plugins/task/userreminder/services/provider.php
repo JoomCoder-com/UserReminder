@@ -32,11 +32,19 @@ return new class () implements ServiceProviderInterface {
         $container->set(
             PluginInterface::class,
             function (Container $container) {
-                $plugin = new UserReminder(
-                    (array) PluginHelper::getPlugin('task', 'userreminder')
-                );
+                $config = (array) PluginHelper::getPlugin('task', 'userreminder');
+
+                // Joomla 4: CMSPlugin::__construct(&$subject, $config) wants the
+                // dispatcher as the subject. Joomla 5+ takes only $config and the
+                // dispatcher is attached through setDispatcher().
+                if (version_compare(JVERSION, '5', '<')) {
+                    $plugin = new UserReminder($container->get(DispatcherInterface::class), $config);
+                } else {
+                    $plugin = new UserReminder($config);
+                    $plugin->setDispatcher($container->get(DispatcherInterface::class));
+                }
+
                 $plugin->setApplication(Factory::getApplication());
-                $plugin->setDispatcher($container->get(DispatcherInterface::class));
 
                 return $plugin;
             }

@@ -15,7 +15,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
-/** @var \JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers\HtmlView $this */
+/** @var \JoomCoder\Component\UserReminder\Administrator\View\Optoutusers\HtmlView $this */
 
 HTMLHelper::_('behavior.multiselect');
 Text::script('COM_USERREMINDER_OPTOUT_REMOVE_PICKED');
@@ -118,6 +118,20 @@ $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
         <?php echo HTMLHelper::_('form.token'); ?>
 
         <?php // Batch-style "Select Users" dialog (toolbar popup button target). ?>
+        <?php if (!empty($this->inlineDialog)) : ?>
         <template id="userreminder-select-users-dialog"><?php echo $this->loadTemplate('select_body'); ?></template>
+        <?php else : ?>
+        <div class="modal fade" id="userreminder-select-users-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><?php echo Text::_('COM_USERREMINDER_OPTOUT_ADD_USERS'); ?></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
+                    </div>
+                    <div class="modal-body"><?php echo $this->loadTemplate('select_body'); ?></div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </form>

@@ -18,11 +18,11 @@ use Joomla\CMS\Router\Route;
 use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
- * ActiveUsers controller — runs the existing-user inactivity pipeline.
+ * Activeusers controller — runs the existing-user inactivity pipeline.
  *
  * @since  4.0.0
  */
-class ActiveUsersController extends BaseController
+class ActiveusersController extends BaseController
 {
     use AclTrait;
 

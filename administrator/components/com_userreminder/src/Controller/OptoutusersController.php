@@ -17,11 +17,11 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 
 /**
- * OptOutUsers controller — handles opt-out user pickers and group pickers.
+ * Optoutusers controller — handles opt-out user pickers and group pickers.
  *
  * @since  4.0.0
  */
-class OptOutUsersController extends BaseController
+class OptoutusersController extends BaseController
 {
     use AclTrait;
 
@@ -48,8 +48,8 @@ class OptOutUsersController extends BaseController
             $userIds = (array) $app->getInput()->get('cid', [], 'array');
         }
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptOutUsersModel $model */
-        $model = $this->getModel('OptOutUsers');
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptoutusersModel $model */
+        $model = $this->getModel('Optoutusers');
 
         $added = $model->addOptUsers($userIds);
 
@@ -77,8 +77,8 @@ class OptOutUsersController extends BaseController
         $app  = Factory::getApplication();
         $cid  = (array) $app->getInput()->get('cid', [], 'array');
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptOutUsersModel $model */
-        $model = $this->getModel('OptOutUsers');
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptoutusersModel $model */
+        $model = $this->getModel('Optoutusers');
 
         if ($model->removeOptUsers($cid)) {
             $app->enqueueMessage(Text::_('COM_USERREMINDER_OPTUSER_REMOVE'), 'success');
@@ -104,8 +104,8 @@ class OptOutUsersController extends BaseController
         $app  = Factory::getApplication();
         $cid  = (array) $app->getInput()->get('cid', [], 'array');
 
-        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptOutUsersModel $model */
-        $model = $this->getModel('OptOutUsers');
+        /** @var \JoomCoder\Component\UserReminder\Administrator\Model\OptoutusersModel $model */
+        $model = $this->getModel('Optoutusers');
 
         if ($model->saveOptGroups($cid)) {
             $app->enqueueMessage(Text::_('COM_USERREMINDER_OPTGROUP_ADDED'), 'success');

@@ -58,9 +58,28 @@ $compZip   = Join-Path $pkgInner "com_userreminder.zip"
 $pluginZip = Join-Path $pkgInner "plg_task_userreminder.zip"
 
 function Zip-Dir($src, $dst) {
+    # ZipFile::CreateFromDirectory on Windows PowerShell stores entries with
+    # backslash separators, which extract as literal "a\b" filenames on Linux
+    # and break Joomla's installer. Build the archive manually with forward
+    # slashes so the zip is portable.
     if (Test-Path $dst) { Remove-Item $dst }
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::CreateFromDirectory($src, $dst)
+    $fs  = [System.IO.File]::Open($dst, [System.IO.FileMode]::CreateNew)
+    $zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        $srcLen = $src.TrimEnd('\','/').Length
+        Get-ChildItem -LiteralPath $src -Recurse -File | ForEach-Object {
+            $rel = $_.FullName.Substring($srcLen + 1).Replace('\','/')
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $zip, $_.FullName, $rel,
+                [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    }
+    finally {
+        $zip.Dispose()
+        $fs.Dispose()
+    }
 }
 
 Zip-Dir $compDir   $compZip

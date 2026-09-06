@@ -32,13 +32,13 @@ class DisplayController extends BaseController
      * @param   array                     $config
      * @param   MVCFactoryInterface|null  $factory
      * @param   AdministratorApplication|null $app
-     * @param   \Joomla\CMS\Input\Input|null $input
+     * @param   \Joomla\Input\Input|null $input
      */
     public function __construct(
         $config = [],
         ?MVCFactoryInterface $factory = null,
         ?AdministratorApplication $app = null,
-        ?\Joomla\CMS\Input\Input $input = null
+        ?\Joomla\Input\Input $input = null
     ) {
         parent::__construct($config, $factory, $app, $input);
 

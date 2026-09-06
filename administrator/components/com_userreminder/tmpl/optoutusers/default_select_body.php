@@ -17,7 +17,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
-/** @var \JoomCoder\Component\UserReminder\Administrator\View\OptOutUsers\HtmlView $this */
+/** @var \JoomCoder\Component\UserReminder\Administrator\View\Optoutusers\HtmlView $this */
 
 $modalUrl = 'index.php?option=com_users&view=users&layout=modal&tmpl=component&field=userreminder_optout_pick';
 

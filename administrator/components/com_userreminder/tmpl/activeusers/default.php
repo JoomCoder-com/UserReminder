@@ -14,7 +14,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
-/** @var \JoomCoder\Component\UserReminder\Administrator\View\ActiveUsers\HtmlView $this */
+/** @var \JoomCoder\Component\UserReminder\Administrator\View\Activeusers\HtmlView $this */
 
 $listOrder = $this->escape($this->state->get('list.ordering', 'a.lastvisitDate'));
 $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
