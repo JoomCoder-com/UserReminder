@@ -19,7 +19,6 @@ use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Registry\Registry;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /**
  * Log view — paginated audit log of every reminder sent.
@@ -83,8 +82,6 @@ class HtmlView extends BaseHtmlView
         $this->state         = $model->getState();
         $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
-
-        UserReminderHelper::addSubmenu('log');
 
         $this->addToolbar();
 

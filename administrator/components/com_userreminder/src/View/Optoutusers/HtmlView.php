@@ -18,7 +18,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 /**
  * Optoutusers view. Two layouts: default (opted-out users list with a
  * com_users modal picker to add more) and usergroup (pick groups to exclude
@@ -67,8 +66,6 @@ class HtmlView extends BaseHtmlView
             // Used by the staging JS inside the "Select Users" dialog.
             Text::script('COM_USERREMINDER_OPTOUT_REMOVE_PICKED');
         }
-
-        UserReminderHelper::addSubmenu('optoutusers.' . ($this->getLayout() ?: 'default'));
 
         $this->addToolbar();
 

@@ -25,14 +25,6 @@
       }
     },
     {
-      "name": "com_userreminder.sidebar",
-      "type": "script",
-      "uri": "com_userreminder/userreminder-sidebar.js",
-      "attributes": {
-        "defer": true
-      }
-    },
-    {
       "name": "com_userreminder.optoutusers-select",
       "type": "script",
       "uri": "com_userreminder/optoutusers-select.js",

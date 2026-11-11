@@ -23,7 +23,7 @@ pass: system123zz@@
   1. Stages `administrator/components/com_userreminder` (→ `admin/`), `components/com_userreminder` (→ `site/`),
      `plugins/task/userreminder` (→ `plg_task_userreminder/`), root manifest + `script.php` at the zip root,
      `media/` at the zip root, plus `pkg_userreminder.xml` + `pkg_script.php`.
-  2. Minifies the custom admin JS (`dashboard.js`, `optoutusers-select.js`, `userreminder-sidebar.js`)
+  2. Minifies the custom admin JS (`dashboard.js`, `optoutusers-select.js`)
      with Vite (IIFE, same filenames). Vendored libs (e.g. `chart.umd.min.js`) are copied verbatim.
   3. Replaces `##VERSION##` in all staged XML/JSON files.
   4. Zips inner extension zips, then `releases/pkg_userreminder_v<version>.zip`, and cleans the staging dir.

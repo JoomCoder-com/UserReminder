@@ -87,8 +87,6 @@ class HtmlView extends BaseHtmlView
             ],
         ]);
 
-        UserReminderHelper::addSubmenu('cpanel');
-
         $this->addToolbar();
         $this->loadDashboardAssets();
 

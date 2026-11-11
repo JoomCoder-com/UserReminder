@@ -18,7 +18,6 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Registry\Registry;
-use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /**
  * Active users view — users who registered but haven't visited in X days.
@@ -80,8 +79,6 @@ class HtmlView extends BaseHtmlView
         $this->state      = $this->get('State');
         $this->filterForm    = $this->get('FilterForm');
         $this->activeFilters = $this->get('ActiveFilters');
-
-        UserReminderHelper::addSubmenu('activeusers');
 
         $this->addToolbar();
 

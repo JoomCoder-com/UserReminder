@@ -20,7 +20,6 @@ use Joomla\CMS\Registry\Registry;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Database\DatabaseDriver;
-use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /**
  * Reminders view — shows the user table for the "Incomplete Registrations"
@@ -93,8 +92,6 @@ class HtmlView extends BaseHtmlView
         $this->filterForm = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
         $this->db         = Factory::getDbo();
-
-        UserReminderHelper::addSubmenu('reminders');
 
         $this->addToolbar();
 

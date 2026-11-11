@@ -39,7 +39,7 @@ const PLUGIN = path.join(ROOT, 'plugins', 'task', 'userreminder');
 
 // Custom JS bundled by Vite. Anything else in media/js (e.g. the vendored,
 // already-minified chart.umd.min.js) is copied verbatim.
-const JS_SOURCES = ['dashboard.js', 'optoutusers-select.js', 'userreminder-sidebar.js'];
+const JS_SOURCES = ['dashboard.js', 'optoutusers-select.js'];
 
 function resolveVersion() {
   // --version=x.y.z wins; otherwise the version lives in package.json.

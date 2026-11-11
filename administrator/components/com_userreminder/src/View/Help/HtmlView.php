@@ -15,7 +15,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 
 /**
  * Static help / documentation view.
@@ -30,8 +29,6 @@ class HtmlView extends BaseHtmlView
             parent::display($tpl);
             return;
         }
-
-        UserReminderHelper::addSubmenu('help');
 
         $this->addToolbar();
 
