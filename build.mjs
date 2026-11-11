@@ -151,8 +151,8 @@ await bundleJs(path.join(ADMIN, 'media', 'js'), path.join(COMP_DIR, 'media', 'js
 
 // --- 3. Version -------------------------------------------------------------
 
-for (const xml of [...collectFiles(STAGING, '.xml'), ...collectFiles(STAGING, '.json')]) {
-  writeFileSync(xml, readFileSync(xml, 'utf8').replaceAll('##VERSION##', version));
+for (const file of [...collectFiles(STAGING, '.xml'), ...collectFiles(STAGING, '.json'), ...collectFiles(STAGING, '.sql')]) {
+  writeFileSync(file, readFileSync(file, 'utf8').replaceAll('##VERSION##', version));
 }
 
 // --- 4. Package -------------------------------------------------------------

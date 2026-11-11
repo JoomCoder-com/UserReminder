@@ -60,6 +60,11 @@ class com_userreminderInstallerScript extends InstallerScript
             $this->migrateSchema6();
         }
 
+        // 6.1.0 schema deltas on fresh installs and upgrades alike
+        // (idempotent, guarded): the log table gains the structured
+        // message-key column and the dead legacy scheduler table goes away.
+        $this->migrateSchema61();
+
         // Register the default mail templates (idempotent; existing templates
         // win). Upgrading sites simply switch to the new mail-template system.
         $this->registerMailTemplates();
@@ -352,6 +357,111 @@ class com_userreminderInstallerScript extends InstallerScript
                     // Leave the site on the previous index state.
                 }
             }
+        }
+    }
+
+    /**
+     * 6.1.0 schema deltas, applied to fresh installs and upgrades alike.
+     *
+     * Both statements also exist in the shipped install SQL — the guards only
+     * matter for upgrade paths. A plain SQL file is not enough: MariaDB
+     * accepts `ADD COLUMN IF NOT EXISTS` but MySQL does not, so the column
+     * addition is guarded through information_schema here (project portability
+     * rule: schema surgery lives in script.php, update SQL files stay
+     * MySQL/MariaDB-portable).
+     *
+     * @return  void
+     *
+     * @since  6.1.0
+     */
+    private function migrateSchema61(): void
+    {
+        $db = Factory::getDbo();
+
+        // #__userreminder_log.message_key — the send engine stores the raw
+        // language key next to the translated description so the log view can
+        // re-translate old rows no matter which language was active at send
+        // time.
+        if (!$this->columnExists('#__userreminder_log', 'message_key')) {
+            try {
+                $db->setQuery(
+                    'ALTER TABLE ' . $db->quoteName('#__userreminder_log')
+                    . ' ADD COLUMN ' . $db->quoteName('message_key')
+                    . ' VARCHAR(64) NOT NULL DEFAULT \'\' AFTER ' . $db->quoteName('description')
+                )->execute();
+            } catch (\Throwable) {
+                // Keep the previous schema; the log view falls back to the
+                // stored description when the column is absent.
+            }
+        }
+
+        // Legacy 4.x scheduler table — superseded by the com_scheduler task
+        // plugin in 4.2.0. The 6.0.0 migration drops it for 5.2.x upgraders;
+        // this catches everything else (idempotent).
+        if ($this->tableExists('#__userreminder_sch')) {
+            try {
+                $db->setQuery('DROP TABLE ' . $db->quoteName('#__userreminder_sch'))->execute();
+            } catch (\Throwable) {
+            }
+        }
+    }
+
+    /**
+     * Whether a column exists on a table in the current database, #_
+     * substituted.
+     *
+     * @param   string  $table   Table name with the #__ placeholder.
+     * @param   string  $column  Column name to look for.
+     *
+     * @return  bool
+     *
+     * @since  6.1.0
+     */
+    private function columnExists(string $table, string $column): bool
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('information_schema.COLUMNS'))
+                ->where($db->quoteName('TABLE_SCHEMA') . ' = DATABASE()')
+                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)))
+                ->where($db->quoteName('COLUMN_NAME') . ' = ' . $db->quote($column));
+
+            $db->setQuery($query);
+
+            return (int) $db->loadResult() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether a table exists in the current database, #__ substituted.
+     *
+     * @param   string  $table  Table name with the #__ placeholder.
+     *
+     * @return  bool
+     *
+     * @since  6.1.0
+     */
+    private function tableExists(string $table): bool
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('information_schema.TABLES'))
+                ->where($db->quoteName('TABLE_SCHEMA') . ' = DATABASE()')
+                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)));
+
+            $db->setQuery($query);
+
+            return (int) $db->loadResult() > 0;
+        } catch (\Throwable) {
+            return false;
         }
     }
 

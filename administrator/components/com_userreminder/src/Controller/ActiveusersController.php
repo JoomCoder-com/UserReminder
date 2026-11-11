@@ -15,6 +15,8 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
+use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderComponent;
+use JoomCoder\Component\UserReminder\Administrator\Service\MailDebug;
 use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /**
@@ -32,17 +34,9 @@ class ActiveusersController extends BaseController
         $this->requireAuthorised('core.manage');
 
         $app   = Factory::getApplication();
-        $stats = SendService::instance()->processInactiveUserReminders(true, 0, 0);
+        $stats = UserReminderComponent::service()->processInactiveUserReminders(true, 0, 0);
 
-        $app->enqueueMessage(
-            Text::sprintf(
-                'COM_USERREMINDER_RUN_COMPLETE',
-                $stats['processed'],
-                $stats['sent'],
-                $stats['deleted']
-            ),
-            'info'
-        );
+        $app->enqueueMessage($this->runMessage($stats), 'info');
 
         $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
     }
@@ -54,14 +48,57 @@ class ActiveusersController extends BaseController
 
         $app = Factory::getApplication();
 
-        $sent = SendService::instance()
-            ->sendTestMail([SendService::TYPE_INACTIVE_USER]);
+        $sent = UserReminderComponent::service()->sendTestMail([SendService::TYPE_INACTIVE_USER]);
 
-        $app->enqueueMessage(
-            $sent ? Text::_('COM_USERREMINDER_TEST_SENT') : Text::_('COM_USERREMINDER_TEST_SEND_ERROR'),
-            $sent ? 'info' : 'error'
-        );
+        $app->enqueueMessage($this->testMessage($sent), $sent ? 'info' : 'error');
 
         $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
+    }
+
+    /**
+     * Human message for a pipeline run (real or simulated).
+     *
+     * @param   array  $stats
+     *
+     * @return  string
+     *
+     * @since  6.1.0
+     */
+    private function runMessage(array $stats): string
+    {
+        if (!empty($stats['dryRun'])) {
+            return Text::sprintf(
+                'COM_USERREMINDER_RUN_SIMULATED',
+                $stats['processed'],
+                $stats['simulated'] ?? 0
+            );
+        }
+
+        return Text::sprintf(
+            'COM_USERREMINDER_RUN_COMPLETE',
+            $stats['processed'],
+            $stats['sent'],
+            $stats['deleted']
+        ) . (!empty($stats['errors'])
+            ? ' ' . Text::sprintf('COM_USERREMINDER_RUN_ERRORS', (int) $stats['errors'])
+            : '');
+    }
+
+    /**
+     * Human message for a test-email attempt (real or simulated).
+     *
+     * @param   bool  $sent
+     *
+     * @return  string
+     *
+     * @since  6.1.0
+     */
+    private function testMessage(bool $sent): string
+    {
+        if ($sent && MailDebug::enabled()) {
+            return Text::_('COM_USERREMINDER_TEST_SIMULATED');
+        }
+
+        return $sent ? Text::_('COM_USERREMINDER_TEST_SENT') : Text::_('COM_USERREMINDER_TEST_SEND_ERROR');
     }
 }

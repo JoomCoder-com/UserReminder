@@ -17,7 +17,7 @@ use Joomla\Component\Scheduler\Administrator\Event\ExecuteTaskEvent;
 use Joomla\Component\Scheduler\Administrator\Task\Status;
 use Joomla\Component\Scheduler\Administrator\Traits\TaskPluginTrait;
 use Joomla\Event\SubscriberInterface;
-use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
+use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderComponent;
 
 /**
  * Scheduled-tasks plugin for UserReminder. Replaces the legacy
@@ -75,23 +75,25 @@ final class UserReminder extends CMSPlugin implements SubscriberInterface
      */
     private function runReminders(ExecuteTaskEvent $event): int
     {
-        if (!class_exists(SendService::class)) {
+        if (!class_exists(UserReminderComponent::class)) {
             $this->logTask('com_userreminder is not installed — aborting', 'error');
 
             return Status::NO_RUN;
         }
 
         try {
-            /** @var SendService $send */
-            $send   = SendService::instance();
+            /** @var \JoomCoder\Component\UserReminder\Administrator\Service\SendService $send */
+            $send   = UserReminderComponent::service();
             $params = $event->getArgument('params');
 
             $regOk = $inactiveOk = true;
-            $regStats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'errors' => 0];
+            $regStats     = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'errors' => 0];
             $inactiveStats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'errors' => 0];
+            $dryRun = false;
 
             if ((int) ($params->runRegistrationReminders ?? 1) === 1) {
                 $regStats = $send->processRegistrationReminders(true, 0, 0);
+                $dryRun   = $dryRun || !empty($regStats['dryRun']);
 
                 if ($regStats['errors'] > 0) {
                     $regOk = false;
@@ -100,6 +102,7 @@ final class UserReminder extends CMSPlugin implements SubscriberInterface
 
             if ((int) ($params->runInactiveReminders ?? 1) === 1) {
                 $inactiveStats = $send->processInactiveUserReminders(true, 0, 0);
+                $dryRun        = $dryRun || !empty($inactiveStats['dryRun']);
 
                 if ($inactiveStats['errors'] > 0) {
                     $inactiveOk = false;
@@ -111,12 +114,29 @@ final class UserReminder extends CMSPlugin implements SubscriberInterface
             return Status::KNOCKOUT;
         }
 
+        if ($dryRun) {
+            $this->logTask(
+                sprintf(
+                    'Dry run (debug mode): processed %d candidate(s), would have sent %d, deleted %d, skipped %d, mail errors %d',
+                    $regStats['processed'] + $inactiveStats['processed'],
+                    ($regStats['simulated'] ?? 0) + ($inactiveStats['simulated'] ?? 0),
+                    $regStats['deleted'] + $inactiveStats['deleted'],
+                    ($regStats['skipped'] ?? 0) + ($inactiveStats['skipped'] ?? 0),
+                    $regStats['errors'] + $inactiveStats['errors']
+                ),
+                'info'
+            );
+
+            return Status::OK;
+        }
+
         $this->logTask(
             sprintf(
-                'Processed %d, sent %d, deleted %d, mail errors %d',
+                'Processed %d, sent %d, deleted %d skipped %d, mail errors %d',
                 $regStats['processed'] + $inactiveStats['processed'],
                 $regStats['sent'] + $inactiveStats['sent'],
                 $regStats['deleted'] + $inactiveStats['deleted'],
+                ($regStats['skipped'] ?? 0) + ($inactiveStats['skipped'] ?? 0),
                 $regStats['errors'] + $inactiveStats['errors']
             ),
             $regOk && $inactiveOk ? 'info' : 'warning'

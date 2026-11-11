@@ -17,7 +17,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
-use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
+use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderComponent;
 
 /**
  * Base controller for com_userreminder. Default task = display.
@@ -141,27 +141,44 @@ class DisplayController extends BaseController
     }
 
     /**
-     * @return  SendService
+     * @return  \JoomCoder\Component\UserReminder\Administrator\Service\SendService
      */
-    private function getSendService(): SendService
+    private function getSendService(): \JoomCoder\Component\UserReminder\Administrator\Service\SendService
     {
-        return SendService::instance();
+        return UserReminderComponent::service();
     }
 
     /**
-     * @param   array  $stats  processed/sent/deleted counts
+     * @param   array  $stats  processed/sent/deleted counts (+ dryRun flag)
      *
      * @return  void
      */
     private function enqueueRunMessage(array $stats): void
     {
-        Factory::getApplication()->enqueueMessage(
+        $app = Factory::getApplication();
+
+        if (!empty($stats['dryRun'])) {
+            $app->enqueueMessage(
+                Text::sprintf(
+                    'COM_USERREMINDER_RUN_SIMULATED',
+                    $stats['processed'],
+                    $stats['simulated'] ?? 0
+                ),
+                'info'
+            );
+
+            return;
+        }
+
+        $app->enqueueMessage(
             Text::sprintf(
                 'COM_USERREMINDER_RUN_COMPLETE',
                 $stats['processed'],
                 $stats['sent'],
                 $stats['deleted']
-            ),
+            ) . (!empty($stats['errors'])
+                ? ' ' . Text::sprintf('COM_USERREMINDER_RUN_ERRORS', (int) $stats['errors'])
+                : ''),
             'info'
         );
     }
