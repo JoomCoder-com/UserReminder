@@ -27,6 +27,11 @@ use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderCompone
  * half shares the administrator component class. It wires the MVC factory,
  * the dispatcher factory and the site router (SEF opt-out links).
  *
+ * NOTE: Joomla boots components from the ADMINISTRATOR half's provider for
+ * both applications (ExtensionManagerTrait::bootComponent always resolves
+ * under JPATH_ADMINISTRATOR). This file is kept complete and consistent with
+ * admin/services/provider.php so nothing regresses if that ever changes.
+ *
  * @since  6.1.0
  */
 return new class implements ServiceProviderInterface
