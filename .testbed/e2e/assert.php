@@ -39,8 +39,18 @@ function pass(string $msg): void
 // --------------------------------------------------------------- upgrade-only
 
 if ($mode === 'upgrade') {
-    $schemas = val("SELECT version_id FROM {$P}schemas WHERE extension_id = (SELECT extension_id FROM {$P}extensions WHERE type='component' AND element='com_userreminder')");
+    // Duplicate-proofed: `= (subquery)` aborts with "Subquery returns more
+    // than 1 row" when the extension table carries duplicate com_userreminder
+    // rows (seen on J6 upgrades). IN + latest row wins keeps the assert alive
+    // so the real problem is surfaced by the explicit duplicate check below.
+    $schemas = val("SELECT version_id FROM {$P}schemas WHERE extension_id IN (
+            SELECT extension_id FROM {$P}extensions
+            WHERE type='component' AND element='com_userreminder'
+        ) ORDER BY version_id DESC LIMIT 1");
     $schemas === '6.0.0' ? pass('#__schemas = 6.0.0') : fail("#__schemas = " . var_export($schemas, true));
+
+    $dupes = (int) val("SELECT COUNT(*) FROM {$P}extensions WHERE type='component' AND element='com_userreminder'");
+    $dupes === 1 ? pass('exactly one com_userreminder component row') : fail("$dupes com_userreminder component rows (expected 1)");
 
     $engine = val("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$P}userreminder'");
     $engine === 'InnoDB' ? pass('#__userreminder engine InnoDB') : fail("#__userreminder engine $engine");

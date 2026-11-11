@@ -32,6 +32,12 @@ if (!in_array($scenario, ['fresh', 'upgrade', 'all'], true) || ($stackArg !== 'a
 $runStacks = $stackArg === 'all' ? array_keys($stacks) : [$stackArg];
 $runScenarios = $scenario === 'all' ? ['fresh', 'upgrade'] : [$scenario];
 
+// Ensure the SMTP catcher is running. Scenario steps recreate only the
+// joomla/db services, so a stack brought down with `docker compose down`
+// would otherwise run the whole matrix with no Mailpit to receive mail.
+echo "Ensuring Mailpit catcher is up\n";
+shell('docker compose -p urtest -f ' . COMPOSE . ' up -d mailpit');
+
 $results = [];
 
 foreach ($runScenarios as $sc) {
