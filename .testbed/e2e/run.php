@@ -13,7 +13,7 @@
  *           emails + detection.
  */
 
-define('COMPOSE', 'C:/wamp64/www/UserReminder/.testbed/docker-compose.yml');
+define('COMPOSE', 'E:/laragon/www/usereminder/.testbed/docker-compose.yml');
 
 $stacks = [
     'j4' => ['service' => 'joomla-j4', 'port' => 8811],
@@ -24,7 +24,7 @@ $stacks = [
 $scenario = $argv[1] ?? 'all';
 $stackArg = $argv[2] ?? 'all';
 
-if (!in_array($scenario, ['fresh', 'upgrade', 'all'], true) || !in_array($stackArg, array_keys($stacks), true)) {
+if (!in_array($scenario, ['fresh', 'upgrade', 'all'], true) || ($stackArg !== 'all' && !in_array($stackArg, array_keys($stacks), true))) {
     fwrite(STDERR, "usage: php run.php <fresh|upgrade|all> <j4|j5|j6|all>\n");
     exit(2);
 }

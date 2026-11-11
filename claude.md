@@ -1,5 +1,8 @@
 # Localhost access
-http://localhost/userreminder/administrator/
+Primary URL (Laragon .test vhost): http://usereminder.test
+- Site: http://usereminder.test
+- Admin: http://usereminder.test/administrator/
+- (http://localhost/userreminder/ still works)
 username: admin
 pass: system123zz@@
 
@@ -53,5 +56,7 @@ pass: system123zz@@
 - Old 4.x update files were deleted: customers coming from 5.2.3 have **no** `#__schemas` row, so every surviving update file would run — each one must be written against the 5.2.3 schema (MyISAM, `UNIQUE KEY userid`) and be idempotent.
 - Index/PK changes are NOT put in the update SQL — MySQL aborts on duplicate index names and `DROP INDEX IF EXISTS` is MariaDB-only. Do them in `administrator/components/com_userreminder/script.php::migrateSchema6()` style: check `information_schema.STATISTICS` first, wrap every statement in try/catch.
 - Run the portability audit before every release that touches schema:
-  `php C:\Users\amine\.claude\skills\auditing-joomla-sql-portability\scripts\audit-sql-portability.php C:\wamp64\www\UserReminder\administrator\components\com_userreminder`
-- Test update SQL on BOTH engines (WAMP: MariaDB on 3306, MySQL on 3308) with the sqlprobe skill script.
+  `php C:\Users\amine\.claude\skills\auditing-joomla-sql-portability\scripts\audit-sql-portability.php E:\laragon\www\usereminder\administrator\components\com_userreminder`
+- Test on BOTH engines before releasing: Laragon MySQL 8.4 on 3306 (the local site DB),
+  MariaDB 11.5 on 3310 (old WAMP service, still running), and the .testbed containers
+  (MySQL 8.0 for J4/J5, MariaDB 11.5 for J6).

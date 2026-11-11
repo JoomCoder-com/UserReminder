@@ -27,9 +27,13 @@ x-db-health: &db-health
 
 services:
   # ---------------- Mailpit (SMTP catcher: UI/API on :8025, SMTP on :1025) ----
+  # Host ports are remapped (18025/11025): Laragon ships its own Mailpit on
+  # 127.0.0.1:1025, so the E2E stack must not fight it. The containers talk to
+  # this catcher via the compose network alias "mailpit" — host ports are only
+  # for humans.
   mailpit:
     image: axllent/mailpit
-    ports: ["8025:8025", "1025:1025"]
+    ports: ["18025:8025", "11025:1025"]
 
   # ---------------- Joomla 4.4 + MySQL 8.0 ----------------
   db-j4:
@@ -86,4 +90,4 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: C:/wamp64/www/UserReminder/releases
+      device: E:/laragon/www/usereminder/releases
