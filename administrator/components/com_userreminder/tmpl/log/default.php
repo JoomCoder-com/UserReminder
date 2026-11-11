@@ -64,7 +64,7 @@ $listDirn  = $this->escape($this->state->get('list.direction', 'DESC'));
                                 <?php echo HTMLHelper::_('grid.id', $i, (int) $row->id); ?>
                             </td>
                             <th scope="row"><?php echo htmlspecialchars((string) ($row->username ?? ''), ENT_QUOTES, 'UTF-8'); ?></th>
-                            <td><?php echo htmlspecialchars(UserReminderHelper::translateLogText((string) ($row->description ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(UserReminderHelper::logDisplay((string) ($row->description ?? ''), (string) ($row->message_key ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
                                 <?php echo !empty($row->date)
                                     ? HTMLHelper::_('date', $row->date, Text::_('DATE_FORMAT_LC4'))

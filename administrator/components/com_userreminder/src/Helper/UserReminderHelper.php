@@ -167,6 +167,30 @@ final class UserReminderHelper
     }
 
     /**
+     * Human text for a log row: prefer the machine-readable message_key stored
+     * since 6.1 (always in sync with the schema, translatable even when the
+     * description itself was written pre-translation), fall back to the legacy
+     * token-translated description for pre-6.1 rows.
+     *
+     * @param   string|null  $description  Raw description as stored in #__userreminder_log.
+     * @param   string|null  $messageKey   Raw message_key column (may be empty for legacy rows).
+     *
+     * @return  string
+     *
+     * @since  6.1.0
+     */
+    public static function logDisplay(?string $description, ?string $messageKey = ''): string
+    {
+        $messageKey = (string) $messageKey;
+
+        if ($messageKey !== '' && str_starts_with($messageKey, 'COM_USERREMINDER_')) {
+            return Text::_($messageKey);
+        }
+
+        return self::translateLogText($description);
+    }
+
+    /**
      * Configure the left sidebar menu.
      * Outputs com_userreminder menu items as JSON config for the JS sidebar script.
      *

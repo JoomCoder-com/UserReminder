@@ -52,7 +52,7 @@ class LogModel extends ListModel
 
         // Lean: only columns the template actually uses; keeps temp tables small on large logs.
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['id', 'userId', 'username', 'description', 'date']))
+            ->select($db->quoteName(['id', 'userId', 'username', 'description', 'message_key', 'date']))
             ->from($db->quoteName('#__userreminder_log'));
 
         // Search by username or description.

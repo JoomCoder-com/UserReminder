@@ -337,7 +337,7 @@ $kpis = [
                                         <tr>
                                             <td class="ps-3 py-2"><?php echo (int) ($row['userId'] ?? $row['user_id'] ?? 0); ?></td>
                                             <td class="py-2"><?php echo htmlspecialchars($row['username'] ?? '', ENT_QUOTES); ?></td>
-                                            <td class="text-truncate py-2" style="max-width: 240px;"><?php echo htmlspecialchars(UserReminderHelper::translateLogText($row['description'] ?? ''), ENT_QUOTES); ?></td>
+                                            <td class="text-truncate py-2" style="max-width: 240px;"><?php echo htmlspecialchars(UserReminderHelper::logDisplay($row['description'] ?? '', $row['message_key'] ?? ''), ENT_QUOTES); ?></td>
                                             <td class="text-nowrap small text-muted py-2 pe-3"><?php echo !empty($row['date']) ? HTMLHelper::_('date', $row['date'], Text::_('DATE_FORMAT_LC4')) : '—'; ?></td>
                                         </tr>
                                     <?php endforeach; ?>

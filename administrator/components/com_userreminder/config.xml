@@ -99,8 +99,8 @@
                   description="COM_USERREMINDER_FIELDSET_NOT_ACTIVATED_DESC">
             <field name="enableActivateReminder" type="radio" default="0"
                    layout="joomla.form.field.radio.switcher"
-                   label="COM_USERREMINDER_LOGIN_ENABLED"
-                   description="COM_USERREMINDER_LOGIN_ENABLED_TEXT">
+                   label="COM_USERREMINDER_ACTIVATE_ENABLED"
+                   description="COM_USERREMINDER_ACTIVATE_ENABLED_TEXT">
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>

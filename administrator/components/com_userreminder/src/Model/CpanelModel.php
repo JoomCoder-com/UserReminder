@@ -37,6 +37,14 @@ class CpanelModel extends BaseDatabaseModel
     public const CACHE_GROUP = 'com_userreminder.dashboard';
 
     /**
+     * Installed manifest version, resolved once per request (static cache).
+     *
+     * @var    string|null
+     * @since  6.1.0
+     */
+    private static ?string $manifestVersion = null;
+
+    /**
      * Add the opt-out group exclusion to a query on #__users aliased as "a",
      * mirroring SendService::applyGroupExclusion() so dashboard counts match
      * what the send pipeline actually targets.
@@ -599,7 +607,7 @@ class CpanelModel extends BaseDatabaseModel
     {
         try {
             $q = $db->getQuery(true)
-                ->select($db->quoteName(['id', 'userId', 'username', 'description', 'date']))
+                ->select($db->quoteName(['id', 'userId', 'username', 'description', 'message_key', 'date']))
                 ->from($db->quoteName('#__userreminder_log'))
                 ->order($db->quoteName('id') . ' DESC');
             $db->setQuery($q, 0, $limit);
@@ -806,10 +814,38 @@ class CpanelModel extends BaseDatabaseModel
             'enableDeleteExistingUsers'  => (int) $params->get('enableDeleteExistingUsers', 0),
             'scheduledTask'              => UserReminderHelper::getSchedulerTask()?->next_execution ?? 'off',
             'debugUserReminder'          => (int) $params->get('debugUserReminder', 0),
-            'ver'                        => '6.0.0',
+            // From the installed manifest (not a hardcoded version literal) so
+            // an upgrade automatically invalidates cached dashboard data.
+            'ver'                        => $this->manifestVersion(),
         ];
 
         return md5(json_encode($relevant));
+    }
+
+    /**
+     * Version string of the installed component manifest, cached per request.
+     *
+     * @return  string
+     *
+     * @since  6.1.0
+     */
+    private function manifestVersion(): string
+    {
+        if (self::$manifestVersion === null) {
+            self::$manifestVersion = 'unknown';
+
+            $file = JPATH_ADMINISTRATOR . '/components/com_userreminder/com_userreminder.xml';
+
+            if (is_file($file) && ($xml = @simplexml_load_file($file)) instanceof \SimpleXMLElement) {
+                $version = (string) $xml->version;
+
+                if ($version !== '') {
+                    self::$manifestVersion = $version;
+                }
+            }
+        }
+
+        return self::$manifestVersion;
     }
 
     private function getCached(string $key): mixed
