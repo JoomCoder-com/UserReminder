@@ -11,7 +11,11 @@ namespace JoomCoder\Component\UserReminder\Site\Model;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
+use JoomCoder\Component\UserReminder\Administrator\Table\LogTable;
+use JoomCoder\Component\UserReminder\Administrator\Table\OptOutTable;
 
 /**
  * Site opt-out model.
@@ -65,7 +69,8 @@ class OptoutModel extends BaseDatabaseModel
     }
 
     /**
-     * Mark the user identified by $code as opted out (idempotent).
+     * Mark the user identified by $code as opted out (idempotent) and record
+     * the event in the audit log.
      *
      * @param   string  $code  Opt-out code (hash from #__userreminder.optoutcode).
      *
@@ -85,26 +90,25 @@ class OptoutModel extends BaseDatabaseModel
             return 'already';
         }
 
-        $db     = $this->getDbo();
-        $insert = $db->getQuery(true)
-            ->insert($db->quoteName('#__userreminder_optout'))
-            ->columns($db->quoteName('user_id'))
-            ->values((int) $userId);
-
-        $db->setQuery($insert);
-
         try {
-            $db->execute();
+            $table = new OptOutTable($this->getDbo());
+            $table->bind(['user_id' => $userId]);
 
-            return 'done';
-        } catch (\Throwable) {
-            // Race condition: another request inserted in the meantime — treat as success.
-            return $this->isOptedOut($userId) ? 'already' : self::STATUS_INVALID;
+            if (!$table->store()) {
+                return self::STATUS_INVALID;
+            }
+        } catch (\UnexpectedValueException) {
+            return self::STATUS_INVALID;
         }
+
+        $this->logEvent($userId, 'COM_USERREMINDER_OPTOUT_LOG');
+
+        return 'done';
     }
 
     /**
-     * Remove the user identified by $code from the opt-out list (resubscribe).
+     * Remove the user identified by $code from the opt-out list (resubscribe)
+     * and record the event in the audit log.
      *
      * @param   string  $code  Opt-out code (hash from #__userreminder.optoutcode).
      *
@@ -124,20 +128,19 @@ class OptoutModel extends BaseDatabaseModel
             return 'notoptedout';
         }
 
-        $db    = $this->getDbo();
-        $query = $db->getQuery(true)
-            ->delete($db->quoteName('#__userreminder_optout'))
-            ->where($db->quoteName('user_id') . ' = ' . (int) $userId);
-
-        $db->setQuery($query);
-
         try {
-            $db->execute();
+            $table = new OptOutTable($this->getDbo());
 
-            return 'resubscribed';
+            if (!$table->delete($userId)) {
+                return self::STATUS_INVALID;
+            }
         } catch (\Throwable) {
             return self::STATUS_INVALID;
         }
+
+        $this->logEvent($userId, 'COM_USERREMINDER_OPTIN_LOG');
+
+        return 'resubscribed';
     }
 
     /**
@@ -167,6 +170,54 @@ class OptoutModel extends BaseDatabaseModel
         $db->setQuery($query);
 
         return (int) $db->loadResult();
+    }
+
+    /**
+     * Append an audit row to #__userreminder_log for a subscription change.
+     *
+     * Never fails the visitor's flow: a logging problem must not turn a
+     * successful unsubscribe into an error page.
+     *
+     * @param   int     $userId  Joomla user id.
+     * @param   string  $key     Language key for the event (stored as message_key).
+     *
+     * @return  void
+     *
+     * @since  6.1.0
+     */
+    private function logEvent(int $userId, string $key): void
+    {
+        try {
+            // The log keys live in the admin language file — the scheduler
+            // writes the same way from outside the admin UI.
+            Factory::getApplication()->getLanguage()->load('com_userreminder', JPATH_ADMINISTRATOR);
+
+            $db = $this->getDbo();
+
+            $username = (string) $db->setQuery(
+                'SELECT ' . $db->quoteName('username')
+                . ' FROM ' . $db->quoteName('#__users')
+                . ' WHERE ' . $db->quoteName('id') . ' = ' . (int) $userId
+            )->loadResult();
+
+            $table = new LogTable($db);
+            $table->bind([
+                'userId'      => $userId,
+                'username'    => $username,
+                'description' => Text::_($key),
+                'message_key' => $key,
+            ]);
+
+            if (!$table->store()) {
+                Factory::getApplication()->getLogger()->error(
+                    'User Reminder: failed to write opt-out audit log row: ' . $table->getError()
+                );
+            }
+        } catch (\Throwable $e) {
+            Factory::getApplication()->getLogger()->error(
+                'User Reminder: opt-out audit log write failed: ' . $e->getMessage()
+            );
+        }
     }
 
     /**

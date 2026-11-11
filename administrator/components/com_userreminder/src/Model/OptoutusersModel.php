@@ -13,6 +13,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
+use JoomCoder\Component\UserReminder\Administrator\Table\OptOutTable;
 
 /**
  * Opt-out users list model.
@@ -219,18 +220,23 @@ class OptoutusersModel extends ListModel
             return 0;
         }
 
-        $insert = $db->getQuery(true)
-            ->insert($db->quoteName('#__userreminder_optout'))
-            ->columns($db->quoteName('user_id'));
+        $table = new OptOutTable($db);
+        $added = 0;
 
         foreach ($new as $id) {
-            $insert->values((int) $id);
+            try {
+                $table->reset();
+                $table->bind(['user_id' => $id]);
+
+                if ($table->store()) {
+                    $added++;
+                }
+            } catch (\UnexpectedValueException) {
+                // Invalid id — skip it.
+            }
         }
 
-        $db->setQuery($insert);
-        $db->execute();
-
-        return \count($new);
+        return $added;
     }
 
     /**
