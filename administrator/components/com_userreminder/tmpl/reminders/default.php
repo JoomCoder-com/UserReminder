@@ -81,7 +81,7 @@ $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
                             </td>
                             <td class="text-center"><?php echo (int) ($row->remindernumber ?? 0); ?></td>
                             <td class="text-center">
-                                <span class="badge bg-info text-dark"><?php echo Text::_('COM_USERREMINDER_ACTIONSEND'); ?></span>
+                                <span class="badge bg-info"><?php echo Text::_('COM_USERREMINDER_ACTIONSEND'); ?></span>
                             </td>
                             <td class="text-center"><?php echo (int) $row->id; ?></td>
                         </tr>

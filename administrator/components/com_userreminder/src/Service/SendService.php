@@ -781,8 +781,10 @@ final class SendService
             // site router, not the current request.
             $sef = \Joomla\CMS\Router\Route::link('site', $path, false, \Joomla\CMS\Router\Route::TLS_IGNORE, true);
 
-            if ($sef !== '' && !str_starts_with($sef, 'index.php?')) {
-                return $siteUrl . ltrim($sef, '/');
+            // $absolute = true: the router already returns the full URL (scheme, host and
+            // any subfolder). Prefixing $siteUrl again doubled it ("http://x/http://x/...").
+            if (preg_match('#^https?://#i', $sef) && !str_contains($sef, '/index.php?')) {
+                return $sef;
             }
 
             return $siteUrl . $path;
