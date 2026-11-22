@@ -32,10 +32,12 @@ const STAGING = path.join(RELEASES, 'build');
 const PKG_INNER = path.join(STAGING, 'packages', 'pkg_userreminder');
 const COMP_DIR = path.join(PKG_INNER, 'com_userreminder');
 const PLUGIN_DIR = path.join(PKG_INNER, 'plg_task_userreminder');
+const UPDATE_PLUGIN_DIR = path.join(PKG_INNER, 'plg_installer_userreminderupdate');
 
 const ADMIN = path.join(ROOT, 'administrator', 'components', 'com_userreminder');
 const SITE = path.join(ROOT, 'components', 'com_userreminder');
 const PLUGIN = path.join(ROOT, 'plugins', 'task', 'userreminder');
+const UPDATE_PLUGIN = path.join(ROOT, 'plugins', 'installer', 'userreminderupdate');
 
 // Custom JS bundled by Vite. Anything else in media/js (e.g. the vendored,
 // already-minified chart.umd.min.js) is copied verbatim.
@@ -142,6 +144,7 @@ copyFileSync(path.join(ADMIN, 'script.php'), path.join(COMP_DIR, 'script.php'));
 copyTree(path.join(ADMIN, 'media'), path.join(COMP_DIR, 'media'));
 
 copyTree(PLUGIN, PLUGIN_DIR, { exclude: ['legacy'] });
+copyTree(UPDATE_PLUGIN, UPDATE_PLUGIN_DIR);
 copyFileSync(path.join(ROOT, 'pkg_script.php'), path.join(STAGING, 'pkg_script.php'));
 copyFileSync(path.join(ROOT, 'pkg_userreminder.xml'), path.join(STAGING, 'pkg_userreminder.xml'));
 
@@ -159,8 +162,10 @@ for (const file of [...collectFiles(STAGING, '.xml'), ...collectFiles(STAGING, '
 
 await zipDir(COMP_DIR, path.join(PKG_INNER, 'com_userreminder.zip'));
 await zipDir(PLUGIN_DIR, path.join(PKG_INNER, 'plg_task_userreminder.zip'));
+await zipDir(UPDATE_PLUGIN_DIR, path.join(PKG_INNER, 'plg_installer_userreminderupdate.zip'));
 rmSync(COMP_DIR, { recursive: true, force: true });
 rmSync(PLUGIN_DIR, { recursive: true, force: true });
+rmSync(UPDATE_PLUGIN_DIR, { recursive: true, force: true });
 
 const outFile = path.join(RELEASES, `pkg_userreminder_v${version}.zip`);
 await zipDir(STAGING, outFile);

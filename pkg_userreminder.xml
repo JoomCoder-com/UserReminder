@@ -20,6 +20,8 @@
     <files>
         <folder type="component" id="com_userreminder">packages/pkg_userreminder/com_userreminder.zip</folder>
         <folder type="plugin" id="userreminder" group="task" enable="1">packages/pkg_userreminder/plg_task_userreminder.zip</folder>
+        <!-- Identifies the site to joomcoder.com when Joomla downloads an update -->
+        <folder type="plugin" id="userreminderupdate" group="installer" enable="1">packages/pkg_userreminder/plg_installer_userreminderupdate.zip</folder>
     </files>
 
     <updateservers>
@@ -28,5 +30,5 @@
         </server>
     </updateservers>
 
-    <dlid/>
+    <dlid prefix="download_id=" suffix=""/>
 </extension>

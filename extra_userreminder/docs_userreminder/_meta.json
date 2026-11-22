@@ -1,0 +1,17 @@
+{
+  "defaults": {
+    "description": "User Reminder emails Joomla users who never activated, never logged in or stopped visiting, and cleans up accounts that never respond.",
+    "keywords": "joomla user reminder, inactive users, activation reminder, joomla email reminder, user cleanup, joomla 5, joomla 6"
+  },
+  "pages": {
+    "index": { "description": "User Reminder for Joomla 4.4, 5 and 6: reminder emails for incomplete registrations, never-logged-in and inactive users.", "keywords": "user reminder, joomla user reminder, inactive users, activation reminder, joomla mail templates, scheduled tasks" },
+    "installation": { "description": "Install User Reminder, enable updates with your download key, and upgrade from 5.x to 6.x.", "keywords": "install user reminder, joomla package, download key, upgrade user reminder, joomla 6, scheduled task" },
+    "getting-started": { "description": "Send your first User Reminder emails in three steps: cadence, reminder types and mail templates, test and schedule.", "keywords": "user reminder quick start, joomla reminder setup, activation email, inactive user email, test email, joomla scheduler" },
+    "features": { "description": "All User Reminder features: three reminder types, mail templates, scheduling, account cleanup, opt-out, dashboard and log.", "keywords": "user reminder features, joomla account cleanup, opt-out, reminder dashboard, action log, joomla email" },
+    "scheduling": { "description": "How User Reminder sends through Joomla Scheduled Tasks: the task, cron, cadence options and sending limits.", "keywords": "joomla scheduled tasks, user reminder task, joomla cron, scheduler run, reminder cadence, email limits" },
+    "email-templates": { "description": "Edit User Reminder emails in Joomla Mail Templates: the three templates, tags, HTML container and links.", "keywords": "joomla mail templates, reminder email, email tags, html email joomla, optout url, activation link" },
+    "admin-screens": { "description": "User Reminder administrator screens: dashboard, reminder lists, opt-out users and groups, action log and options.", "keywords": "user reminder dashboard, opt-out users, opt-out groups, action log, joomla admin, reminder options" },
+    "troubleshooting": { "description": "Fix User Reminder issues: reminders not sent, no emails, skipped or deleted users, wrong links, plain emails, updates.", "keywords": "user reminder not working, joomla emails not sent, scheduled task, reminder links, joomla mail, troubleshooting" },
+    "faq": { "description": "Answers about User Reminder: emails, mail templates, sending, testing, deletion, opt-out and Community Builder.", "keywords": "user reminder faq, joomla reminder questions, delete inactive users, unsubscribe, community builder, mail templates" }
+  }
+}

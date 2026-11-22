@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="installer" method="upgrade">
+	<name>plg_installer_userreminderupdate</name>
+	<author>JoomCoder</author>
+	<creationDate>2026-11-22</creationDate>
+	<copyright>(C) 2026 JoomCoder. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later</license>
+	<authorEmail>support@joomcoder.com</authorEmail>
+	<authorUrl>https://www.joomcoder.com/</authorUrl>
+	<version>##VERSION##</version>
+	<description>PLG_INSTALLER_USERREMINDERUPDATE_XML_DESCRIPTION</description>
+	<namespace path="src">JoomCoder\Plugin\Installer\UserReminderUpdate</namespace>
+	<files>
+		<folder plugin="userreminderupdate">services</folder>
+		<folder>src</folder>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/plg_installer_userreminderupdate.ini</language>
+		<language tag="en-GB">en-GB/plg_installer_userreminderupdate.sys.ini</language>
+	</languages>
+</extension>

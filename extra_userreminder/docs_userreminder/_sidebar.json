@@ -1,0 +1,15 @@
+{
+  "items": [
+    { "title": "Overview", "path": "index.md" },
+    { "title": "Installation", "path": "installation.md" },
+    { "title": "Quick Start", "path": "getting-started.md" },
+    { "title": "Features", "path": "features.md" },
+    { "title": "Guides", "children": [
+      { "title": "Scheduling", "path": "features/scheduling.md" },
+      { "title": "Email Templates", "path": "features/email-templates.md" },
+      { "title": "Administrator Screens", "path": "features/admin-screens.md" }
+    ]},
+    { "title": "Troubleshooting", "path": "troubleshooting.md" },
+    { "title": "FAQ", "path": "faq.md" }
+  ]
+}
