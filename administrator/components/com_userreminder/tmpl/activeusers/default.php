@@ -13,11 +13,18 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Factory;
+use Joomla\Database\DatabaseInterface;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 
 /** @var \JoomCoder\Component\UserReminder\Administrator\View\Activeusers\HtmlView $this */
 
 $listOrder = $this->escape($this->state->get('list.ordering', 'a.lastvisitDate'));
 $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
+
+// "Action to Perform": what the next run does for each user
+$sendService = new SendService(Factory::getContainer()->get(DatabaseInterface::class));
+$layouts     = JPATH_ADMINISTRATOR . '/components/com_userreminder/layouts';
 ?>
 <form action="<?php echo Route::_('index.php?option=com_userreminder&view=activeusers'); ?>" method="post" name="adminForm" id="adminForm">
     <div id="j-main-container" class="j-main-container">
@@ -77,7 +84,7 @@ $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));
                             <td class="text-center"><?php echo (int) ($row->nodays ?? 0); ?></td>
                             <td class="text-center"><?php echo (int) ($row->remindernumber ?? 0); ?></td>
                             <td class="text-center">
-                                <span class="badge bg-info"><?php echo Text::_('COM_USERREMINDER_ACTIONSEND'); ?></span>
+                                <?php echo LayoutHelper::render('userreminder.action', ['action' => $sendService->plannedAction($row, SendService::TYPE_INACTIVE_USER)], $layouts); ?>
                             </td>
                             <td class="text-center"><?php echo (int) $row->id; ?></td>
                         </tr>

@@ -597,6 +597,48 @@ final class SendService
      *
      * @since   4.0.0
      */
+    /**
+     * What the next run will do for a user, for the admin lists' "Action to Perform"
+     * column. Same rules as the run (decideAction() for types 1/2, the inactive-user
+     * branch of sendInactiveReminders() for type 3).
+     *
+     * @param   object  $row   User row with remindernumber, datesent, registerDate.
+     * @param   int     $type  One of the TYPE_* constants.
+     *
+     * @return  string  send|wait|done|delete|removegroups|off
+     *
+     * @since   6.0.1
+     */
+    public function plannedAction(object $row, int $type): string
+    {
+        static $options = null;
+        $options ??= ReminderOptions::fromComponent();
+
+        if (!$options->typeEnabled($type)) {
+            return 'off';
+        }
+
+        $reminderNumber = (int) ($row->remindernumber ?? 0);
+
+        if ($reminderNumber > 0 && $reminderNumber >= $options->maxReminders()) {
+            if ($options->deleteAtEndOfCycle($type)) {
+                return 'delete';
+            }
+
+            return $type === self::TYPE_INACTIVE_USER && $options->removeFromGroups() ? 'removegroups' : 'done';
+        }
+
+        if ($reminderNumber === 0) {
+            // Types 1/2 wait for the account age unless the first reminder goes out at once
+            $waiting = $type !== self::TYPE_INACTIVE_USER && !$options->firstImmediate()
+                && $this->isWithinCoolDown($row->registerDate ?? null, $options->cooldownDays());
+
+            return $waiting ? 'wait' : 'send';
+        }
+
+        return $this->isWithinCoolDown($row->datesent ?? null, $options->cooldownDays()) ? 'wait' : 'send';
+    }
+
     private function isWithinCoolDown(?string $datesent, int $days): bool
     {
         if (empty($datesent)) {
