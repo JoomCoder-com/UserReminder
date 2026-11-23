@@ -1,0 +1,9 @@
+{
+  "slug": "userreminder",
+  "name": "User Reminder",
+  "color": ["#10B981", "#047857"],
+  "glow": "#34D399",
+  "art": "userreminder-icon-art.svg",
+  "og": ["Automatic email reminders for Joomla users:", "finish sign-ups, bring back inactive members."],
+  "card": ["Email reminders for Joomla users:", "sign-ups, inactive members, clean-up."]
+}

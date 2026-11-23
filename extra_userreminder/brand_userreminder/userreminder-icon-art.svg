@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Bell with an orange notification badge -->
+  <path fill="#FFFFFF" d="M256 108c-64 0-108 50-108 114v66l-34 46c-8 11 0 26 13 26h258c13 0 21-15 13-26l-34-46v-66c0-64-44-114-108-114z"/>
+  <path fill="#FFFFFF" d="M214 378h84a42 42 0 0 1-84 0z"/>
+  <circle cx="352" cy="150" r="58" fill="{TILE}"/>
+  <circle cx="352" cy="150" r="44" fill="{ORANGE}"/>
+</svg>
