@@ -287,6 +287,11 @@ final class SendService
         $options = ReminderOptions::fromComponent();
         $limit   = $limit > 0 ? $limit : $options->batchSize();
 
+        // Switched off in Options: nothing to do.
+        if (!$options->typeEnabled(self::TYPE_INACTIVE_USER)) {
+            return ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'skipped' => 0, 'simulated' => 0, 'removedGroups' => 0, 'errors' => 0, 'dryRun' => false];
+        }
+
         $days   = $options->inactivityDays();
         $cutoff = ReminderOptions::utcNow('-' . $days . ' days');
 

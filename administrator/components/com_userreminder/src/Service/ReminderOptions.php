@@ -159,13 +159,14 @@ final class ReminderOptions
      */
     public function typeEnabled(int $type): bool
     {
-        if ($type === SendService::TYPE_INACTIVE_USER) {
-            return true;
-        }
-
-        $key = $type === SendService::TYPE_NOT_ACTIVATED
-            ? 'enableActivateReminder'
-            : 'enableLoginReminder';
+        // Inactive-user reminders are opt-in like the other two (6.0.0 rebuild, user decision
+        // 2026-11-23): before, they had no switch and started right after install. Sites updated
+        // from a version without the switch get it saved as on (script.php), so they keep sending.
+        $key = match ($type) {
+            SendService::TYPE_NOT_ACTIVATED => 'enableActivateReminder',
+            SendService::TYPE_INACTIVE_USER => 'enableInactiveReminder',
+            default                         => 'enableLoginReminder',
+        };
 
         return (int) $this->params->get($key, 0) === 1;
     }

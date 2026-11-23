@@ -57,6 +57,10 @@ class com_userreminderInstallerScript extends InstallerScript
             // SQL file) because MySQL aborts on duplicate index names and the
             // 5.2.x schema carries a UNIQUE KEY that must become the PK.
             $this->migrateSchema6();
+
+            // Inactive-user reminders became opt-in (default off). Sites that had them
+            // always on keep sending: save the switch as on when it is not saved yet.
+            $this->keepInactiveRemindersOn();
         }
 
         // 6.1.0 schema deltas on fresh installs and upgrades alike
@@ -200,6 +204,49 @@ class com_userreminderInstallerScript extends InstallerScript
             $db->execute();
         } catch (\Throwable) {
             // Non-fatal — System → Mail Templates → Options can set it manually.
+        }
+    }
+
+    /**
+     * On update: save "enableInactiveReminder" = 1 when the site has no value for it yet.
+     *
+     * Before the switch existed, inactive-user reminders were always on; without this, an
+     * update would silently stop them.
+     *
+     * @return  void
+     *
+     * @since   6.0.0
+     */
+    private function keepInactiveRemindersOn(): void
+    {
+        try {
+            $db    = Factory::getDbo();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['extension_id', 'params']))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_userreminder'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+            $row = $db->setQuery($query)->loadObject();
+
+            if (!$row) {
+                return;
+            }
+
+            $params = json_decode((string) $row->params, true) ?: [];
+
+            if (\array_key_exists('enableInactiveReminder', $params)) {
+                return;
+            }
+
+            $params['enableInactiveReminder'] = 1;
+
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('params') . ' = ' . $db->quote(json_encode($params)))
+                ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id);
+            $db->setQuery($update)->execute();
+        } catch (\Throwable) {
+            // Never block the update on this.
         }
     }
 

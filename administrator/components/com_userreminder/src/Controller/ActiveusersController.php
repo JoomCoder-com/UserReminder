@@ -33,6 +33,14 @@ class ActiveusersController extends BaseController
         $this->checkToken();
         $this->requireAuthorised('core.manage');
 
+        // Inactive-user reminders are switched off in Options: say so instead of "Processed 0".
+        if (!\JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions::fromComponent()->typeEnabled(\JoomCoder\Component\UserReminder\Administrator\Service\SendService::TYPE_INACTIVE_USER)) {
+            Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_INACTIVE_OFF'), 'warning');
+            $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
+
+            return;
+        }
+
         $app   = Factory::getApplication();
         $stats = UserReminderComponent::service()->processInactiveUserReminders(true, 0, 0);
 

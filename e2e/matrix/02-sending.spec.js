@@ -12,13 +12,41 @@ async function setSwitch(page, name, value) {
   await expect(radio).toBeChecked();
 }
 
-test('activation and login reminders are switched on in Options', async ({ page }) => {
-  seedUsers();
-  await adminLogin(page);
+async function openReminderOptions(page) {
   await page.goto(`${BASE}/administrator/index.php?option=com_config&view=component&component=com_userreminder`);
   await page.locator('[role=tab]', { hasText: /Reminders/i }).first().click();
+}
+async function saveOptions(page) {
+  await Promise.all([page.waitForLoadState('load'), page.locator('#toolbar button', { hasText: /^\s*Save\s*$/ }).first().click()]);
+  await expect(page.locator('#system-message-container')).toContainText(/saved/i);
+}
+
+test('with inactive-user reminders switched off, sending says so and mails nobody', async ({ page, request }) => {
+  const users = seedUsers();
+  await adminLogin(page);
+  await openReminderOptions(page);
+  await setSwitch(page, 'enableInactiveReminder', 0);
+  // The inactive-user settings hide while the switch is off
+  await expect(page.locator('#jform_numberOfDaysExistingUser')).toBeHidden();
+  await saveOptions(page);
+
+  await page.goto(admin('view=activeusers'));
+  await toolbar(page, 'Send Reminders');
+  await expect(page.locator('#system-message-container')).toContainText(/switched off/i);
+  await page.goto(admin('view=cpanel'));
+  await toolbar(page, 'Send inactive reminders');
+  await expect(page.locator('#system-message-container')).toContainText(/switched off/i);
+  await page.waitForTimeout(1000);
+  expect((await mails(request, `to:inact@${users.domain}`)).length).toBe(0);
+});
+
+test('the three reminder types are switched on in Options', async ({ page }) => {
+  seedUsers();
+  await adminLogin(page);
+  await openReminderOptions(page);
   await setSwitch(page, 'enableActivateReminder', 1);
   await setSwitch(page, 'enableLoginReminder', 1);
+  await setSwitch(page, 'enableInactiveReminder', 1);
   await Promise.all([page.waitForLoadState('load'), page.locator('#toolbar button', { hasText: /^\s*Save\s*$/ }).first().click()]);
   await expect(page.locator('#system-message-container')).toContainText(/saved/i);
 });

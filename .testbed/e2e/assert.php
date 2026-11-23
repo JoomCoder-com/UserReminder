@@ -49,6 +49,12 @@ if ($mode === 'upgrade') {
         ) ORDER BY version_id DESC LIMIT 1");
     $schemas === '6.0.0' ? pass('#__schemas = 6.0.0') : fail("#__schemas = " . var_export($schemas, true));
 
+    // Inactive-user reminders became opt-in; an upgraded site keeps them on (script.php).
+    $cp = json_decode((string) val("SELECT params FROM {$P}extensions WHERE type='component' AND element='com_userreminder' ORDER BY extension_id DESC LIMIT 1"), true) ?: [];
+    (int) ($cp['enableInactiveReminder'] ?? 0) === 1
+        ? pass('inactive-user reminders kept on after the update')
+        : fail('inactive-user reminders switched off by the update: ' . var_export($cp['enableInactiveReminder'] ?? null, true));
+
     $dupes = (int) val("SELECT COUNT(*) FROM {$P}extensions WHERE type='component' AND element='com_userreminder'");
     $dupes === 1 ? pass('exactly one com_userreminder component row') : fail("$dupes com_userreminder component rows (expected 1)");
 

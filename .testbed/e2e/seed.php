@@ -165,6 +165,12 @@ file_put_contents('/tmp/e2e-expected.json', json_encode(array_merge($expected, [
 $cparams = json_decode((string) val("SELECT params FROM {$P}extensions WHERE element = 'com_userreminder' AND type = 'component'"), true) ?: [];
 $cparams['enableActivateReminder'] = 1;
 $cparams['enableLoginReminder']    = 1;
+// Inactive-user reminders: a fresh install starts with them off, so switch them on here. An
+// upgraded site must already have them on (script.php keeps them on); assert.php checks that,
+// so the seeder leaves the upgrade scenario alone.
+if (empty($expected['legacyLogId']) && !array_key_exists('enableInactiveReminder', $cparams)) {
+    $cparams['enableInactiveReminder'] = 1;
+}
 q("UPDATE {$P}extensions SET params = " . $db->quote(json_encode($cparams)) . " WHERE element = 'com_userreminder' AND type = 'component'");
 
 // Make sure the scheduled task is due and enabled.
