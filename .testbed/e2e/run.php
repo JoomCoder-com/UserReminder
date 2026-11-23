@@ -19,13 +19,16 @@ $stacks = [
     'j4' => ['service' => 'joomla-j4', 'port' => 8811],
     'j5' => ['service' => 'joomla-j5', 'port' => 8812],
     'j6' => ['service' => 'joomla-j6', 'port' => 8813],
+    'j4m' => ['service' => 'joomla-j4m', 'port' => 8814], // Joomla 4.4 + MariaDB
+    'j5m' => ['service' => 'joomla-j5m', 'port' => 8815], // Joomla 5 + MariaDB
+    'j6y' => ['service' => 'joomla-j6y', 'port' => 8816], // Joomla 6.2 + MySQL 8.4
 ];
 
 $scenario = $argv[1] ?? 'all';
 $stackArg = $argv[2] ?? 'all';
 
 if (!in_array($scenario, ['fresh', 'upgrade', 'all'], true) || ($stackArg !== 'all' && !in_array($stackArg, array_keys($stacks), true))) {
-    fwrite(STDERR, "usage: php run.php <fresh|upgrade|all> <j4|j5|j6|all>\n");
+    fwrite(STDERR, "usage: php run.php <fresh|upgrade|all> <j4|j5|j6|j4m|j5m|j6y|all>\n");
     exit(2);
 }
 

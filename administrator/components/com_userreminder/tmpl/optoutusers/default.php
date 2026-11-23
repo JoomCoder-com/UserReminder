@@ -23,6 +23,9 @@ Text::script('COM_USERREMINDER_OPTOUT_REMOVE_PICKED');
 $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->getRegistry()->addRegistryFile('media/com_userreminder/joomla.asset.json');
 $wa->useScript('com_userreminder.optoutusers-select');
+// The "Select Users" modal: Joomla 4's admin template loads Bootstrap's modal script anyway,
+// Joomla 5 / 6 do not, and the button did nothing there.
+$wa->useScript('bootstrap.modal');
 
 $listOrder = $this->escape($this->state->get('list.ordering', 'a.name'));
 $listDirn  = $this->escape($this->state->get('list.direction', 'ASC'));

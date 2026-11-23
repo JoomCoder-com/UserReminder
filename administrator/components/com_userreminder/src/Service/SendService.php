@@ -119,6 +119,15 @@ final class SendService
         private readonly DatabaseInterface $db,
         private readonly ?MailerFactoryInterface $mailerFactory = null
     ) {
+        // Send errors (Log::add(..., 'com_userreminder')) went nowhere: no logger listened to the
+        // category, so a run only reported "mail errors N" with no reason. Write them to
+        // administrator/logs/com_userreminder.php.
+        static $loggerAdded = false;
+
+        if (!$loggerAdded) {
+            $loggerAdded = true;
+            Log::addLogger(['text_file' => 'com_userreminder.php'], Log::WARNING | Log::ERROR | Log::CRITICAL | Log::ALERT | Log::EMERGENCY, ['com_userreminder']);
+        }
     }
 
     /**
@@ -481,16 +490,20 @@ final class SendService
 
         // Without "send first reminder immediately", a user's first reminder
         // waits until the account is at least `$days` old.
+        // The two halves are joined with UNION, and union() does not carry the second query's
+        // bound values into the statement ("number of variables must match the number of
+        // parameters" on every run with the default options). The cutoff is a date we build
+        // ourselves, so it is quoted inline instead of bound.
         $firstSendAgeFilter = $options->firstImmediate()
             ? null
-            : fn() => $db->quoteName('a.registerDate') . ' < :cutoff';
+            : fn() => $db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff);
 
-        $addAgeFilter = static function (\Joomla\Database\QueryInterface $query) use ($firstSendAgeFilter, $cutoff) {
+        $addAgeFilter = static function (\Joomla\Database\QueryInterface $query) use ($firstSendAgeFilter) {
             if ($firstSendAgeFilter === null) {
                 return $query;
             }
 
-            return $query->where($firstSendAgeFilter())->bind(':cutoff', $cutoff);
+            return $query->where($firstSendAgeFilter());
         };
 
         $notActivated = $addAgeFilter(

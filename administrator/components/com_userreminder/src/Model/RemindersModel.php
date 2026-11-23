@@ -77,9 +77,12 @@ class RemindersModel extends ListModel
             ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
             ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
             ->where('o.user_id IS NULL')
-            ->where('a.block >= 1')
-            ->where('a.activation <> ' . $db->quote(''))
-            ->where('a.lastvisitDate IS NULL');
+            ->where('a.lastvisitDate IS NULL')
+            // Both registration reminder types, as SendService sends them: not activated
+            // (blocked, activation token) and activated but never logged in. The list showed only
+            // the first, so the users who get the login reminder were in no list.
+            ->where('((a.block >= 1 AND a.activation <> ' . $db->quote('') . ')'
+                . ' OR (a.block = 0 AND a.activation = ' . $db->quote('') . '))');
 
         // With "send first reminder immediately" the registration-age window
         // does not apply to first sends, so don't filter freshly registered users out.

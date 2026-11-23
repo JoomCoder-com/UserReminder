@@ -160,6 +160,13 @@ file_put_contents('/tmp/e2e-expected.json', json_encode(array_merge($expected, [
     'doneDatesent' => $doneDatesent,
 ])));
 
+// Activation and login reminders are off by default (config.xml): switch them on the way an
+// admin does in Options, keeping every other saved option (the upgrade scenario migrates them).
+$cparams = json_decode((string) val("SELECT params FROM {$P}extensions WHERE element = 'com_userreminder' AND type = 'component'"), true) ?: [];
+$cparams['enableActivateReminder'] = 1;
+$cparams['enableLoginReminder']    = 1;
+q("UPDATE {$P}extensions SET params = " . $db->quote(json_encode($cparams)) . " WHERE element = 'com_userreminder' AND type = 'component'");
+
 // Make sure the scheduled task is due and enabled.
 q("UPDATE {$P}scheduler_tasks
    SET next_execution = '" . gmdate('Y-m-d H:i:s', strtotime('-1 hour')) . "', state = 1

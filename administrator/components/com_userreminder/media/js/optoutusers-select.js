@@ -51,30 +51,12 @@
     updateState();
   });
 
-  window.addEventListener('message', (event) => {
-    if (event.origin !== window.location.origin) {
-      return;
-    }
-
-    const data = event.data || {};
-
-    if (data.messageType !== 'joomla:content-select' || data.contentType !== 'com_users.user') {
-      return;
-    }
-
-    if (data.userField && data.userField !== pickField) {
-      return;
-    }
-
-    const id = String(data.id || '');
-
-    if (id === '') {
-      return;
-    }
-
+  // Stage one picked user (deduplicated by id).
+  const stage = (id, name) => {
+    const data = { name };
     const tbody = liveTbody();
 
-    if (!tbody || stagedIds().has(id)) {
+    if (id === '' || id === '0' || !tbody || stagedIds().has(id)) {
       return;
     }
 
@@ -120,5 +102,53 @@
 
     tbody.appendChild(row);
     updateState();
+  };
+
+  window.addEventListener('message', (event) => {
+    if (event.origin !== window.location.origin) {
+      return;
+    }
+
+    const data = event.data || {};
+
+    if (data.messageType !== 'joomla:content-select' || data.contentType !== 'com_users.user') {
+      return;
+    }
+
+    if (data.userField && data.userField !== pickField) {
+      return;
+    }
+
+    stage(String(data.id || ''), data.name);
   });
+
+  // Joomla 4: com_users' modal sends no message. Its own user field binds the iframe's
+  // .button-select links instead (same origin), so do the same. On Joomla 5/6 both paths may
+  // fire for one click; stage() ignores the second.
+  document.addEventListener('load', (event) => {
+    const frame = event.target;
+
+    if (!(frame instanceof HTMLIFrameElement) || !(frame.src || '').includes(pickField)) {
+      return;
+    }
+
+    let doc;
+
+    try {
+      doc = frame.contentDocument;
+    } catch (e) {
+      return;
+    }
+
+    if (!doc) {
+      return;
+    }
+
+    doc.querySelectorAll('.button-select[data-user-field="' + pickField + '"]').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        stage(String(link.getAttribute('data-user-value') || ''), link.getAttribute('data-user-name') || '');
+      });
+    });
+  }, true);
 })();

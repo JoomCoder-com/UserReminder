@@ -11,7 +11,6 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
-use Joomla\CMS\Mail\MailTemplate;
 
 /**
  * Installer script for com_userreminder (admin).
@@ -289,15 +288,51 @@ class com_userreminderInstallerScript extends InstallerScript
                     $tags[] = (string) $tag;
                 }
 
-                if ($templateId === '' || MailTemplate::getTemplate($templateId, '') !== null) {
+                if ($templateId === '' || $this->mailTemplateExists($templateId)) {
                     continue;
                 }
 
-                MailTemplate::createTemplate($templateId, $subject, $body, $tags, $htmlbody);
+                // Direct insert, as MailTemplate::createTemplate() did up to Joomla 6.1. From 6.2 it
+                // saves through com_mails' Template model, which cannot boot in a CLI install
+                // ("Could not parse the requested URI"): the templates were silently missing.
+                // createTemplate() / getTemplate() are deprecated in 6.2 and go away in 8.0.
+                $db  = Factory::getDbo();
+                $row = (object) [
+                    'template_id' => $templateId,
+                    'extension'   => 'com_userreminder',
+                    'language'    => '',
+                    'subject'     => $subject,
+                    'body'        => $body,
+                    'htmlbody'    => $htmlbody,
+                    'attachments' => '',
+                    'params'      => json_encode(['tags' => $tags]),
+                ];
+                $db->insertObject('#__mail_templates', $row);
             } catch (\Throwable) {
                 // Never block the install on a registration failure.
             }
         }
+    }
+
+    /**
+     * Does the site already have this mail template (the default, language '' row)?
+     *
+     * @param   string  $templateId  Full template id (com_userreminder.userreminder.xxx).
+     *
+     * @return  bool
+     *
+     * @since   6.0.0
+     */
+    private function mailTemplateExists(string $templateId): bool
+    {
+        $db    = Factory::getDbo();
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__mail_templates'))
+            ->where($db->quoteName('template_id') . ' = ' . $db->quote($templateId))
+            ->where($db->quoteName('language') . ' = ' . $db->quote(''));
+
+        return (int) $db->setQuery($query)->loadResult() > 0;
     }
 
     /**

@@ -41,12 +41,10 @@ class HtmlView extends BaseHtmlView
     {
         $model = $this->getModel();
 
-        // Joomla 5+ PopupButton supports inline dialogs; Joomla 4 falls back
-        // to a classic Bootstrap modal (see tmpl/optoutusers/default.php).
-        $this->inlineDialog = method_exists(
-            \Joomla\CMS\Toolbar\Button\PopupButton::class,
-            'popupType'
-        );
+        // The user picker is a Bootstrap modal on every Joomla version (tmpl/optoutusers/default.php,
+        // tested on 4.4 / 5 / 6). The old check, method_exists(PopupButton, 'popupType'), was false
+        // everywhere (toolbar options go through __call), so the inline-dialog branch never ran.
+        $this->inlineDialog = false;
 
         $this->items         = $this->get('Items');
         $this->pagination    = $this->get('Pagination');
@@ -97,12 +95,17 @@ class HtmlView extends BaseHtmlView
             } else {
                 // Joomla 4: PopupButton has no inline popup type, use a classic
                 // Bootstrap modal rendered in tmpl/optoutusers/default.php.
-                $bar->standardButton('selectUsers', Text::_('COM_USERREMINDER_OPTOUT_SELECT_USERS'))
-                    ->icon('icon-plus')
-                    ->attributes([
-                        'data-bs-toggle' => 'modal',
-                        'data-bs-target' => '#userreminder-select-users-modal',
-                    ]);
+                // A custom button: a standardButton without a task gets
+                // onclick="Joomla.submitbutton('')", which submitted the form and reloaded the
+                // page before the modal could open.
+                $bar->customButton('selectUsers')
+                    ->html(
+                        '<button type="button" class="btn btn-primary" data-bs-toggle="modal"'
+                        . ' data-bs-target="#userreminder-select-users-modal">'
+                        . '<span class="icon-plus" aria-hidden="true"></span> '
+                        . htmlspecialchars(Text::_('COM_USERREMINDER_OPTOUT_SELECT_USERS'), ENT_QUOTES, 'UTF-8')
+                        . '</button>'
+                    );
             }
 
             $bar->standardButton('remove', Text::_('COM_USERREMINDER_OPTUSER_REMOVE_BUTTON'), 'optoutusers.remove')

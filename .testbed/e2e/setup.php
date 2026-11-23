@@ -24,4 +24,8 @@ foreach (['mailer', 'smtphost', 'smtpport', 'smtpsecure', 'smtpauth', 'mailfrom'
     echo "  $k = " . trim($m[1] ?? '???') . "\n";
 }
 
+// Browser suite: Joomla's guided tour starts by itself on the first admin login and takes over
+// the page; the statistics prompt adds a table above every list. Neither belongs to the product.
+q("UPDATE {$P}extensions SET enabled = 0 WHERE type = 'plugin' AND folder = 'system' AND element IN ('guidedtours', 'stats')");
+
 echo "SETUP OK (tag=$TAG)\n";
