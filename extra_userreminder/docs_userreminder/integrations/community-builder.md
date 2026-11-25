@@ -8,7 +8,7 @@ If people register through [Community Builder](https://www.joomlapolis.com/) (CB
 2. Under **Incomplete Registrations**, set **Use Community Builder activation** to **Yes**
 3. On the **Links & URLs** tab, set **Activation URL** to CB's activation path, for example:
 
-```
+```text
 index.php?option=com_comprofiler&view=confirm&confirmcode=
 ```
 

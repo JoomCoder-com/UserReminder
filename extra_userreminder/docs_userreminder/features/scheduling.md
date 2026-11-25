@@ -23,7 +23,7 @@ If the task is missing or disabled, the [dashboard](dashboard.md) shows **Automa
 - **Lazy scheduler** (Joomla's default): a visit to the site starts due tasks. Fine for sites with daily visitors.
 - **Server cron** (more reliable): turn off the lazy scheduler in **System > Scheduled Tasks > Options** and add a cron job, for example every 15 minutes:
 
-```
+```bash
 php /path/to/your/site/cli/joomla.php scheduler:run --all
 ```
 
