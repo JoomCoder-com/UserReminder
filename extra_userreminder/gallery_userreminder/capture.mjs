@@ -57,8 +57,8 @@ const SHOTS = [
   { file: '07-opt-out-users', url: A('com_userreminder&view=optoutusers'), kind: 'page' },
   { file: '08-opt-out-groups', url: A('com_userreminder&view=optoutusers'), before: tab('Opt-out User Groups'), kind: 'page' },
   { file: '09-action-log', url: A('com_userreminder&view=log' + L), kind: 'page' },
-  { file: '10-options-reminders', url: A('com_config&view=component&component=com_userreminder'), before: tab('Reminders'), kind: 'page' },
-  { file: '11-options-email-container', url: A('com_config&view=component&component=com_userreminder'), before: tab('Email Container (HTML)'), kind: 'page' },
+  { file: '10-options-reminders', url: A('com_config&view=component&component=com_userreminder'), before: tab('Reminders'), kind: 'element', selector: 'joomla-tab' },
+  { file: '11-options-email-container', url: A('com_config&view=component&component=com_userreminder'), before: tab('Email Container (HTML)'), kind: 'element', selector: 'joomla-tab' },
   { file: '12-scheduled-task', url: A('com_scheduler&view=tasks&filter[search]=User Reminder'), kind: 'page' },
   { file: '13-unsubscribe', url: '/index.php?option=com_userreminder&view=optout&uid=' + createHash('md5').update('Yuki Tanakaopt').digest('hex'), site: true, kind: 'element', selector: '.card' },
 ];
@@ -147,6 +147,9 @@ async function shootEmail(ctx, id, path) {
 
 mkdirSync(OUT, { recursive: true });
 mkdirSync(DOCS_OUT, { recursive: true });
+// Joomla's toolbar is sticky: in a tall element shot it floats over the top of the element.
+const unstick = (pg) => pg.addStyleTag({ content: '#subhead-container,.subhead{position:static!important}' });
+
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, reducedMotion: 'reduce', locale: 'en-GB', timezoneId: 'UTC', colorScheme: 'light' });
 const page = await ctx.newPage();
@@ -162,6 +165,7 @@ for (const s of SHOTS) {
   }
   await open(page, s);
   if (s.kind === 'element') {
+    await unstick(page);
     await page.locator(s.selector).first().screenshot({ path });
   } else {
     // Short pages: stop under the content instead of showing an empty band.
@@ -181,6 +185,7 @@ await adminLogin(docsPage, BASE);
 for (const s of DOCS) {
   if (ONLY && !('docs-' + s.file).includes(ONLY)) continue;
   await open(docsPage, s);
+  await unstick(docsPage);
   await docsPage.locator(s.selector).first().screenshot({ path: join(DOCS_OUT, `${s.file}@2x.png`) });
   if (s.close) await docsPage.getByRole('button', { name: 'Close' }).first().click().catch(() => {});
   console.log('ok docs', s.file);
