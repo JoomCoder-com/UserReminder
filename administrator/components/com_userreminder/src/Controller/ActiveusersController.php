@@ -11,13 +11,8 @@ namespace JoomCoder\Component\UserReminder\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\Router\Route;
-use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderComponent;
-use JoomCoder\Component\UserReminder\Administrator\Service\MailDebug;
 use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
+use Joomla\CMS\MVC\Controller\BaseController;
 
 /**
  * Activeusers controller — runs the existing-user inactivity pipeline.
@@ -26,87 +21,29 @@ use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
  */
 class ActiveusersController extends BaseController
 {
-    use AclTrait;
+    use RunTrait;
 
+    /**
+     * Send inactive-user reminders now.
+     *
+     * @return  void
+     *
+     * @since   4.0.0
+     */
     public function sendReminders(): void
     {
-        $this->checkToken();
-        $this->requireAuthorised('core.manage');
-
-        // Inactive-user reminders are switched off in Options: say so instead of "Processed 0".
-        if (!\JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions::fromComponent()->typeEnabled(\JoomCoder\Component\UserReminder\Administrator\Service\SendService::TYPE_INACTIVE_USER)) {
-            Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_INACTIVE_OFF'), 'warning');
-            $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
-
-            return;
-        }
-
-        $app   = Factory::getApplication();
-        $stats = UserReminderComponent::service()->processInactiveUserReminders(true, 0, 0);
-
-        $app->enqueueMessage($this->runMessage($stats), 'info');
-
-        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
+        $this->runNow(true, 'activeusers');
     }
 
+    /**
+     * Send an inactive-user test email to the configured test user.
+     *
+     * @return  void
+     *
+     * @since   4.0.0
+     */
     public function sendTestMail(): void
     {
-        $this->checkToken();
-        $this->requireAuthorised('core.manage');
-
-        $app = Factory::getApplication();
-
-        $sent = UserReminderComponent::service()->sendTestMail([SendService::TYPE_INACTIVE_USER]);
-
-        $app->enqueueMessage($this->testMessage($sent), $sent ? 'info' : 'error');
-
-        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=activeusers', false));
-    }
-
-    /**
-     * Human message for a pipeline run (real or simulated).
-     *
-     * @param   array  $stats
-     *
-     * @return  string
-     *
-     * @since  6.1.0
-     */
-    private function runMessage(array $stats): string
-    {
-        if (!empty($stats['dryRun'])) {
-            return Text::sprintf(
-                'COM_USERREMINDER_RUN_SIMULATED',
-                $stats['processed'],
-                $stats['simulated'] ?? 0
-            );
-        }
-
-        return Text::sprintf(
-            'COM_USERREMINDER_RUN_COMPLETE',
-            $stats['processed'],
-            $stats['sent'],
-            $stats['deleted']
-        ) . (!empty($stats['errors'])
-            ? ' ' . Text::sprintf('COM_USERREMINDER_RUN_ERRORS', (int) $stats['errors'])
-            : '');
-    }
-
-    /**
-     * Human message for a test-email attempt (real or simulated).
-     *
-     * @param   bool  $sent
-     *
-     * @return  string
-     *
-     * @since  6.1.0
-     */
-    private function testMessage(bool $sent): string
-    {
-        if ($sent && MailDebug::enabled()) {
-            return Text::_('COM_USERREMINDER_TEST_SIMULATED');
-        }
-
-        return $sent ? Text::_('COM_USERREMINDER_TEST_SENT') : Text::_('COM_USERREMINDER_TEST_SEND_ERROR');
+        $this->sendTest([SendService::TYPE_INACTIVE_USER], 'activeusers');
     }
 }

@@ -17,6 +17,7 @@ declare(strict_types=1);
 const DB     = 'usereminder_j4';
 const PREFIX = 'm1pdq_';
 const ADMIN  = 343;
+const SITENAME = 'Northwind Makers Community';
 
 $db = new mysqli('127.0.0.1', 'root', '', DB);
 $db->set_charset('utf8mb4');
@@ -133,7 +134,7 @@ $optedOut = ['Viktor Petrov', 'Laura Silva', 'Ines Moreau'];
 
 $labels = [1 => ['Activation reminder sent', 'COM_USERREMINDER_ACTIVATE_REMINDER_SENT'],
            2 => ['Login reminder sent', 'COM_USERREMINDER_LOGIN_REMINDER_SENT'],
-           3 => ['User reminder sent', 'COM_USERREMINDER_USER_REMINDER_SENT']];
+           3 => ['Inactivity reminder sent', 'COM_USERREMINDER_USER_REMINDER_SENT']];
 $log = [];
 $users = [];
 $domains = ['gmail.com', 'outlook.com', 'proton.me', 'yahoo.com', 'icloud.com', 'gmx.de', 'example.org'];
@@ -194,9 +195,31 @@ foreach ($log as [$uid, $uname, [$desc, $key], $date]) {
 // Email container: the site's own name in the header, no sample banner image.
 $row = $db->query("SELECT params FROM " . PREFIX . "extensions WHERE element = 'com_userreminder' AND type = 'component'")->fetch_row();
 $cfg = json_decode($row[0] ?? '{}', true) ?: [];
-$cfg = array_merge($cfg, ['mail_container' => '1', 'mail_container_logo' => '0', 'mail_container_header' => 'Northwind Makers Community',
-    'mail_container_footer' => 'Sent by {SITENAME} - {YEAR}', 'numberOfReminders' => '2', 'numberOfDaysExistingUser' => '30']);
+$cfg = array_merge($cfg, ['mail_container' => '1', 'mail_container_logo' => '0', 'mail_container_header' => '',
+    'mail_container_footer' => '', 'numberOfReminders' => '2', 'numberOfDays' => '3', 'numberOfDaysExistingUser' => '30',
+    'enableActivateReminder' => '1', 'enableLoginReminder' => '1', 'enableInactiveReminder' => '1',
+    'enabledBccToAdmin' => '0', 'bccEmailAddress' => '', 'maxemailstosend' => '50', 'debugUserReminder' => '0', 'test_user' => (string) $users['Yuki Tanaka']]);
 $db->query("UPDATE " . PREFIX . "extensions SET params = '" . $db->real_escape_string(json_encode($cfg)) . "' WHERE element = 'com_userreminder' AND type = 'component'");
+
+// The demo community's name: header and {SITENAME} in the emails, the dashboard title bar.
+$cfgFile = 'E:/laragon/www/usereminder/configuration.php';
+file_put_contents($cfgFile, preg_replace('/public \$sitename = \'[^\']*\';/', 'public $sitename = \'' . SITENAME . '\';', file_get_contents($cfgFile)));
+
+// The shipped default emails (templates are only inserted on install when missing).
+q("DELETE FROM #__mail_templates WHERE extension = 'com_userreminder'");
+foreach (glob('E:/laragon/www/usereminder/administrator/components/com_userreminder/mails/*.xml') as $file) {
+    $mail = simplexml_load_file($file)->mail;
+    $tags = [];
+    foreach ($mail->template->tags->tag as $tag) {
+        $tags[] = (string) $tag;
+    }
+    ins('mail_templates', ['template_id' => (string) $mail->name, 'extension' => 'com_userreminder', 'language' => '',
+        'subject' => (string) $mail->template->subject, 'body' => (string) $mail->template->body,
+        'htmlbody' => (string) $mail->template->htmlbody, 'attachments' => '', 'params' => json_encode(['tags' => $tags])]);
+}
+
+// 6.1.0 has no Help screen any more (the toolbar Help button opens the online docs).
+q("DELETE FROM #__menu WHERE client_id = 1 AND link = 'index.php?option=com_userreminder&view=help'");
 
 // The scheduled task ran this morning, as on a live site.
 q("UPDATE #__scheduler_tasks SET last_execution = '" . ago(0, 5) . "', next_execution = DATE_ADD('" . ago(0, 5) . "', INTERVAL 1 DAY), times_executed = 214, times_failed = 0, last_exit_code = 0 WHERE title = 'User Reminder emails'");

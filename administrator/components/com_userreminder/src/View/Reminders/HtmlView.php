@@ -11,15 +11,15 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Reminders;
 
 \defined('_JEXEC') or die;
 
+use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Pagination\Pagination;
-use Joomla\CMS\Registry\Registry;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Joomla\Database\DatabaseDriver;
+use Joomla\Registry\Registry;
 
 /**
  * Reminders view — shows the user table for the "Incomplete Registrations"
@@ -70,13 +70,6 @@ class HtmlView extends BaseHtmlView
      */
     protected $state;
 
-    /**
-     * @var  DatabaseDriver
-     *
-     * @since  4.0.0
-     */
-    protected $db;
-
     public function display($tpl = null): void
     {
         if ($this->getLayout() === 'modal') {
@@ -91,7 +84,6 @@ class HtmlView extends BaseHtmlView
         $this->state      = $model->getState();
         $this->filterForm = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
-        $this->db         = Factory::getDbo();
 
         $this->addToolbar();
 
@@ -113,5 +105,7 @@ class HtmlView extends BaseHtmlView
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');
         }
+
+        ToolbarHelper::help('', false, UserReminderHelper::DOCS_URL);
     }
 }

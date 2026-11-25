@@ -40,7 +40,7 @@ class pkg_userreminderInstallerScript extends InstallerScript
 
         if (version_compare(JVERSION, '4.0.0', 'lt')) {
             Factory::getApplication()->enqueueMessage(
-                'UserReminder 4 requires Joomla 4.0 or later. Please upgrade Joomla first.',
+                'User Reminder requires Joomla 4.0 or later. Please upgrade Joomla first.',
                 'error'
             );
             return false;

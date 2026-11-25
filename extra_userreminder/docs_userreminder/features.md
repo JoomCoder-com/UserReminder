@@ -1,78 +1,53 @@
 # Features
 
-Everything User Reminder does, at a glance.
+Everything User Reminder does, grouped by area. Each heading links to its guide.
 
-## Reminder Types
+## Reminder types
 
-Three groups, each turned on separately on the **Reminders** tab of the options.
+Three groups of users, each switched on separately in **Options > Reminders**. All three are off after a new install.
 
-- **Incomplete registrations**: blocked accounts with an activation token that never visited
-- **Activated, never logged in**: active accounts that never signed in
-- **Inactive users**: no visit for the **Inactivity threshold** (days)
-
----
+- [Activation reminders](features/activation-reminders.md): blocked accounts with an activation link that was never used
+- [Never-logged-in reminders](features/login-reminders.md): active accounts that never signed in
+- [Inactive-user reminders](features/inactive-users.md): no visit for the number of days you set
 
 ## Emails
 
-- One Joomla mail template per type, with subject, plain text and HTML body
-- Translate each template per site language in **System > Mail Templates**
-- Tags: `{NAME}`, `{USERNAME}`, `{SITENAME}`, `{SITELINK}`, `{ACTIVATE_URL}`, `{PASSWORD_RESET_URL}`, `{OPTOUT_URL}`
-- Branded HTML container: logo or header title, footer text, footer colours
+- One [Joomla mail template](features/email-templates.md) per type, with subject, plain text and HTML body, per site language
+- Tags: `{NAME}`, `{USERNAME}`, `{EMAIL}`, `{SITENAME}`, `{SITELINK}`, `{ACTIVATE_URL}`, `{PASSWORD_RESET_URL}`, `{OPTOUT_URL}`
+- An [HTML container](configuration/email-container.md) around each email: logo or title, footer text and colours (Joomla 5 and 6)
+- An optional [copy of every reminder](configuration/email-delivery.md#admin-copy-bcc) to an admin address
 
-See [Email Templates](features/email-templates.md).
+## Scheduling and cadence
 
----
+- Sends through the **Send User Reminder emails** [scheduled task](features/scheduling.md), created on install to run every 24 hours
+- Days between reminders, number of reminders, first reminder at once or after the wait
+- **Send Reminders** buttons to send what is due right now
 
-## Scheduling and Cadence
+## Account cleanup
 
-- Runs as the **Send User Reminder emails** task in Joomla Scheduled Tasks
-- Choose per task whether it sends registration reminders, inactivity reminders, or both
-- Days between reminders, number of reminders, first reminder at once or later
-- **Send Reminders** button to run by hand
-
-See [Scheduling](features/scheduling.md).
-
----
-
-## Account Cleanup
-
-- **Delete users** after the last reminder, per reminder type
-- **Remove from user groups** for inactive users instead of deleting them
+- [Delete users](features/account-cleanup.md) after the last reminder, per reminder type
+- Or remove inactive users from chosen user groups instead
 - A dashboard alert while deletion is on
 
----
+## Opt-out
 
-## Opt-Out
-
-- Unsubscribe link in every email, with a confirmation page and a resubscribe option
-- **Opt-out Users**: add or remove users by hand
+- An [unsubscribe link](features/opt-out.md) in every email, with a confirmation page and a resubscribe button
+- **Opt-out Users**: add or remove people by hand
 - **Opt-out Groups**: members of these groups never get reminders
-- Opt-outs and resubscribes are written to the action log
 
----
+## Dashboard and log
 
-## Dashboard and Log
+- [Dashboard](features/dashboard.md): who is pending, due now and sent, a 30-day chart, backlog aging and health checks
+- Every list shows what the next run will do for each user
+- [Action log](features/action-log.md) of every reminder, opt-out and resubscribe, with pruning
 
-- Pending activation, never logged in, inactive, due now, sent (total, 7 and 30 days), opted out
-- 30-day chart, split by type, backlog aging, oldest pending and longest inactive users
-- Health checks: scheduled task, debug mode, auto-delete, site mail address, BCC, backlog
-- Action log with search, delete and pruning of entries older than 12 months
+## Safe testing
 
-See [Administrator Screens](features/admin-screens.md).
+- **Send Test Email** to one chosen user
+- [Developer debug mode](features/testing.md): a full run that sends nothing and changes nothing
 
----
+## Built for Joomla
 
-## Delivery and Testing
-
-- **Emails per batch** and **Maximum emails per run** to respect your host's limits
-- BCC of every reminder to an admin address
-- **Send Test Email** to a chosen test user
-- **Developer debug mode**: a dry run that sends nothing and changes no counters
-
----
-
-## Compatibility
-
-- Joomla 4.4, 5 and 6
-- Community Builder activation links
-- Your own activation and password-reset paths
+- Joomla 4.4, 5 and 6, MySQL and MariaDB ([Compatibility](product-overview/compatibility.md))
+- Joomla mail templates, scheduled tasks, user groups, ACL and update system
+- [Community Builder](integrations/community-builder.md) activation links

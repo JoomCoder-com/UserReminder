@@ -11,7 +11,9 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Component\ComponentHelper;
+use JoomCoder\Component\UserReminder\Administrator\Service\Audience;
+use JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
 
@@ -51,35 +53,13 @@ class ActiveusersModel extends ListModel
 
     protected function getListQuery(): QueryInterface
     {
-        $db     = $this->getDbo();
-        $query  = $db->getQuery(true);
-        $params = ComponentHelper::getParams('com_userreminder');
-        $days   = max(1, (int) $params->get('numberOfDaysExistingUser', 180));
+        $db = $this->getDbo();
 
-        // Keep nodays for display but filter sargably on the indexed column directly.
-        $query->select('a.id, a.name, a.username, a.email, a.lastvisitDate')
-            ->select('(TO_DAYS(NOW()) - TO_DAYS(a.lastvisitDate)) AS nodays')
-            ->select('b.datesent, b.remindernumber')
-            ->from($db->quoteName('#__users', 'a'))
-            ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-            ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-            ->where('o.user_id IS NULL')
-            ->where('a.block = 0')
-            ->where('a.lastvisitDate IS NOT NULL')
-            ->where($db->quoteName('a.lastvisitDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
-
-        // Members of the opt-out user groups never receive reminders — keep the
-        // list in sync with what the send pipeline targets (SendService).
-        $groups = \JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper::getOptOutGroups();
-
-        if (!empty($groups)) {
-            $sub = $db->getQuery(true)
-                ->select($db->quoteName('gm.user_id'))
-                ->from($db->quoteName('#__user_usergroup_map', 'gm'))
-                ->where($db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
-
-            $query->where($db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
-        }
+        // Exactly the users the inactive-user run targets.
+        $query = Audience::query($db, ReminderOptions::fromComponent(), SendService::TYPE_INACTIVE_USER)
+            ->select('a.id, a.name, a.username, a.email, a.lastvisitDate')
+            ->select('DATEDIFF(UTC_TIMESTAMP(), a.lastvisitDate) AS nodays')
+            ->select('b.datesent, b.remindernumber');
 
         $search = (string) $this->getState('filter.search', '');
         if ($search !== '') {

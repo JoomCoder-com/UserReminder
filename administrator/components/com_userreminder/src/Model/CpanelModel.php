@@ -11,21 +11,26 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
+use JoomCoder\Component\UserReminder\Administrator\Service\Audience;
+use JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
+use Joomla\CMS\Cache\Controller\OutputController;
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Database\DatabaseInterface;
-use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
+use Joomla\Database\QueryInterface;
 
 /**
- * Cpanel / dashboard model — aggregates all KPIs, analytics and health checks
- * for the rebuilt dashboard.
+ * Cpanel / dashboard model: KPIs, analytics and health checks.
  *
- * All heavy counts are COUNT(a.id) or small GROUP BYs, sargable, and cached
- * for 10 minutes. Every query is wrapped in try/catch so the dashboard never
+ * User counts start from Audience::query(), the same query the send run uses,
+ * so the dashboard counts the users the run would email. The payload is cached
+ * for 10 minutes and every query is wrapped in try/catch so the dashboard never
  * white-screens on large sites.
  *
  * @since  4.1.0
@@ -44,35 +49,7 @@ class CpanelModel extends BaseDatabaseModel
      */
     private static ?string $manifestVersion = null;
 
-    /**
-     * Add the opt-out group exclusion to a query on #__users aliased as "a",
-     * mirroring SendService::applyGroupExclusion() so dashboard counts match
-     * what the send pipeline actually targets.
-     *
-     * @param   DatabaseInterface                $db     Database.
-     * @param   \Joomla\Database\QueryInterface  $query  Query on #__users as "a".
-     *
-     * @return  void
-     *
-     * @since   4.2.1
-     */
-    private function applyGroupExclusion(DatabaseInterface $db, \Joomla\Database\QueryInterface $query): void
-    {
-        $groups = UserReminderHelper::getOptOutGroups();
-
-        if (empty($groups)) {
-            return;
-        }
-
-        $sub = $db->getQuery(true)
-            ->select($db->quoteName('gm.user_id'))
-            ->from($db->quoteName('#__user_usergroup_map', 'gm'))
-            ->where($db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
-
-        $query->where($db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
-    }
-
-    public function getForm($data = [], $loadData = true, $formName = null): ?\Joomla\CMS\Form\Form
+    public function getForm($data = [], $loadData = true, $formName = null): ?Form
     {
         return null;
     }
@@ -88,21 +65,19 @@ class CpanelModel extends BaseDatabaseModel
      */
     public function getDashboard(bool $forceRefresh = false): array
     {
-        $params = ComponentHelper::getParams('com_userreminder');
-
-        // Build a cache key that busts when thresholds change.
-        $cacheKey = $this->getCacheKey($params);
+        $options  = ReminderOptions::fromComponent();
+        $cacheKey = $this->getCacheKey($options);
 
         if (!$forceRefresh) {
             $cached = $this->getCached($cacheKey);
-            if (is_array($cached) && isset($cached['generatedAt'])) {
+
+            if ($cached !== null) {
                 return $cached;
             }
         }
 
-        $data = $this->buildDashboard($params);
+        $data = $this->buildDashboard($options);
         $data['generatedAt'] = Factory::getDate()->toSql();
-        $data['cacheKey']    = $cacheKey;
 
         $this->storeCached($cacheKey, $data);
 
@@ -118,316 +93,151 @@ class CpanelModel extends BaseDatabaseModel
      */
     public function clearDashboardCache(): void
     {
-        foreach (['callback', 'output'] as $type) {
-            try {
-                $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
-                $ctrl    = $factory->createCacheController($type, ['defaultgroup' => self::CACHE_GROUP]);
-                $ctrl->clean();
-            } catch (\Throwable $e) {
-                Log::add('User Reminder: could not clean dashboard cache: ' . $e->getMessage(), Log::WARNING, 'com_userreminder');
+        try {
+            $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
+
+            foreach (['callback', 'output'] as $type) {
+                $factory->createCacheController($type, ['defaultgroup' => self::CACHE_GROUP])->clean();
             }
+        } catch (\Throwable $e) {
+            Log::add('User Reminder: could not clean dashboard cache: ' . $e->getMessage(), Log::WARNING, 'com_userreminder');
         }
     }
 
     /**
      * Build the dashboard payload without touching cache.
      *
-     * @param   \Joomla\Registry\Registry  $params
+     * @param   ReminderOptions  $options
      *
      * @return  array
      *
      * @since   4.1.0
      */
-    private function buildDashboard(\Joomla\Registry\Registry $params): array
+    private function buildDashboard(ReminderOptions $options): array
     {
         $db = $this->getDatabase();
 
-        // Thresholds from config.
-        $days         = max(1, (int) $params->get('numberOfDays', 1));
-        $existingDays = max(1, (int) $params->get('numberOfDaysExistingUser', 180));
-        $maxReminders = max(1, (int) $params->get('numberOfReminders', 1));
-        $batchSize    = max(1, (int) $params->get('number_email', 50));
-
-        // Cutoff datetimes — sargable: column < cutoff, never DATE_ADD(col) < NOW().
-        // With "send first reminder immediately", the registration-age cutoff
-        // does not apply to first sends — null means "no age filter".
-        $imed           = (int) $params->get('enabledSendImed', 0) === 1;
-        $cutoffReg      = $imed ? null : Factory::getDate()->modify('-' . $days . ' days')->toSql();
-        $cutoffExisting = Factory::getDate()->modify('-' . $existingDays . ' days')->toSql();
-        $cutoffCoolDown = Factory::getDate()->modify('-' . $days . ' days')->toSql();
-
-        // Core KPIs — all COUNTs, no ORDER BY, no SELECT *.
-        $pendingActivation = $this->countPendingActivation($db, $cutoffReg);
-        $neverLoggedIn     = $this->countNeverLoggedIn($db, $cutoffReg);
-        $inactiveUsers     = $this->countInactiveUsers($db, $cutoffExisting);
-        $dueNow            = $this->countDueNow($db, $cutoffReg, $cutoffExisting, $cutoffCoolDown, $maxReminders, $days, $existingDays);
+        $pendingActivation = $this->countAudience($db, $options, SendService::TYPE_NOT_ACTIVATED);
+        $neverLoggedIn     = $this->countAudience($db, $options, SendService::TYPE_NEVER_LOGGED);
+        $inactiveUsers     = $this->countAudience($db, $options, SendService::TYPE_INACTIVE_USER);
+        $dueNow            = $this->countDueNow($db, $options);
         $sent              = $this->countSent($db);
-        $optedOut          = $this->countOptedOut($db);
-        $totalUsers        = $this->countTotalUsers($db);
 
-        // Analytics — tiny aggregates.
-        $trend  = $this->getTrend30($db);
-        $byType = $this->getByType($db);
-        $aging  = $this->getAging($db, $cutoffReg, $cutoffExisting, $days, $existingDays);
-
-        // Preview tables — capped, explicit columns.
-        $recentLogs    = $this->getRecentLogs($db, 5);
-        $oldestPending = $this->getOldestPending($db, $cutoffReg, 5);
-        $longestInactive = $this->getLongestInactive($db, $cutoffExisting, 5);
-
-        // Health + config snapshot.
-        $health         = $this->buildHealth($params, $pendingActivation, $neverLoggedIn, $inactiveUsers, $dueNow, $batchSize);
-        $configSnapshot = $this->buildConfigSnapshot($params, $days, $existingDays, $maxReminders, $batchSize);
+        $thresholds = [
+            'days'         => $options->cooldownDays(),
+            'existingDays' => $options->inactivityDays(),
+            'maxReminders' => $options->maxReminders(),
+            'batchSize'    => $options->batchSize(),
+        ];
 
         return [
             'kpi' => [
                 'pendingActivation' => $pendingActivation,
                 'neverLoggedIn'     => $neverLoggedIn,
                 'inactiveUsers'     => $inactiveUsers,
-                'pendingTotal'      => $pendingActivation + $neverLoggedIn,
                 'dueNow'            => $dueNow,
                 'sentTotal'         => $sent['total'],
                 'sent7d'            => $sent['d7'],
                 'sent30d'           => $sent['d30'],
-                'optedOut'          => $optedOut,
-                'totalUsers'        => $totalUsers,
+                'optedOut'          => $this->countTable($db, '#__userreminder_optout'),
+                'totalUsers'        => $this->countTable($db, '#__users'),
             ],
             'analytics' => [
-                'trend'  => $trend,
-                'byType' => $byType,
-                'aging'  => $aging,
+                'trend'  => $this->getTrend30($db),
+                'byType' => $this->getByType($db),
+                'aging'  => $this->getAging($db, $options),
             ],
             'recent' => [
-                'logs'            => $recentLogs,
-                'oldestPending'   => $oldestPending,
-                'longestInactive' => $longestInactive,
+                'logs'            => $this->getRecentLogs($db, 5),
+                'oldestPending'   => $this->getOldest($db, $options, SendService::TYPE_NOT_ACTIVATED, 'a.registerDate', 5),
+                'longestInactive' => $this->getOldest($db, $options, SendService::TYPE_INACTIVE_USER, 'a.lastvisitDate', 5),
             ],
-            'health'         => $health,
-            'configSnapshot' => $configSnapshot,
-            'thresholds' => [
-                'days'         => $days,
-                'existingDays' => $existingDays,
-                'maxReminders' => $maxReminders,
-                'batchSize'    => $batchSize,
-            ],
+            'health'         => $this->buildHealth($options, $pendingActivation + $neverLoggedIn + $inactiveUsers, $dueNow),
+            'configSnapshot' => $this->buildConfigSnapshot($options, $thresholds),
+            'thresholds'     => $thresholds,
         ];
     }
 
-    private function countPendingActivation(DatabaseInterface $db, ?string $cutoff): int
+    /**
+     * Run a single-value query; 0 on any database error.
+     *
+     * @param   DatabaseInterface      $db
+     * @param   QueryInterface|string  $query
+     *
+     * @return  int
+     *
+     * @since  6.1.0
+     */
+    private function loadInt(DatabaseInterface $db, QueryInterface|string $query): int
     {
         try {
-            $query = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block >= 1')
-                ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL');
-
-            if ($cutoff !== null) {
-                $query->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
-            }
-
-            $this->applyGroupExclusion($db, $query);
-
-            $db->setQuery($query);
-
-            return (int) $db->loadResult();
+            return (int) $db->setQuery($query)->loadResult();
         } catch (\Throwable) {
             return 0;
         }
     }
 
-    private function countNeverLoggedIn(DatabaseInterface $db, ?string $cutoff): int
+    private function countAudience(DatabaseInterface $db, ReminderOptions $options, int $type): int
     {
-        try {
-            $query = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.activation = ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL');
-
-            if ($cutoff !== null) {
-                $query->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff));
-            }
-
-            $this->applyGroupExclusion($db, $query);
-
-            $db->setQuery($query);
-
-            return (int) $db->loadResult();
-        } catch (\Throwable) {
-            return 0;
-        }
+        return $this->loadInt($db, Audience::query($db, $options, $type)->select('COUNT(a.id)'));
     }
 
-    private function countInactiveUsers(DatabaseInterface $db, string $cutoffExisting): int
+    private function countTable(DatabaseInterface $db, string $table): int
     {
-        try {
-            $query = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting));
-
-            $this->applyGroupExclusion($db, $query);
-
-            $db->setQuery($query);
-
-            return (int) $db->loadResult();
-        } catch (\Throwable) {
-            return 0;
-        }
+        return $this->loadInt($db, 'SELECT COUNT(*) FROM ' . $db->quoteName($table));
     }
 
     /**
-     * Users whose cooldown has elapsed and who still have reminders left.
-     * We sum three small COUNTs in PHP to avoid a UNION temp table.
+     * Users whose cool-down has elapsed and who still have reminders left
+     * (the three types never overlap, so one OR-ed query counts them all).
+     *
+     * @param   DatabaseInterface  $db
+     * @param   ReminderOptions    $options
+     *
+     * @return  int
+     *
+     * @since   4.1.0
      */
-    private function countDueNow(
-        DatabaseInterface $db,
-        ?string $cutoffReg,
-        string $cutoffExisting,
-        string $cutoffCoolDown,
-        int $maxReminders,
-        int $days,
-        int $existingDays
-    ): int {
-        $total = 0;
+    private function countDueNow(DatabaseInterface $db, ReminderOptions $options): int
+    {
+        $query = Audience::query($db, $options, SendService::TYPE_NOT_ACTIVATED, SendService::TYPE_NEVER_LOGGED, SendService::TYPE_INACTIVE_USER)
+            ->select('COUNT(a.id)')
+            ->where('(b.userid IS NULL OR b.remindernumber < ' . $options->maxReminders() . ')')
+            ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote(ReminderOptions::utcNow('-' . $options->cooldownDays() . ' days')) . ')');
 
-        // Type 1: not activated, blocked, cooldown elapsed or never sent.
-        try {
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block >= 1')
-                ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL');
-
-            if ($cutoffReg !== null) {
-                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
-            }
-
-            $q->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
-                ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
-            $this->applyGroupExclusion($db, $q);
-            $db->setQuery($q);
-            $total += (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
-
-        // Type 2: never logged in, block=0, respect the registration-age window
-        // unless "send first reminder immediately" is on, plus maxReminders.
-        try {
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.activation = ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL');
-
-            if ($cutoffReg !== null) {
-                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
-            }
-
-            $q->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
-                ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
-            $this->applyGroupExclusion($db, $q);
-            $db->setQuery($q);
-            $total += (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
-
-        // Type 3: inactive existing users.
-        try {
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting))
-                ->where('(b.userid IS NULL OR b.remindernumber < ' . $maxReminders . ')')
-                ->where('(b.datesent IS NULL OR b.datesent < ' . $db->quote($cutoffCoolDown) . ')');
-            $this->applyGroupExclusion($db, $q);
-            $db->setQuery($q);
-            $total += (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
-
-        return $total;
+        return $this->loadInt($db, $query);
     }
 
+    /**
+     * Sent reminders: all time, last 7 and last 30 days (one query).
+     *
+     * @param   DatabaseInterface  $db
+     *
+     * @return  array{total:int, d7:int, d30:int}
+     *
+     * @since   4.1.0
+     */
     private function countSent(DatabaseInterface $db): array
     {
-        $out = ['total' => 0, 'd7' => 0, 'd30' => 0];
+        $date = $db->quoteName('date');
 
         try {
-            $db->setQuery('SELECT COUNT(*) FROM ' . $db->quoteName('#__userreminder_log'));
-            $out['total'] = (int) $db->loadResult();
+            $row = $db->setQuery(
+                $db->getQuery(true)
+                    ->select('COUNT(*) AS total')
+                    ->select('SUM(CASE WHEN ' . $date . ' >= ' . $db->quote(ReminderOptions::utcNow('-7 days')) . ' THEN 1 ELSE 0 END) AS d7')
+                    ->select('SUM(CASE WHEN ' . $date . ' >= ' . $db->quote(ReminderOptions::utcNow('-30 days')) . ' THEN 1 ELSE 0 END) AS d30')
+                    ->from($db->quoteName('#__userreminder_log'))
+            )->loadAssoc() ?: [];
         } catch (\Throwable) {
+            $row = [];
         }
 
-        try {
-            $cut7 = Factory::getDate()->modify('-7 days')->toSql();
-            $q = $db->getQuery(true)
-                ->select('COUNT(*)')
-                ->from($db->quoteName('#__userreminder_log'))
-                ->where($db->quoteName('date') . ' >= ' . $db->quote($cut7));
-            $db->setQuery($q);
-            $out['d7'] = (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
-
-        try {
-            $cut30 = Factory::getDate()->modify('-30 days')->toSql();
-            $q = $db->getQuery(true)
-                ->select('COUNT(*)')
-                ->from($db->quoteName('#__userreminder_log'))
-                ->where($db->quoteName('date') . ' >= ' . $db->quote($cut30));
-            $db->setQuery($q);
-            $out['d30'] = (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
-
-        return $out;
-    }
-
-    private function countOptedOut(DatabaseInterface $db): int
-    {
-        try {
-            $db->setQuery('SELECT COUNT(*) FROM ' . $db->quoteName('#__userreminder_optout'));
-
-            return (int) $db->loadResult();
-        } catch (\Throwable) {
-            return 0;
-        }
-    }
-
-    private function countTotalUsers(DatabaseInterface $db): int
-    {
-        try {
-            $db->setQuery('SELECT COUNT(*) FROM ' . $db->quoteName('#__users'));
-
-            return (int) $db->loadResult();
-        } catch (\Throwable) {
-            return 0;
-        }
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'd7'    => (int) ($row['d7'] ?? 0),
+            'd30'   => (int) ($row['d30'] ?? 0),
+        ];
     }
 
     /**
@@ -438,169 +248,129 @@ class CpanelModel extends BaseDatabaseModel
     private function getTrend30(DatabaseInterface $db): array
     {
         try {
-            $cut30 = Factory::getDate()->modify('-30 days')->toSql();
-            $q = $db->getQuery(true)
-                ->select('DATE(' . $db->quoteName('date') . ') AS d, COUNT(*) AS c')
-                ->from($db->quoteName('#__userreminder_log'))
-                ->where($db->quoteName('date') . ' >= ' . $db->quote($cut30))
-                ->group('DATE(' . $db->quoteName('date') . ')')
-                ->order('d ASC');
-            $db->setQuery($q);
-            $rows = $db->loadAssocList() ?: [];
-
-            // Fill missing days with 0 so the chart is continuous.
-            $map = [];
-            foreach ($rows as $r) {
-                $map[$r['d']] = (int) $r['c'];
-            }
-
-            $out = [];
-            $today = new \DateTimeImmutable('today');
-            for ($i = 29; $i >= 0; $i--) {
-                $d = $today->modify('-' . $i . ' days')->format('Y-m-d');
-                $out[] = ['date' => $d, 'count' => $map[$d] ?? 0];
-            }
-
-            return $out;
+            $day = 'DATE(' . $db->quoteName('date') . ')';
+            $map = $db->setQuery(
+                $db->getQuery(true)
+                    ->select($day . ' AS d, COUNT(*) AS c')
+                    ->from($db->quoteName('#__userreminder_log'))
+                    ->where($db->quoteName('date') . ' >= ' . $db->quote(ReminderOptions::utcNow('-30 days')))
+                    ->group($day)
+            )->loadAssocList('d', 'c') ?: [];
         } catch (\Throwable) {
             return [];
         }
+
+        // Fill missing days with 0 so the chart is continuous.
+        $out   = [];
+        $today = new \DateTimeImmutable('today');
+
+        for ($i = 29; $i >= 0; $i--) {
+            $d     = $today->modify('-' . $i . ' days')->format('Y-m-d');
+            $out[] = ['date' => $d, 'count' => (int) ($map[$d] ?? 0)];
+        }
+
+        return $out;
     }
 
     /**
-     * Donut by type — 3 rows from #__userreminder.type.
+     * Reminder state rows per type.
      *
      * @return  array<int,int>  type => count
      */
     private function getByType(DatabaseInterface $db): array
     {
-        try {
-            $q = $db->getQuery(true)
-                ->select($db->quoteName('type') . ', COUNT(*) AS c')
-                ->from($db->quoteName('#__userreminder'))
-                ->group($db->quoteName('type'));
-            $db->setQuery($q);
-            $rows = $db->loadAssocList() ?: [];
-            $out  = [1 => 0, 2 => 0, 3 => 0];
-            foreach ($rows as $r) {
-                $t = (int) $r['type'];
-                if (isset($out[$t])) {
-                    $out[$t] = (int) $r['c'];
-                } else {
-                    $out[$t] = (int) $r['c'];
-                }
-            }
+        $out = [1 => 0, 2 => 0, 3 => 0];
 
-            return $out;
+        try {
+            $rows = $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('type') . ', COUNT(*) AS c')
+                    ->from($db->quoteName('#__userreminder'))
+                    ->group($db->quoteName('type'))
+            )->loadAssocList('type', 'c') ?: [];
         } catch (\Throwable) {
-            return [1 => 0, 2 => 0, 3 => 0];
+            return $out;
         }
+
+        foreach ($rows as $type => $count) {
+            $out[(int) $type] = (int) $count;
+        }
+
+        return $out;
     }
 
     /**
-     * Aging buckets — 3 COUNTs per dimension, no full scan GROUP BY.
+     * Aging buckets: pending activations by account age, inactive users by
+     * how far past the inactivity threshold they are (one query each).
      *
-     * @return  array
+     * @param   DatabaseInterface  $db
+     * @param   ReminderOptions    $options
+     *
+     * @return  array{pending: array<string,int>, inactive: array<string,int>}
+     *
+     * @since   4.1.0
      */
-    private function getAging(DatabaseInterface $db, ?string $cutoffReg, string $cutoffExisting, int $days, int $existingDays): array
+    private function getAging(DatabaseInterface $db, ReminderOptions $options): array
     {
-        $pending = ['1-7' => 0, '8-30' => 0, '30+' => 0];
-        $inactive = ['just' => 0, '2x' => 0, '4x' => 0];
+        $existingDays = $options->inactivityDays();
 
-        // Pending aging based on registerDate (with the immediate-send option,
-        // the youngest bucket covers everything newer than 7 days).
-        try {
-            $d7  = Factory::getDate()->modify('-7 days')->toSql();
-            $d30 = Factory::getDate()->modify('-30 days')->toSql();
+        $pending = $this->buckets($db, Audience::query($db, $options, SendService::TYPE_NOT_ACTIVATED), 'a.registerDate', [
+            '1-7'  => [null, '-7 days'],
+            '8-30' => ['-7 days', '-30 days'],
+            '30+'  => ['-30 days', null],
+        ]);
 
-            // 1-7 days overdue (registered between cutoff and cutoff+7)
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block >= 1')
-                ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' >= ' . $db->quote($d7));
-
-            if ($cutoffReg !== null) {
-                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
-            }
-
-            $db->setQuery($q);
-            $pending['1-7'] = (int) $db->loadResult();
-
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block >= 1')
-                ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($d7))
-                ->where($db->quoteName('a.registerDate') . ' >= ' . $db->quote($d30));
-            $db->setQuery($q);
-            $pending['8-30'] = (int) $db->loadResult();
-
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block >= 1')
-                ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL')
-                ->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($d30));
-            $db->setQuery($q);
-            $pending['30+'] = (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
-
-        // Inactive aging: just over threshold, 2x, 4x.
-        try {
-            $d2x = Factory::getDate()->modify('-' . ($existingDays * 2) . ' days')->toSql();
-            $d4x = Factory::getDate()->modify('-' . ($existingDays * 4) . ' days')->toSql();
-
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting))
-                ->where($db->quoteName('a.lastvisitDate') . ' >= ' . $db->quote($d2x));
-            $db->setQuery($q);
-            $inactive['just'] = (int) $db->loadResult();
-
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($d2x))
-                ->where($db->quoteName('a.lastvisitDate') . ' >= ' . $db->quote($d4x));
-            $db->setQuery($q);
-            $inactive['2x'] = (int) $db->loadResult();
-
-            $q = $db->getQuery(true)
-                ->select('COUNT(a.id)')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($d4x));
-            $db->setQuery($q);
-            $inactive['4x'] = (int) $db->loadResult();
-        } catch (\Throwable) {
-        }
+        $inactive = $this->buckets($db, Audience::query($db, $options, SendService::TYPE_INACTIVE_USER), 'a.lastvisitDate', [
+            'just' => [null, '-' . ($existingDays * 2) . ' days'],
+            '2x'   => ['-' . ($existingDays * 2) . ' days', '-' . ($existingDays * 4) . ' days'],
+            '4x'   => ['-' . ($existingDays * 4) . ' days', null],
+        ]);
 
         return ['pending' => $pending, 'inactive' => $inactive];
+    }
+
+    /**
+     * Count rows of a query per date bucket in one SELECT.
+     *
+     * @param   DatabaseInterface  $db
+     * @param   QueryInterface     $query    Audience query (no SELECT yet).
+     * @param   string             $column   Date column.
+     * @param   array              $buckets  name => [before, since]: date modifiers such as '-7 days'
+     *                                       for "column < now+before" and "column >= now+since" (null = open).
+     *
+     * @return  array<string,int>
+     *
+     * @since  6.1.0
+     */
+    private function buckets(DatabaseInterface $db, QueryInterface $query, string $column, array $buckets): array
+    {
+        foreach ($buckets as $name => [$before, $since]) {
+            $conditions = [];
+
+            if ($before !== null) {
+                $conditions[] = $column . ' < ' . $db->quote(ReminderOptions::utcNow($before));
+            }
+
+            if ($since !== null) {
+                $conditions[] = $column . ' >= ' . $db->quote(ReminderOptions::utcNow($since));
+            }
+
+            $query->select('SUM(CASE WHEN ' . implode(' AND ', $conditions) . ' THEN 1 ELSE 0 END) AS ' . $db->quoteName('b_' . $name));
+        }
+
+        try {
+            $row = $db->setQuery($query)->loadAssoc() ?: [];
+        } catch (\Throwable) {
+            $row = [];
+        }
+
+        $out = [];
+
+        foreach (array_keys($buckets) as $name) {
+            $out[$name] = (int) ($row['b_' . $name] ?? 0);
+        }
+
+        return $out;
     }
 
     private function getRecentLogs(DatabaseInterface $db, int $limit): array
@@ -610,216 +380,131 @@ class CpanelModel extends BaseDatabaseModel
                 ->select($db->quoteName(['id', 'userId', 'username', 'description', 'message_key', 'date']))
                 ->from($db->quoteName('#__userreminder_log'))
                 ->order($db->quoteName('id') . ' DESC');
-            $db->setQuery($q, 0, $limit);
 
-            return $db->loadAssocList() ?: [];
+            return $db->setQuery($q, 0, $limit)->loadAssocList() ?: [];
         } catch (\Throwable) {
             return [];
         }
     }
 
-    private function getOldestPending(DatabaseInterface $db, ?string $cutoffReg, int $limit): array
+    /**
+     * The users of one reminder type who have waited longest.
+     *
+     * @param   DatabaseInterface  $db
+     * @param   ReminderOptions    $options
+     * @param   int                $type
+     * @param   string             $dateColumn  a.registerDate or a.lastvisitDate.
+     * @param   int                $limit
+     *
+     * @return  array
+     *
+     * @since  6.1.0
+     */
+    private function getOldest(DatabaseInterface $db, ReminderOptions $options, int $type, string $dateColumn, int $limit): array
     {
         try {
-            $q = $db->getQuery(true)
-                ->select('a.id, a.name, a.username, a.email, a.registerDate')
+            $q = Audience::query($db, $options, $type)
+                ->select('a.id, a.name, a.username, a.email, ' . $dateColumn)
                 ->select('b.datesent, b.remindernumber')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block >= 1')
-                ->where('a.activation <> ' . $db->quote(''))
-                ->where('a.lastvisitDate IS NULL');
+                ->order($dateColumn . ' ASC');
 
-            if ($cutoffReg !== null) {
-                $q->where($db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoffReg));
-            }
-
-            $this->applyGroupExclusion($db, $q);
-
-            $q->order($db->quoteName('a.registerDate') . ' ASC');
-            $db->setQuery($q, 0, $limit);
-
-            return $db->loadAssocList() ?: [];
+            return $db->setQuery($q, 0, $limit)->loadAssocList() ?: [];
         } catch (\Throwable) {
             return [];
         }
     }
 
-    private function getLongestInactive(DatabaseInterface $db, string $cutoffExisting, int $limit): array
+    private function buildHealth(ReminderOptions $options, int $queueTotal, int $dueNow): array
     {
-        try {
-            $q = $db->getQuery(true)
-                ->select('a.id, a.name, a.username, a.email, a.lastvisitDate')
-                ->select('b.datesent, b.remindernumber')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-                ->where('o.user_id IS NULL')
-                ->where('a.block = 0')
-                ->where('a.lastvisitDate IS NOT NULL')
-                ->where($db->quoteName('a.lastvisitDate') . ' < ' . $db->quote($cutoffExisting));
-
-            $this->applyGroupExclusion($db, $q);
-
-            $q->order($db->quoteName('a.lastvisitDate') . ' ASC');
-            $db->setQuery($q, 0, $limit);
-
-            return $db->loadAssocList() ?: [];
-        } catch (\Throwable) {
-            return [];
-        }
-    }
-
-    private function buildHealth(
-        \Joomla\Registry\Registry $params,
-        int $pendingActivation,
-        int $neverLoggedIn,
-        int $inactiveUsers,
-        int $dueNow,
-        int $batchSize
-    ): array {
-        $alerts = [];
-        $app    = Factory::getApplication();
+        $alerts    = [];
+        $batchSize = $options->batchSize();
 
         // Ready = Task - UserReminder plugin enabled AND an enabled scheduled task exists.
         $taskReady = UserReminderHelper::isTaskPluginEnabled() && UserReminderHelper::isScheduledTaskEnabled();
+
         if (!$taskReady) {
-            $alerts[] = [
-                'level' => 'danger',
-                'icon'  => 'fa-plug',
-                'key'   => 'plugin_disabled',
-            ];
+            $alerts[] = ['level' => 'danger', 'icon' => 'fa-plug', 'key' => 'plugin_disabled'];
+
+            if ($queueTotal > 0) {
+                $alerts[] = ['level' => 'warning', 'icon' => 'fa-clock', 'key' => 'scheduler_off'];
+            }
         }
 
-        $queueTotal = $pendingActivation + $neverLoggedIn + $inactiveUsers;
-
-        if (!$taskReady && $queueTotal > 0) {
-            $alerts[] = [
-                'level' => 'warning',
-                'icon'  => 'fa-clock',
-                'key'   => 'scheduler_off',
-            ];
+        if ($options->debug()) {
+            $alerts[] = ['level' => 'info', 'icon' => 'fa-bug', 'key' => 'debug_on'];
         }
 
-        if ((int) $params->get('debugUserReminder', 0) === 1) {
-            $alerts[] = [
-                'level' => 'info',
-                'icon'  => 'fa-bug',
-                'key'   => 'debug_on',
-            ];
+        $deleteEnabled = $options->deleteAtEndOfCycle(SendService::TYPE_NOT_ACTIVATED)
+            || $options->deleteAtEndOfCycle(SendService::TYPE_NEVER_LOGGED)
+            || $options->deleteAtEndOfCycle(SendService::TYPE_INACTIVE_USER);
+
+        if ($deleteEnabled) {
+            $alerts[] = ['level' => 'danger', 'icon' => 'fa-trash', 'key' => 'delete_enabled'];
         }
 
-        $deleteFlags = [
-            (int) $params->get('enableDeleteUsers', 0),
-            (int) $params->get('enableDeleteUsersLogin', 0),
-            (int) $params->get('enableDeleteExistingUsers', 0),
-        ];
-        if (array_sum($deleteFlags) > 0) {
-            $alerts[] = [
-                'level' => 'danger',
-                'icon'  => 'fa-trash',
-                'key'   => 'delete_enabled',
-            ];
+        $mailFrom = trim((string) Factory::getApplication()->get('mailfrom', ''));
+        $mailOk   = (bool) filter_var($mailFrom, FILTER_VALIDATE_EMAIL);
+
+        if (!$mailOk) {
+            $alerts[] = ['level' => 'danger', 'icon' => 'fa-envelope', 'key' => 'mail_invalid'];
         }
 
-        $mailFrom = trim((string) $app->get('mailfrom', ''));
-        if ($mailFrom === '' || !filter_var($mailFrom, FILTER_VALIDATE_EMAIL)) {
-            $alerts[] = [
-                'level' => 'danger',
-                'icon'  => 'fa-envelope',
-                'key'   => 'mail_invalid',
-            ];
-        }
+        // BCC switched on without an address.
+        $params = $options->raw();
 
-        // BCC check — warn when BCC is on but no address is configured.
-        $bccEnabled = (int) $params->get('enabledBccToAdmin', 1);
-        $bccAddress = trim((string) $params->get('bccEmailAddress', ''));
-        if ($bccAddress === '' && $bccEnabled === 1) {
-            $alerts[] = [
-                'level' => 'warning',
-                'icon'  => 'fa-copy',
-                'key'   => 'bcc_missing',
-            ];
+        if ((int) $params->get('enabledBccToAdmin', 0) === 1 && trim((string) $params->get('bccEmailAddress', '')) === '') {
+            $alerts[] = ['level' => 'warning', 'icon' => 'fa-copy', 'key' => 'bcc_missing'];
         }
 
         if ($dueNow > $batchSize) {
-            $alerts[] = [
-                'level' => 'warning',
-                'icon'  => 'fa-layer-group',
-                'key'   => 'backlog_pressure',
-                'due'   => $dueNow,
-                'batch' => $batchSize,
-            ];
-        }
-
-        // Health summary for the right-hand health card (compact).
-        $health = [
-            'pluginEnabled'    => $taskReady,
-            'schedulerEnabled' => $taskReady,
-            'debugOn'          => (int) $params->get('debugUserReminder', 0) === 1,
-            'deleteEnabled'    => array_sum($deleteFlags) > 0,
-            'mailOk'           => $mailFrom !== '' && filter_var($mailFrom, FILTER_VALIDATE_EMAIL),
-            'queueTotal'       => $queueTotal,
-            'dueNow'           => $dueNow,
-            'batchSize'        => $batchSize,
-        ];
-
-        return ['alerts' => $alerts, 'summary' => $health];
-    }
-
-    private function buildConfigSnapshot(
-        \Joomla\Registry\Registry $params,
-        int $days,
-        int $existingDays,
-        int $maxReminders,
-        int $batchSize
-    ): array {
-        $task = UserReminderHelper::getSchedulerTask();
-
-        $scheduleText = '—';
-        $nextRun      = '';
-        if ($task !== null && (int) $task->state === 1) {
-            $scheduleText = Text::_('COM_USERREMINDER_DASH_ON');
-            $nextRun      = (string) $task->next_execution;
+            $alerts[] = ['level' => 'warning', 'icon' => 'fa-layer-group', 'key' => 'backlog_pressure', 'due' => $dueNow, 'batch' => $batchSize];
         }
 
         return [
-            'days'             => $days,
-            'existingDays'     => $existingDays,
-            'maxReminders'     => $maxReminders,
-            'batchSize'        => $batchSize,
-            'maxPerRun'        => (int) $params->get('maxemailstosend', 20),
-            'scheduleText'     => $scheduleText,
-            'nextRun'          => $nextRun,
-            'activationOn'     => (int) $params->get('enableActivateReminder', 0) === 1,
-            'loginOn'          => (int) $params->get('enableLoginReminder', 0) === 1,
-            'deleteUsers'      => (int) $params->get('enableDeleteUsers', 0) === 1,
-            'deleteLogin'      => (int) $params->get('enableDeleteUsersLogin', 0) === 1,
-            'deleteExisting'   => (int) $params->get('enableDeleteExistingUsers', 0) === 1,
+            'alerts'  => $alerts,
+            'summary' => [
+                'schedulerEnabled' => $taskReady,
+                'debugOn'          => $options->debug(),
+                'deleteEnabled'    => $deleteEnabled,
+                'mailOk'           => $mailOk,
+                'queueTotal'       => $queueTotal,
+                'dueNow'           => $dueNow,
+                'batchSize'        => $batchSize,
+            ],
         ];
     }
 
-    private function getCacheKey(\Joomla\Registry\Registry $params): string
+    private function buildConfigSnapshot(ReminderOptions $options, array $thresholds): array
     {
-        $relevant = [
-            'numberOfDays'               => (int) $params->get('numberOfDays', 1),
-            'enabledSendImed'            => (int) $params->get('enabledSendImed', 0),
-            'numberOfDaysExistingUser'   => (int) $params->get('numberOfDaysExistingUser', 180),
-            'numberOfReminders'          => (int) $params->get('numberOfReminders', 1),
-            'number_email'               => (int) $params->get('number_email', 50),
-            'enableDeleteUsers'          => (int) $params->get('enableDeleteUsers', 0),
-            'enableDeleteUsersLogin'     => (int) $params->get('enableDeleteUsersLogin', 0),
-            'enableDeleteExistingUsers'  => (int) $params->get('enableDeleteExistingUsers', 0),
-            'scheduledTask'              => UserReminderHelper::getSchedulerTask()?->next_execution ?? 'off',
-            'debugUserReminder'          => (int) $params->get('debugUserReminder', 0),
-            // From the installed manifest (not a hardcoded version literal) so
-            // an upgrade automatically invalidates cached dashboard data.
-            'ver'                        => $this->manifestVersion(),
-        ];
+        $task = UserReminderHelper::getSchedulerTask();
+        $on   = $task !== null && (int) $task->state === 1;
 
-        return md5(json_encode($relevant));
+        return $thresholds + [
+            'maxPerRun'    => $options->maxPerRun(),
+            'scheduleText' => $on ? Text::_('COM_USERREMINDER_DASH_ON') : '—',
+            'nextRun'      => $on ? (string) $task->next_execution : '',
+            'activationOn' => $options->typeEnabled(SendService::TYPE_NOT_ACTIVATED),
+            'loginOn'      => $options->typeEnabled(SendService::TYPE_NEVER_LOGGED),
+        ];
+    }
+
+    /**
+     * Cache key that changes whenever a setting the dashboard depends on, the
+     * scheduled task or the installed version changes.
+     *
+     * @param   ReminderOptions  $options
+     *
+     * @return  string
+     *
+     * @since   4.1.0
+     */
+    private function getCacheKey(ReminderOptions $options): string
+    {
+        return md5(json_encode([
+            $options->raw()->toArray(),
+            UserReminderHelper::getSchedulerTask()?->next_execution ?? 'off',
+            $this->manifestVersion(),
+        ]));
     }
 
     /**
@@ -832,36 +517,32 @@ class CpanelModel extends BaseDatabaseModel
     private function manifestVersion(): string
     {
         if (self::$manifestVersion === null) {
-            self::$manifestVersion = 'unknown';
+            // Joomla keeps the admin manifest under its package name, userreminder.xml.
+            $xml = @simplexml_load_file(JPATH_ADMINISTRATOR . '/components/com_userreminder/userreminder.xml');
 
-            $file = JPATH_ADMINISTRATOR . '/components/com_userreminder/com_userreminder.xml';
-
-            if (is_file($file) && ($xml = @simplexml_load_file($file)) instanceof \SimpleXMLElement) {
-                $version = (string) $xml->version;
-
-                if ($version !== '') {
-                    self::$manifestVersion = $version;
-                }
-            }
+            self::$manifestVersion = $xml instanceof \SimpleXMLElement && (string) $xml->version !== ''
+                ? (string) $xml->version
+                : 'unknown';
         }
 
         return self::$manifestVersion;
     }
 
-    private function getCached(string $key): mixed
+    private function cache(): OutputController
+    {
+        $cache = Factory::getContainer()->get(CacheControllerFactoryInterface::class)
+            ->createCacheController('output', ['defaultgroup' => self::CACHE_GROUP]);
+        $cache->setLifeTime(self::CACHE_TTL);
+
+        return $cache;
+    }
+
+    private function getCached(string $key): ?array
     {
         try {
-            $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
-            $cache   = $factory->createCacheController('output', ['defaultgroup' => self::CACHE_GROUP]);
-            $cache->setLifeTime(self::CACHE_TTL);
+            $data = $this->cache()->get(['userreminder.dashboard', $key]);
 
-            $data = $cache->get(['userreminder.dashboard', $key]);
-
-            if (is_array($data) && isset($data['generatedAt'])) {
-                return $data;
-            }
-
-            return null;
+            return is_array($data) && isset($data['generatedAt']) ? $data : null;
         } catch (\Throwable) {
             return null;
         }
@@ -870,10 +551,7 @@ class CpanelModel extends BaseDatabaseModel
     private function storeCached(string $key, array $data): void
     {
         try {
-            $factory = Factory::getContainer()->get(CacheControllerFactoryInterface::class);
-            $cache   = $factory->createCacheController('output', ['defaultgroup' => self::CACHE_GROUP]);
-            $cache->setLifeTime(self::CACHE_TTL);
-            $cache->store($data, ['userreminder.dashboard', $key]);
+            $this->cache()->store($data, ['userreminder.dashboard', $key]);
         } catch (\Throwable) {
             // Cache is best-effort — a failed store only costs one uncached dashboard render.
         }

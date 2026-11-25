@@ -11,6 +11,7 @@ namespace JoomCoder\Component\UserReminder\Administrator\View\Log;
 
 \defined('_JEXEC') or die;
 
+use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
@@ -109,5 +110,7 @@ class HtmlView extends BaseHtmlView
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');
         }
+
+        ToolbarHelper::help('', false, UserReminderHelper::DOCS_URL);
     }
 }

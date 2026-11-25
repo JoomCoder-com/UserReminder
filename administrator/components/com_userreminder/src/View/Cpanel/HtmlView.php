@@ -119,6 +119,8 @@ class HtmlView extends BaseHtmlView
         if (Factory::getUser()->authorise('core.admin', 'com_userreminder')) {
             ToolbarHelper::preferences('com_userreminder');
         }
+
+        ToolbarHelper::help('', false, UserReminderHelper::DOCS_URL);
     }
 
     private function loadDashboardAssets(): void

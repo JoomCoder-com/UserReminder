@@ -11,10 +11,8 @@ namespace JoomCoder\Component\UserReminder\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Component\ComponentHelper;
+use JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Router\Route;
-use Joomla\Registry\Registry;
 
 /**
  * Builds the per-user activation URL used in reminder emails.
@@ -25,65 +23,46 @@ use Joomla\Registry\Registry;
  */
 final class ActivationUrlHelper
 {
+    private const DEFAULT_BASE = 'index.php?option=com_users&task=registration.activate&token=';
+
     /**
      * Return the URL the user must visit to (re)activate their account.
      *
-     * @param   object       $row      User record (must expose ->id and ->activation).
-     * @param   string|null  $siteUrl  The resolved site root from SiteUrl::root()
-     *                               (null triggers the same resolution logic).
-     * @param   mixed        $params   Optional params registry (ignored; kept for BC).
+     * @param   object           $row      User record (must expose ->id and ->activation).
+     * @param   string|null      $siteUrl  The resolved site root from SiteUrl::root()
+     *                                     (null triggers the same resolution logic).
+     * @param   ReminderOptions  $options  Component options.
      *
      * @return  string
      *
      * @since  4.0.0
      */
-    public static function get(object $row, ?string $siteUrl = null, $params = null): string
+    public static function get(object $row, ?string $siteUrl, ReminderOptions $options): string
     {
-        if ($params === null || $params instanceof Registry === false) {
-            $params = ComponentHelper::getParams('com_userreminder');
-        }
-
-        if ($params instanceof Registry === false) {
-            $params = ComponentHelper::getParams('com_userreminder');
-        }
-
         $siteUrl ??= SiteUrl::root() ?? '';
+        $base      = $options->activationBase();
 
-        $app     = Factory::getApplication();
-        $db      = Factory::getDbo();
-        $tlsMode = (int) $app->get('force_ssl', 0) === 2 ? Route::TLS_FORCE : Route::TLS_IGNORE;
-
-        if ((int) $params->get('useCBActivation', 0) === 1) {
-            $cbUrl = trim((string) $params->get('activateURL', ''));
+        if ($options->cbActivation()) {
+            $db = Factory::getDbo();
 
             try {
                 $query = $db->getQuery(true)
                     ->select($db->quoteName('cbactivation'))
                     ->from($db->quoteName('#__comprofiler'))
                     ->where($db->quoteName('user_id') . ' = ' . (int) $row->id);
-                $db->setQuery($query);
 
-                $code = (string) $db->loadResult();
+                $code = (string) $db->setQuery($query)->loadResult();
             } catch (\Throwable) {
                 $code = '';
             }
 
-            return $siteUrl . $cbUrl . $code;
+            return $siteUrl . $base . $code;
         }
 
-        $base = (string) $params->get('activateURL', 'index.php?option=com_users&task=registration.activate&token=');
+        $base = ltrim($base !== '' ? $base : self::DEFAULT_BASE, '/');
 
-        if ($base === '') {
-            $base = 'index.php?option=com_users&task=registration.activate&token=';
-        }
-
-        // Route needs a request context (live_site on the CLI); fall back to a
-        // plain SiteUrl-built link when it is unavailable (cron without
-        // --live-site).
-        try {
-            return Route::link('site', $base . $row->activation, false, $tlsMode, true);
-        } catch (\Throwable) {
-            return $siteUrl . $base . $row->activation;
-        }
+        return str_starts_with($base, 'index.php?')
+            ? SiteUrl::route($siteUrl, $base . $row->activation)
+            : $siteUrl . $base . $row->activation;
     }
 }

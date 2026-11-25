@@ -4,25 +4,25 @@
 
 ### What is User Reminder?
 
-A Joomla extension that emails users who never activated their account, never logged in, or haven't visited for a while, and can clean up the accounts that never respond.
-
-### Who is it for?
-
-Any Joomla site with user registration: membership sites, communities, shops, schools and intranets that want to recover sign-ups, bring members back and keep the user list clean.
+A Joomla extension that emails users who never activated their account, never logged in, or stopped visiting, and can clean up the accounts that never respond.
 
 ### Which Joomla and PHP versions are supported?
 
-Joomla 4.4, 5 and 6, with PHP 8.1 or higher.
+Joomla 4.4, 5 and 6, with PHP 8.1 or higher, on MySQL or MariaDB. See [Compatibility](product-overview/compatibility.md).
 
-### Does it send my users to an outside service?
+### Does it send my users' data to an outside service?
 
-No. Emails go out through your own Joomla mail settings and all data stays in your database.
+No. Emails go out through your own Joomla mail settings, and all data stays in your database.
+
+### Where is the help?
+
+The **Help** button on every User Reminder screen opens this documentation.
 
 ## Emails
 
 ### Where do I edit the email text?
 
-In **System > Mail Templates** (or **Email Templates** in the User Reminder menu). Each reminder type has its own template, per language. See [Email Templates](features/email-templates.md).
+In **System > Mail Templates**, or **Email Templates** in the User Reminder menu. Each reminder type has its own template, per language. See [Email templates](features/email-templates.md).
 
 ### My 5.x email texts are gone after the upgrade. Why?
 
@@ -30,7 +30,11 @@ In **System > Mail Templates** (or **Email Templates** in the User Reminder menu
 
 ### Can the emails carry my logo?
 
-Yes. Turn on **Show logo** on the **Email Container (HTML)** tab and pick the logo file.
+Yes, on Joomla 5 and 6. Turn on **Show logo** in **Options > Email Container (HTML)** and pick the image. See [Email Container](configuration/email-container.md).
+
+### Can I get a copy of every reminder?
+
+Yes. Turn on **BCC admin on all reminders** in **Options > Email Delivery** and enter an address.
 
 ## Sending
 
@@ -40,30 +44,34 @@ By the **User Reminder emails** scheduled task, which the installer creates to r
 
 ### Can I send by hand?
 
-Yes. Click **Send Reminders** on the Registration Reminders or Active User Reminders screen, or **Send now** on the dashboard.
+Yes. **Send Reminders** on **Registration Reminders** or **Active User Reminders**, or the send buttons on the dashboard.
 
 ### Will it overload my mail server?
 
-No. **Emails per batch** and **Maximum emails per run** keep each run small; what doesn't fit goes out in the next run.
+No. **Maximum emails per run** keeps each run small; the rest go out in the next runs.
 
 ### Can I test without emailing real users?
 
-Yes. **Send Test Email** goes to your test user only. **Developer debug mode** simulates a full run: nothing is sent and no counters change.
+Yes. **Send Test Email** goes to your test user only. **Developer debug mode** simulates a full run: nothing is sent and nothing changes. See [Testing](features/testing.md).
 
-## Accounts and Opt-Out
+### Can I see who gets an email before it is sent?
+
+Yes. The lists show the **Action to Perform** for every user: send, wait, delete, or nothing more.
+
+## Accounts and opt-out
 
 ### Does it delete users?
 
-Only if you turn on **Delete users** for a reminder type. Then users who got the last reminder and still didn't react are deleted. For inactive users you can remove them from chosen groups instead.
+Only if you turn on **Delete users** for a reminder type. Users who got the last reminder and still did not react are then deleted. For inactive users you can remove them from chosen groups instead. See [Account cleanup](features/account-cleanup.md).
 
 ### How does unsubscribing work?
 
-Every email has an `{OPTOUT_URL}` link. It opens a confirmation page on your site; after that the user gets no more reminders. The same page offers to resubscribe.
+Every email has an unsubscribe link. It opens a confirmation page on your site; after confirming, the user gets no more reminders. The same page offers to resubscribe. See [Opt-out](features/opt-out.md).
 
-### Can I exclude staff from reminders?
+### Can I exclude staff?
 
-Yes. Add their user groups under **Opt-out Groups**, or add single users under **Opt-out Users**.
+Yes. Add their user groups under **Opt-out > User Groups**, or single users under **Opt-out Users**.
 
 ### Does it work with Community Builder?
 
-Yes. Turn on **Use Community Builder activation** so activation reminders contain a working CB activation link.
+Yes. See [Community Builder](integrations/community-builder.md).

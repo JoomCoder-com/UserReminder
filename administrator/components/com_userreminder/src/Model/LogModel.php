@@ -174,17 +174,4 @@ class LogModel extends ListModel
 
         return $total;
     }
-
-    /**
-     * Get a list of distinct users referenced by the log, used by the toolbar
-     * to render the empty-state info message.
-     *
-     * @return  int
-     *
-     * @since   4.0.0
-     */
-    public function countEntries(): int
-    {
-        return (int) $this->getDbo()->setQuery('SELECT COUNT(*) FROM #__userreminder_log')->loadResult();
-    }
 }

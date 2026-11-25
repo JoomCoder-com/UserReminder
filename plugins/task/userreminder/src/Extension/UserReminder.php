@@ -81,32 +81,18 @@ final class UserReminder extends CMSPlugin implements SubscriberInterface
             return Status::NO_RUN;
         }
 
-        try {
-            /** @var \JoomCoder\Component\UserReminder\Administrator\Service\SendService $send */
-            $send   = UserReminderComponent::service();
-            $params = $event->getArgument('params');
+        $params = $event->getArgument('params');
+        $runs   = [];
 
-            $regOk = $inactiveOk = true;
-            $regStats     = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'errors' => 0];
-            $inactiveStats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'errors' => 0];
-            $dryRun = false;
+        try {
+            $send = UserReminderComponent::service();
 
             if ((int) ($params->runRegistrationReminders ?? 1) === 1) {
-                $regStats = $send->processRegistrationReminders(true, 0, 0);
-                $dryRun   = $dryRun || !empty($regStats['dryRun']);
-
-                if ($regStats['errors'] > 0) {
-                    $regOk = false;
-                }
+                $runs[] = $send->processRegistrationReminders();
             }
 
             if ((int) ($params->runInactiveReminders ?? 1) === 1) {
-                $inactiveStats = $send->processInactiveUserReminders(true, 0, 0);
-                $dryRun        = $dryRun || !empty($inactiveStats['dryRun']);
-
-                if ($inactiveStats['errors'] > 0) {
-                    $inactiveOk = false;
-                }
+                $runs[] = $send->processInactiveUserReminders();
             }
         } catch (\Throwable $e) {
             $this->logTask('Exception: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine(), 'error');
@@ -114,32 +100,21 @@ final class UserReminder extends CMSPlugin implements SubscriberInterface
             return Status::KNOCKOUT;
         }
 
-        if ($dryRun) {
-            $this->logTask(
-                sprintf(
-                    'Dry run (debug mode): processed %d candidate(s), would have sent %d, deleted %d, skipped %d, mail errors %d',
-                    $regStats['processed'] + $inactiveStats['processed'],
-                    ($regStats['simulated'] ?? 0) + ($inactiveStats['simulated'] ?? 0),
-                    $regStats['deleted'] + $inactiveStats['deleted'],
-                    ($regStats['skipped'] ?? 0) + ($inactiveStats['skipped'] ?? 0),
-                    $regStats['errors'] + $inactiveStats['errors']
-                ),
-                'info'
-            );
-
-            return Status::OK;
-        }
+        $total  = static fn(string $key): int => (int) array_sum(array_column($runs, $key));
+        $dryRun = \in_array(true, array_column($runs, 'dryRun'), true);
 
         $this->logTask(
             sprintf(
-                'Processed %d, sent %d, deleted %d skipped %d, mail errors %d',
-                $regStats['processed'] + $inactiveStats['processed'],
-                $regStats['sent'] + $inactiveStats['sent'],
-                $regStats['deleted'] + $inactiveStats['deleted'],
-                ($regStats['skipped'] ?? 0) + ($inactiveStats['skipped'] ?? 0),
-                $regStats['errors'] + $inactiveStats['errors']
+                $dryRun
+                    ? 'Dry run (debug mode): processed %d candidate(s), would have sent %d, deleted %d, skipped %d, mail errors %d'
+                    : 'Processed %d, sent %d, deleted %d, skipped %d, mail errors %d',
+                $total('processed'),
+                $total($dryRun ? 'simulated' : 'sent'),
+                $total('deleted'),
+                $total('skipped'),
+                $total('errors')
             ),
-            $regOk && $inactiveOk ? 'info' : 'warning'
+            $total('errors') > 0 && !$dryRun ? 'warning' : 'info'
         );
 
         // The routine itself ran fine; per-mail failures are already logged.

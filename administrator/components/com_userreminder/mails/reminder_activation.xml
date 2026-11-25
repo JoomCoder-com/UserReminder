@@ -7,12 +7,13 @@
         <template>
             <subject><![CDATA[USERREMINDER_REMINDER_DETAILS_FOR]]></subject>
             <body><![CDATA[USERREMINDER_SEND_MSG_REMINDER]]></body>
-            <htmlbody><![CDATA[Hello {NAME},<br /><br />We have noticed that you have not completed registering at {SITENAME}.<br /><br />Your account is created and must be activated before you can use it.<br /><br />To activate the account click on the following link or copy-paste it in your browser:<br /><a href="{ACTIVATE_URL}">{ACTIVATE_URL}</a><br /><br />After activation you may login to <a href="{SITELINK}">{SITELINK}</a> using the following username and password:<br /><br />Username: {USERNAME}<br />Forgot your Password? : <a href="{PASSWORD_RESET_URL}">{PASSWORD_RESET_URL}</a><br /><br />If you no longer wish to receive these reminders then unsubscribe here <a href="{OPTOUT_URL}">{OPTOUT_URL}</a>]]></htmlbody>
+            <htmlbody><![CDATA[<p>Hello {NAME},</p><p>You registered an account at {SITENAME}, but it has not been activated yet.</p><p>Activate your account with this link:<br /><a href="{ACTIVATE_URL}">{ACTIVATE_URL}</a></p><p>After that, log in with your username <strong>{USERNAME}</strong>. Forgot your password? <a href="{PASSWORD_RESET_URL}">Reset it here</a>.</p><p>If you did not register at {SITENAME}, you can ignore this email.</p><p>Regards,<br />{SITENAME}<br /><a href="{SITELINK}">{SITELINK}</a></p><p style="font-size:12px;color:#666666;">Do not want to receive these reminders? <a href="{OPTOUT_URL}">Unsubscribe</a>.</p>]]></htmlbody>
             <tags>
                 <tag>NAME</tag>
                 <tag>SITENAME</tag>
                 <tag>SITELINK</tag>
                 <tag>USERNAME</tag>
+                <tag>EMAIL</tag>
                 <tag>PASSWORD_RESET_URL</tag>
                 <tag>OPTOUT_URL</tag>
                 <tag>ACTIVATE_URL</tag>

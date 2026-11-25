@@ -7,12 +7,13 @@
         <template>
             <subject><![CDATA[USERREMINDER_EXISTINGUSERREMINDER_DETAILS_FOR]]></subject>
             <body><![CDATA[USERREMINDER_SEND_MSG_EXISTINGUSERREMINDER]]></body>
-            <htmlbody><![CDATA[Hello {NAME},<br /><br />We have noticed that you have not visited {SITENAME} for a while.<br /><br />Come back and see what is new: <a href="{SITELINK}">{SITELINK}</a><br /><br />If you no longer wish to receive these reminders then unsubscribe here <a href="{OPTOUT_URL}">{OPTOUT_URL}</a>]]></htmlbody>
+            <htmlbody><![CDATA[<p>Hello {NAME},</p><p>You have not visited {SITENAME} for a while.</p><p>Come back and see what is new: <a href="{SITELINK}">{SITELINK}</a></p><p>Regards,<br />{SITENAME}<br /><a href="{SITELINK}">{SITELINK}</a></p><p style="font-size:12px;color:#666666;">Do not want to receive these reminders? <a href="{OPTOUT_URL}">Unsubscribe</a>.</p>]]></htmlbody>
             <tags>
                 <tag>NAME</tag>
                 <tag>SITENAME</tag>
                 <tag>SITELINK</tag>
                 <tag>USERNAME</tag>
+                <tag>EMAIL</tag>
                 <tag>PASSWORD_RESET_URL</tag>
                 <tag>OPTOUT_URL</tag>
             </tags>

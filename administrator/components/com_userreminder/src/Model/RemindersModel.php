@@ -11,7 +11,9 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Component\ComponentHelper;
+use JoomCoder\Component\UserReminder\Administrator\Service\Audience;
+use JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions;
+use JoomCoder\Component\UserReminder\Administrator\Service\SendService;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
 
@@ -65,43 +67,12 @@ class RemindersModel extends ListModel
      */
     protected function getListQuery(): QueryInterface
     {
-        $db     = $this->getDbo();
-        $query  = $db->getQuery(true);
-        $params = ComponentHelper::getParams('com_userreminder');
-        $days   = max(1, (int) $params->get('numberOfDays', 1));
+        $db = $this->getDbo();
 
-        // Sargable: column < DATE_SUB(NOW(), INTERVAL) — never wrap the column in DATE_ADD/TO_DAYS.
-        $query->select('a.id, a.name, a.username, a.email, a.registerDate, a.lastvisitDate, a.block, a.activation')
-            ->select('b.datesent, b.remindernumber')
-            ->from($db->quoteName('#__users', 'a'))
-            ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON b.userid = a.id')
-            ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON o.user_id = a.id')
-            ->where('o.user_id IS NULL')
-            ->where('a.lastvisitDate IS NULL')
-            // Both registration reminder types, as SendService sends them: not activated
-            // (blocked, activation token) and activated but never logged in. The list showed only
-            // the first, so the users who get the login reminder were in no list.
-            ->where('((a.block >= 1 AND a.activation <> ' . $db->quote('') . ')'
-                . ' OR (a.block = 0 AND a.activation = ' . $db->quote('') . '))');
-
-        // With "send first reminder immediately" the registration-age window
-        // does not apply to first sends, so don't filter freshly registered users out.
-        if ((int) $params->get('enabledSendImed', 0) !== 1) {
-            $query->where($db->quoteName('a.registerDate') . ' < DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)');
-        }
-
-        // Members of the opt-out user groups never receive reminders — keep the
-        // list in sync with what the send pipeline targets (SendService).
-        $groups = \JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper::getOptOutGroups();
-
-        if (!empty($groups)) {
-            $sub = $db->getQuery(true)
-                ->select($db->quoteName('gm.user_id'))
-                ->from($db->quoteName('#__user_usergroup_map', 'gm'))
-                ->where($db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
-
-            $query->where($db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
-        }
+        // Both registration reminder types, exactly the users the run targets.
+        $query = Audience::query($db, ReminderOptions::fromComponent(), SendService::TYPE_NOT_ACTIVATED, SendService::TYPE_NEVER_LOGGED)
+            ->select('a.id, a.name, a.username, a.email, a.registerDate, a.lastvisitDate, a.block, a.activation')
+            ->select('b.datesent, b.remindernumber');
 
         // Optional search — mirrors OptoutusersModel pattern, only when filter is set.
         $search = (string) $this->getState('filter.search', '');

@@ -146,10 +146,7 @@ final class ReminderOptions
     /**
      * Is this reminder type enabled?
      *
-     * Types 1 (not activated) and 2 (never logged in) each have an explicit
-     * component option. The inactive-user pipeline (type 3) has no toggle of
-     * its own — it is governed by the task plugin's form switch
-     * (runInactiveReminders) or the caller — so it always reports enabled.
+     * Each type has its own switch in Options (all off on new installs).
      *
      * @param   int  $type  One of the SendService::TYPE_* constants.
      *
@@ -215,7 +212,7 @@ final class ReminderOptions
      */
     public function bccAddress(): ?string
     {
-        if ((int) $this->params->get('enabledBccToAdmin', 1) !== 1) {
+        if ((int) $this->params->get('enabledBccToAdmin', 0) !== 1) {
             return null;
         }
 

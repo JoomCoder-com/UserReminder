@@ -11,6 +11,8 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
+use Joomla\Filesystem\File;
+use Joomla\Registry\Registry;
 
 /**
  * Installer script for com_userreminder (admin).
@@ -98,35 +100,21 @@ class com_userreminderInstallerScript extends InstallerScript
     {
         try {
             if (is_file(self::MAIL_LAYOUT_TARGET)) {
-                \Joomla\Filesystem\File::delete(self::MAIL_LAYOUT_TARGET);
-            }
-
-            $db     = Factory::getDbo();
-            $query  = $db->getQuery(true)
-                ->select($db->quoteName(['extension_id', 'params']))
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_mails'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-            $db->setQuery($query);
-
-            if ($row = $db->loadObject()) {
-                $params = new \Joomla\Registry\Registry((string) $row->params);
-
-                if ($params->get('mail_htmllayout') === 'userreminder') {
-                    $params->remove('mail_htmllayout');
-
-                    $db->setQuery(
-                        $db->getQuery(true)
-                            ->update($db->quoteName('#__extensions'))
-                            ->set($db->quoteName('params') . ' = ' . $db->quote((string) $params))
-                            ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id)
-                    );
-                    $db->execute();
-                }
+                File::delete(self::MAIL_LAYOUT_TARGET);
             }
         } catch (\Throwable) {
             // Best effort.
         }
+
+        $this->updateParams('com_mails', static function (Registry $params): bool {
+            if ($params->get('mail_htmllayout') !== 'userreminder') {
+                return false;
+            }
+
+            $params->remove('mail_htmllayout');
+
+            return true;
+        });
 
         return true;
     }
@@ -152,18 +140,16 @@ class com_userreminderInstallerScript extends InstallerScript
                 \mkdir($dir, 0755, true);
             }
 
-            \Joomla\Filesystem\File::copy(self::MAIL_LAYOUT_SOURCE, self::MAIL_LAYOUT_TARGET);
+            File::copy(self::MAIL_LAYOUT_SOURCE, self::MAIL_LAYOUT_TARGET);
         } catch (\Throwable) {
             // Non-fatal — the stock container is used when the layout is missing.
         }
     }
 
     /**
-     * Point com_mails at our container layout. The layout itself falls back to
-     * the stock joomla.mail.mailtemplate container for non-User-Reminder
-     * emails, so this is safe to set globally.
-     *
-     * Only applies when the admin has not already configured a layout.
+     * Point com_mails at our container layout, unless the admin already chose
+     * one. The layout falls back to the stock joomla.mail.mailtemplate
+     * container for other emails, so this is safe to set globally.
      *
      * @return  void
      *
@@ -171,40 +157,7 @@ class com_userreminderInstallerScript extends InstallerScript
      */
     private function selectMailLayout(): void
     {
-        $db = Factory::getDbo();
-
-        try {
-            $query = $db->getQuery(true)
-                ->select($db->quoteName(['extension_id', 'params']))
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_mails'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-            $db->setQuery($query);
-
-            $row = $db->loadObject();
-
-            if (!$row) {
-                return;
-            }
-
-            $params = new \Joomla\Registry\Registry((string) $row->params);
-
-            if ($params->exists('mail_htmllayout')) {
-                return;
-            }
-
-            $params->set('mail_htmllayout', 'userreminder');
-
-            $db->setQuery(
-                $db->getQuery(true)
-                    ->update($db->quoteName('#__extensions'))
-                    ->set($db->quoteName('params') . ' = ' . $db->quote((string) $params))
-                    ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id)
-            );
-            $db->execute();
-        } catch (\Throwable) {
-            // Non-fatal — System → Mail Templates → Options can set it manually.
-        }
+        $this->setDefaultParam('com_mails', 'mail_htmllayout', 'userreminder');
     }
 
     /**
@@ -219,41 +172,12 @@ class com_userreminderInstallerScript extends InstallerScript
      */
     private function keepInactiveRemindersOn(): void
     {
-        try {
-            $db    = Factory::getDbo();
-            $query = $db->getQuery(true)
-                ->select($db->quoteName(['extension_id', 'params']))
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_userreminder'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-            $row = $db->setQuery($query)->loadObject();
-
-            if (!$row) {
-                return;
-            }
-
-            $params = json_decode((string) $row->params, true) ?: [];
-
-            if (\array_key_exists('enableInactiveReminder', $params)) {
-                return;
-            }
-
-            $params['enableInactiveReminder'] = 1;
-
-            $update = $db->getQuery(true)
-                ->update($db->quoteName('#__extensions'))
-                ->set($db->quoteName('params') . ' = ' . $db->quote(json_encode($params)))
-                ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id);
-            $db->setQuery($update)->execute();
-        } catch (\Throwable) {
-            // Never block the update on this.
-        }
+        $this->setDefaultParam('com_userreminder', 'enableInactiveReminder', 1);
     }
 
     /**
-     * Make com_mails send the HTML part of mail templates ("both" style).
-     *
-     * Only applies when the admin has not explicitly configured mail_style.
+     * Make com_mails send the HTML part of mail templates ("both" style),
+     * unless the admin already chose a mail style.
      *
      * @return  void
      *
@@ -261,39 +185,74 @@ class com_userreminderInstallerScript extends InstallerScript
      */
     private function enableHtmlMailStyle(): void
     {
-        $db = Factory::getDbo();
+        $this->setDefaultParam('com_mails', 'mail_style', 'both');
+    }
 
+    /**
+     * Save a component option only when the site has no value for it yet.
+     *
+     * @param   string  $element  Component element (com_mails, com_userreminder).
+     * @param   string  $key      Option name.
+     * @param   mixed   $value    Value to save.
+     *
+     * @return  void
+     *
+     * @since   6.1.0
+     */
+    private function setDefaultParam(string $element, string $key, $value): void
+    {
+        $this->updateParams($element, static function (Registry $params) use ($key, $value): bool {
+            if ($params->exists($key)) {
+                return false;
+            }
+
+            $params->set($key, $value);
+
+            return true;
+        });
+    }
+
+    /**
+     * Load a component's options, let $change edit them, and save them when it
+     * returns true. Never blocks the install.
+     *
+     * @param   string    $element  Component element.
+     * @param   callable  $change   fn(Registry $params): bool.
+     *
+     * @return  void
+     *
+     * @since   6.1.0
+     */
+    private function updateParams(string $element, callable $change): void
+    {
         try {
-            $query = $db->getQuery(true)
-                ->select($db->quoteName(['extension_id', 'params']))
-                ->from($db->quoteName('#__extensions'))
-                ->where($db->quoteName('element') . ' = ' . $db->quote('com_mails'))
-                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-            $db->setQuery($query);
-
-            $row = $db->loadObject();
+            $db  = Factory::getDbo();
+            $row = $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName(['extension_id', 'params']))
+                    ->from($db->quoteName('#__extensions'))
+                    ->where($db->quoteName('element') . ' = ' . $db->quote($element))
+                    ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+            )->loadObject();
 
             if (!$row) {
                 return;
             }
 
-            $params = new \Joomla\Registry\Registry((string) $row->params);
+            $params = new Registry((string) $row->params);
 
-            if ($params->exists('mail_style')) {
+            if (!$change($params)) {
                 return;
             }
-
-            $params->set('mail_style', 'both');
 
             $db->setQuery(
                 $db->getQuery(true)
                     ->update($db->quoteName('#__extensions'))
                     ->set($db->quoteName('params') . ' = ' . $db->quote((string) $params))
                     ->where($db->quoteName('extension_id') . ' = ' . (int) $row->extension_id)
-            );
-            $db->execute();
+            )->execute();
         } catch (\Throwable) {
-            // Non-fatal — admins can switch the style under System → Mail Templates → Options.
+            // Non-fatal: the admin can set it under the component's Options.
         }
     }
 
@@ -489,67 +448,7 @@ class com_userreminderInstallerScript extends InstallerScript
     }
 
     /**
-     * Whether a column exists on a table in the current database, #_
-     * substituted.
-     *
-     * @param   string  $table   Table name with the #__ placeholder.
-     * @param   string  $column  Column name to look for.
-     *
-     * @return  bool
-     *
-     * @since  6.1.0
-     */
-    private function columnExists(string $table, string $column): bool
-    {
-        $db = Factory::getDbo();
-
-        try {
-            $query = $db->getQuery(true)
-                ->select('COUNT(*)')
-                ->from($db->quoteName('information_schema.COLUMNS'))
-                ->where($db->quoteName('TABLE_SCHEMA') . ' = DATABASE()')
-                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)))
-                ->where($db->quoteName('COLUMN_NAME') . ' = ' . $db->quote($column));
-
-            $db->setQuery($query);
-
-            return (int) $db->loadResult() > 0;
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * Whether a table exists in the current database, #__ substituted.
-     *
-     * @param   string  $table  Table name with the #__ placeholder.
-     *
-     * @return  bool
-     *
-     * @since  6.1.0
-     */
-    private function tableExists(string $table): bool
-    {
-        $db = Factory::getDbo();
-
-        try {
-            $query = $db->getQuery(true)
-                ->select('COUNT(*)')
-                ->from($db->quoteName('information_schema.TABLES'))
-                ->where($db->quoteName('TABLE_SCHEMA') . ' = DATABASE()')
-                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)));
-
-            $db->setQuery($query);
-
-            return (int) $db->loadResult() > 0;
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * Whether an index (or the PRIMARY key) exists on a table in the current
-     * database, # substituted.
+     * Whether an index (or the PRIMARY key) exists on a table.
      *
      * @param   string  $table  Table name with the #__ placeholder.
      * @param   string  $index  Index name to look for.
@@ -560,19 +459,66 @@ class com_userreminderInstallerScript extends InstallerScript
      */
     private function indexExists(string $table, string $index): bool
     {
+        return $this->inSchema('STATISTICS', $table, ['INDEX_NAME' => $index]);
+    }
+
+    /**
+     * Whether a column exists on a table.
+     *
+     * @param   string  $table   Table name with the #__ placeholder.
+     * @param   string  $column  Column name to look for.
+     *
+     * @return  bool
+     *
+     * @since  6.1.0
+     */
+    private function columnExists(string $table, string $column): bool
+    {
+        return $this->inSchema('COLUMNS', $table, ['COLUMN_NAME' => $column]);
+    }
+
+    /**
+     * Whether a table exists.
+     *
+     * @param   string  $table  Table name with the #__ placeholder.
+     *
+     * @return  bool
+     *
+     * @since  6.1.0
+     */
+    private function tableExists(string $table): bool
+    {
+        return $this->inSchema('TABLES', $table);
+    }
+
+    /**
+     * Look a table (and optional column/index) up in information_schema for
+     * the current database.
+     *
+     * @param   string  $view   information_schema view: TABLES, COLUMNS or STATISTICS.
+     * @param   string  $table  Table name with the #__ placeholder.
+     * @param   array   $match  Extra column => value conditions.
+     *
+     * @return  bool
+     *
+     * @since  6.1.0
+     */
+    private function inSchema(string $view, string $table, array $match = []): bool
+    {
         $db = Factory::getDbo();
 
         try {
             $query = $db->getQuery(true)
                 ->select('COUNT(*)')
-                ->from($db->quoteName('information_schema.STATISTICS'))
+                ->from($db->quoteName('information_schema.' . $view))
                 ->where($db->quoteName('TABLE_SCHEMA') . ' = DATABASE()')
-                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)))
-                ->where($db->quoteName('INDEX_NAME') . ' = ' . $db->quote($index));
+                ->where($db->quoteName('TABLE_NAME') . ' = ' . $db->quote($db->replacePrefix($table)));
 
-            $db->setQuery($query);
+            foreach ($match as $column => $value) {
+                $query->where($db->quoteName($column) . ' = ' . $db->quote($value));
+            }
 
-            return (int) $db->loadResult() > 0;
+            return (int) $db->setQuery($query)->loadResult() > 0;
         } catch (\Throwable) {
             return false;
         }

@@ -3,17 +3,28 @@
  * UserReminder E2E orchestrator (host side).
  *
  * Usage:  php run.php <scenario> <stack>
- *   scenario: fresh | upgrade | all
- *   stack:    j4 | j5 | j6 | all
+ *   scenario: fresh | upgrade | upgrade6 | all
+ *   stack:    j4 | j5 | j6 | j4m | j5m | j6y | all
  *
- * fresh   — clean Joomla, install pkg_userreminder_v6.0.0.zip, seed, run the
- *           scheduler task, assert emails + detection.
- * upgrade — clean Joomla, install com_userreminder_v5.2.3_j4.zip, seed
- *           old-schema data, update to 6.0.0 on top, run, assert migration +
- *           emails + detection.
+ * The package under test is releases/pkg_userreminder_v<package.json version>.zip.
+ *
+ * fresh    — clean Joomla, install the package, seed, run the scheduler task,
+ *            assert emails + detection.
+ * upgrade  — clean Joomla, install com_userreminder_v5.2.3_j4.zip, seed
+ *            old-schema data, update to the package, run, assert migration +
+ *            emails + detection.
+ * upgrade6 — clean Joomla, install the released pkg 6.0.0, seed, update to the
+ *            package, run, assert the same as fresh plus the schema version.
  */
 
 define('COMPOSE', 'E:/laragon/www/usereminder/.testbed/docker-compose.yml');
+define('VERSION', json_decode((string) file_get_contents(__DIR__ . '/../../package.json'), true)['version']);
+define('PKG', '/pkg/pkg_userreminder_v' . VERSION . '.zip');
+
+if (!is_file(__DIR__ . '/../../releases/pkg_userreminder_v' . VERSION . '.zip')) {
+    fwrite(STDERR, 'releases/pkg_userreminder_v' . VERSION . ".zip is missing: run npm run build first\n");
+    exit(2);
+}
 
 $stacks = [
     'j4' => ['service' => 'joomla-j4', 'port' => 8811],
@@ -27,13 +38,15 @@ $stacks = [
 $scenario = $argv[1] ?? 'all';
 $stackArg = $argv[2] ?? 'all';
 
-if (!in_array($scenario, ['fresh', 'upgrade', 'all'], true) || ($stackArg !== 'all' && !in_array($stackArg, array_keys($stacks), true))) {
-    fwrite(STDERR, "usage: php run.php <fresh|upgrade|all> <j4|j5|j6|j4m|j5m|j6y|all>\n");
+if (!in_array($scenario, ['fresh', 'upgrade', 'upgrade6', 'all'], true) || ($stackArg !== 'all' && !in_array($stackArg, array_keys($stacks), true))) {
+    fwrite(STDERR, "usage: php run.php <fresh|upgrade|upgrade6|all> <j4|j5|j6|j4m|j5m|j6y|all>\n");
     exit(2);
 }
 
 $runStacks = $stackArg === 'all' ? array_keys($stacks) : [$stackArg];
-$runScenarios = $scenario === 'all' ? ['fresh', 'upgrade'] : [$scenario];
+$runScenarios = $scenario === 'all' ? ['fresh', 'upgrade', 'upgrade6'] : [$scenario];
+
+echo 'Testing ' . PKG . "\n";
 
 // Ensure the SMTP catcher is running. Scenario steps recreate only the
 // joomla/db services, so a stack brought down with `docker compose down`
@@ -84,23 +97,33 @@ function runScenario(string $scenario, string $stack): array
     step('Waiting for Joomla unattended install', fn() => waitInstalled($port));
 
     // 3. Mailer -> Mailpit.
-    step('Configuring Mailpit mailer', function () use ($stack) {
-        out(execContainer($stack, 'php /e2e/setup.php'));
+    // Links in the emails must point at the real site. Two ways a command-line run learns it:
+    // live_site, or the address an admin page view remembers (SiteUrl::remember()). upgrade6 and
+    // the Joomla 4 stacks use the remembered address: Joomla 4.4's own scheduler:run fails with
+    // JLIB_APPLICATION_ERROR_MODEL_CREATE when live_site is set (a core issue, before any task runs).
+    $siteRoot   = "http://localhost:$port";
+    $remembered = $scenario === 'upgrade6' || str_starts_with($stack, 'j4');
+
+    step('Configuring Mailpit mailer and site address', function () use ($stack, $remembered, $siteRoot) {
+        out(execContainer($stack, 'php /e2e/setup.php' . ($remembered ? '' : ' ' . $siteRoot)));
     });
 
     if ($scenario === 'fresh') {
-        step('Installing pkg_userreminder_v6.0.0.zip', function () use ($stack) {
-            $out = execContainer($stack, 'php /e2e/install.php /pkg/pkg_userreminder_v6.0.0.zip');
-            out($out);
-
-            if (!str_contains($out, 'RESULT: PASS')) {
-                throw new Exception('install failed');
-            }
-        });
+        step('Installing ' . PKG, fn() => installPackage($stack, PKG));
 
         step('Seeding users', function () use ($stack) {
             out(execContainer($stack, 'php /e2e/seed.php post'));
         });
+    } elseif ($scenario === 'upgrade6') {
+        step('Installing the released 6.0.0', fn() => installPackage($stack, '/pkg/pkg_userreminder_v6.0.0.zip'));
+
+        step('Seeding users on 6.0.0', function () use ($stack) {
+            out(execContainer($stack, 'php /e2e/seed.php post'));
+        });
+
+
+
+        step('Updating to ' . VERSION . ' on top', fn() => installPackage($stack, PKG));
     } else {
         step('Installing 5.2.3 (old release)', function () use ($stack) {
             $out = execContainer($stack, 'php /e2e/install.php /pkg/com_userreminder_v5.2.3_j4.zip');
@@ -115,17 +138,16 @@ function runScenario(string $scenario, string $stack): array
             out(execContainer($stack, 'php /e2e/seed.php pre'));
         });
 
-        step('Updating to 6.0.0 on top', function () use ($stack) {
-            $out = execContainer($stack, 'php /e2e/install.php /pkg/pkg_userreminder_v6.0.0.zip');
-            out($out);
-
-            if (!str_contains($out, 'RESULT: PASS')) {
-                throw new Exception('update failed');
-            }
-        });
+        step('Updating to ' . VERSION . ' on top', fn() => installPackage($stack, PKG));
 
         step('Seeding remaining users / forcing task due', function () use ($stack) {
             out(execContainer($stack, 'php /e2e/seed.php post'));
+        });
+    }
+
+    if ($remembered) {
+        step('Remembering the site address (as an admin page view does)', function () use ($stack, $siteRoot) {
+            out(execContainer($stack, 'UR_SITE_ROOT=' . $siteRoot . ' php /e2e/seed.php remember'));
         });
     }
 
@@ -139,8 +161,8 @@ function runScenario(string $scenario, string $stack): array
         }
     });
 
-        step('Assertions', function () use ($stack, $scenario) {
-            $out = execContainer($stack, 'php /e2e/assert.php ' . $scenario);
+        step('Assertions', function () use ($stack, $scenario, $siteRoot) {
+            $out = execContainer($stack, 'UR_VERSION=' . VERSION . ' UR_SITE_ROOT=' . $siteRoot . ' php /e2e/assert.php ' . $scenario);
             out($out);
 
             if (!str_contains($out, 'RESULT: PASS')) {
@@ -152,6 +174,16 @@ function runScenario(string $scenario, string $stack): array
 
         return ['scenario' => $scenario, 'stack' => $stack, 'ok' => $ok];
     }
+
+function installPackage(string $stack, string $zip): void
+{
+    $out = execContainer($stack, 'php /e2e/install.php ' . $zip);
+    out($out);
+
+    if (!str_contains($out, 'RESULT: PASS')) {
+        throw new Exception('install of ' . $zip . ' failed');
+    }
+}
 
 function step(string $label, callable $fn): void
 {

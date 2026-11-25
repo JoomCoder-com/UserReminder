@@ -1,13 +1,37 @@
 {
+  "home": true,
   "items": [
-    { "title": "Overview", "path": "index.md" },
+    { "title": "Overview", "path": "index.md", "section": "product-overview" },
+    { "title": "Features", "path": "features.md", "section": "product-overview" },
+    { "title": "Use Cases", "path": "product-overview/use-cases.md", "section": "product-overview" },
+    { "title": "Benefits", "path": "product-overview/benefits.md", "section": "product-overview" },
+    { "title": "Why Choose It", "path": "product-overview/why-choose-it.md", "section": "product-overview" },
+    { "title": "Compatibility", "path": "product-overview/compatibility.md", "section": "product-overview" },
+
     { "title": "Installation", "path": "installation.md" },
     { "title": "Quick Start", "path": "getting-started.md" },
-    { "title": "Features", "path": "features.md" },
-    { "title": "Guides", "children": [
+    { "title": "Feature guides", "children": [
+      { "title": "Activation reminders", "path": "features/activation-reminders.md" },
+      { "title": "Never-logged-in reminders", "path": "features/login-reminders.md" },
+      { "title": "Inactive-user reminders", "path": "features/inactive-users.md" },
+      { "title": "Email templates", "path": "features/email-templates.md" },
       { "title": "Scheduling", "path": "features/scheduling.md" },
-      { "title": "Email Templates", "path": "features/email-templates.md" },
-      { "title": "Administrator Screens", "path": "features/admin-screens.md" }
+      { "title": "Account cleanup", "path": "features/account-cleanup.md" },
+      { "title": "Opt-out", "path": "features/opt-out.md" },
+      { "title": "Dashboard", "path": "features/dashboard.md" },
+      { "title": "Action log", "path": "features/action-log.md" },
+      { "title": "Testing and dry runs", "path": "features/testing.md" }
+    ]},
+    { "title": "Configuration", "children": [
+      { "title": "General", "path": "configuration/general.md" },
+      { "title": "Email Delivery", "path": "configuration/email-delivery.md" },
+      { "title": "Links & URLs", "path": "configuration/links.md" },
+      { "title": "Reminders", "path": "configuration/reminders.md" },
+      { "title": "Email Container", "path": "configuration/email-container.md" },
+      { "title": "Permissions", "path": "configuration/permissions.md" }
+    ]},
+    { "title": "Integrations", "section": "integrations", "children": [
+      { "title": "Community Builder", "path": "integrations/community-builder.md", "section": "integrations" }
     ]},
     { "title": "Troubleshooting", "path": "troubleshooting.md" },
     { "title": "FAQ", "path": "faq.md" }

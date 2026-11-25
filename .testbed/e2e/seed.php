@@ -26,9 +26,17 @@ use Joomla\CMS\User\UserHelper;
 
 $mode = $argv[1] ?? 'post';
 
-if (!in_array($mode, ['pre', 'post'], true)) {
-    fwrite(STDERR, "usage: seed.php pre|post\n");
+if (!in_array($mode, ['pre', 'post', 'remember'], true)) {
+    fwrite(STDERR, "usage: seed.php pre|post|remember\n");
     exit(2);
+}
+
+// remember: store UR_SITE_ROOT the way SiteUrl::remember() does on an admin page view.
+if ($mode === 'remember') {
+    $root = rtrim((string) getenv('UR_SITE_ROOT'), '/') . '/';
+    q("UPDATE {$P}extensions SET custom_data = " . $db->quote(json_encode(['site_root' => $root])) . " WHERE element = 'com_userreminder' AND type = 'component'");
+    echo "  remembered site address $root\n";
+    exit(0);
 }
 
 $DOM = 'example.test';
@@ -165,6 +173,9 @@ file_put_contents('/tmp/e2e-expected.json', json_encode(array_merge($expected, [
 $cparams = json_decode((string) val("SELECT params FROM {$P}extensions WHERE element = 'com_userreminder' AND type = 'component'"), true) ?: [];
 $cparams['enableActivateReminder'] = 1;
 $cparams['enableLoginReminder']    = 1;
+// BCC copy of every reminder (Options -> Delivery); assert.php checks each message carries it.
+$cparams['enabledBccToAdmin'] = 1;
+$cparams['bccEmailAddress']   = "bcc@$TAG.$DOM";
 // Inactive-user reminders: a fresh install starts with them off, so switch them on here. An
 // upgraded site must already have them on (script.php keeps them on); assert.php checks that,
 // so the seeder leaves the upgrade scenario alone.
@@ -172,6 +183,7 @@ if (empty($expected['legacyLogId']) && !array_key_exists('enableInactiveReminder
     $cparams['enableInactiveReminder'] = 1;
 }
 q("UPDATE {$P}extensions SET params = " . $db->quote(json_encode($cparams)) . " WHERE element = 'com_userreminder' AND type = 'component'");
+
 
 // Make sure the scheduled task is due and enabled.
 q("UPDATE {$P}scheduler_tasks

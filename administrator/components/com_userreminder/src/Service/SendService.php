@@ -22,6 +22,8 @@ use Joomla\CMS\Event\GenericEvent;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Database\DatabaseInterface;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Router\Route;
+use Joomla\Database\QueryInterface;
 use JoomCoder\Component\UserReminder\Administrator\Helper\ActivationUrlHelper;
 use JoomCoder\Component\UserReminder\Administrator\Helper\SiteUrl;
 
@@ -57,6 +59,19 @@ final class SendService
     /** Event name dispatched after a single reminder attempt. */
     public const EVENT_AFTER_SEND = 'onUserReminderAfterSend';
 
+    /** Mail template per reminder type (com_userreminder.userreminder.<name>). */
+    private const TEMPLATES = [
+        self::TYPE_NOT_ACTIVATED => 'reminder_activation',
+        self::TYPE_NEVER_LOGGED  => 'reminder_login',
+        self::TYPE_INACTIVE_USER => 'reminder_inactive',
+    ];
+
+    /** Counters returned by both pipelines. */
+    private const EMPTY_STATS = [
+        'processed' => 0, 'sent' => 0, 'deleted' => 0, 'skipped' => 0,
+        'simulated' => 0, 'removedGroups' => 0, 'errors' => 0, 'dryRun' => false,
+    ];
+
     /**
      * Pending log rows, flushed to #__userreminder_log in one multi-row
      * INSERT per batch instead of one query per sent email.
@@ -75,16 +90,6 @@ final class SendService
      * @since  6.0.0
      */
     private const LOG_BATCH = 25;
-
-    /**
-     * Lazily loaded ids of the opt-out user groups
-     * (#__userreminder_optout_usergroups).
-     *
-     * @var  int[]|null
-     *
-     * @since  4.2.1
-     */
-    private ?array $excludedGroups = null;
 
     /**
      * Whether the "cannot resolve a site URL" failure was already logged for
@@ -160,9 +165,9 @@ final class SendService
      * the mail template HTML (MailHelper::convertRelativeToAbsoluteUrls),
      * which needs $_SERVER['HTTP_HOST']. The Joomla CLI does not populate it
      * (only the --live-site option does), so a cron run without it used to
-     * fatal. The reminder links themselves are always built from SiteUrl —
-     * which refuses "localhost" — this shim only serves core's URL
-     * absolutisation and is applied once and only when truly missing.
+     * fatal. The reminder links themselves are built from SiteUrl::root();
+     * this shim uses the same address and only serves core's URL
+     * absolutisation, applied only when the host is truly missing.
      *
      * @return  void
      *
@@ -170,21 +175,25 @@ final class SendService
      */
     private function ensureRequestContext(): void
     {
-        if (isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST'] !== '') {
-            return;
+        // Resolved before touching $_SERVER, so a made-up host never becomes the site address.
+        $parts = parse_url((string) SiteUrl::root()) ?: [];
+        $path  = rtrim($parts['path'] ?? '', '/') . '/';
+
+        if (empty($_SERVER['HTTP_HOST'])) {
+            $_SERVER['HTTP_HOST'] = ($parts['host'] ?? 'localhost') . (isset($parts['port']) ? ':' . $parts['port'] : '');
         }
 
-        $live = trim((string) Factory::getApplication()->get('live_site', ''), " \t/");
-
-        if ($live !== '' && ($parts = parse_url('//' . str_replace('//', '/', $live))) !== false) {
-            $_SERVER['HTTP_HOST']   = ($parts['host'] ?? '') . (isset($parts['port']) ? ':' . $parts['port'] : '');
-            $_SERVER['REQUEST_URI'] = ($parts['path'] ?? '') . '/';
-        } else {
-            $_SERVER['HTTP_HOST']   = 'localhost';
-            $_SERVER['REQUEST_URI'] = '/';
+        // Joomla's console copies the path of live_site into REQUEST_URI: empty for
+        // "https://example.com". Uri::getInstance() then appends the relative script name
+        // ("example.comcli/joomla.php") and every mail template send fails with
+        // "Could not parse the requested URI" (seen on Joomla 5.4.9).
+        if (!str_starts_with((string) ($_SERVER['REQUEST_URI'] ?? ''), '/')) {
+            $_SERVER['REQUEST_URI'] = $path;
         }
 
-        $_SERVER['SCRIPT_NAME'] = $_SERVER['REQUEST_URI'];
+        if (!str_starts_with((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '/')) {
+            $_SERVER['SCRIPT_NAME'] = $path;
+        }
     }
 
     /**
@@ -194,26 +203,84 @@ final class SendService
      * @param   int   $offset      SQL offset (0-based).
      * @param   int   $limit       Batch size (0 = ReminderOptions::batchSize()).
      *
-     * @return  array{processed:int, sent:int, deleted:int, skipped:int, errors:int, dryRun:bool}
+     * @return  array{processed:int, sent:int, deleted:int, skipped:int, simulated:int, removedGroups:int, errors:int, dryRun:bool}
      *
      * @since   4.0.0
      */
     public function processRegistrationReminders(bool $logToTable = true, int $offset = 0, int $limit = 0): array
     {
-        $this->ensureRequestContext();
-        $this->loadThirdPartyPlugins();
-        $options = ReminderOptions::fromComponent();
-        $limit   = $limit > 0 ? $limit : $options->batchSize();
+        $options = $this->startRun();
 
         // Clean up rows whose users are healthy again (batched).
         $this->cleanupStaleRows();
 
-        $candidates = $this->buildRegistrationCandidateQuery($options);
+        $this->db->setQuery($this->buildRegistrationCandidateQuery($options), $offset, $limit > 0 ? $limit : $options->batchSize());
 
-        $this->db->setQuery($candidates, $offset, $limit);
-        $rows = $this->db->loadObjectList() ?: [];
+        return $this->processRows($this->db->loadObjectList() ?: [], $options, $logToTable);
+    }
 
-        $stats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'skipped' => 0, 'simulated' => 0, 'errors' => 0, 'dryRun' => false];
+    /**
+     * Send reminders to existing registered users who haven't visited in X days.
+     *
+     * @param   bool  $logToTable
+     * @param   int   $offset
+     * @param   int   $limit
+     *
+     * @return  array{processed:int, sent:int, deleted:int, skipped:int, simulated:int, removedGroups:int, errors:int, dryRun:bool}
+     *
+     * @since   4.0.0
+     */
+    public function processInactiveUserReminders(bool $logToTable = true, int $offset = 0, int $limit = 0): array
+    {
+        $options = $this->startRun();
+
+        // Switched off in Options: nothing to do.
+        if (!$options->typeEnabled(self::TYPE_INACTIVE_USER)) {
+            return self::EMPTY_STATS;
+        }
+
+        $query = Audience::query($this->db, $options, self::TYPE_INACTIVE_USER)
+            ->select('a.id, a.email, a.block, a.registerDate, a.lastvisitDate, a.activation, a.username, a.name')
+            ->select('b.datesent, b.remindernumber, b.optoutcode')
+            ->select((string) self::TYPE_INACTIVE_USER . ' AS type');
+
+        $query->order($this->db->quoteName('a.lastvisitDate') . ' ASC');
+
+        $this->db->setQuery($query, $offset, $limit > 0 ? $limit : $options->batchSize());
+
+        return $this->processRows($this->db->loadObjectList() ?: [], $options, $logToTable);
+    }
+
+    /**
+     * Shared set-up of both pipelines.
+     *
+     * @return  ReminderOptions
+     *
+     * @since  6.1.0
+     */
+    private function startRun(): ReminderOptions
+    {
+        $this->ensureRequestContext();
+        $this->loadThirdPartyPlugins();
+
+        return ReminderOptions::fromComponent();
+    }
+
+    /**
+     * Apply plannedAction() to each candidate row: send, delete, remove from
+     * groups or skip. In dry-run mode nothing is sent, stored or deleted.
+     *
+     * @param   object[]         $rows        Candidate rows, each with a ->type.
+     * @param   ReminderOptions  $options
+     * @param   bool             $logToTable  Write a log row for every real send.
+     *
+     * @return  array  See EMPTY_STATS.
+     *
+     * @since  6.1.0
+     */
+    private function processRows(array $rows, ReminderOptions $options, bool $logToTable): array
+    {
+        $stats    = self::EMPTY_STATS;
         $maxSends = $options->maxPerRun();
         $dryRun   = $options->debug();
 
@@ -225,21 +292,16 @@ final class SendService
             $stats['processed']++;
 
             $type = (int) ($row->type ?? 0);
-            $type = in_array($type, [self::TYPE_NOT_ACTIVATED, self::TYPE_NEVER_LOGGED], true)
-                ? $type
-                : self::TYPE_NEVER_LOGGED;
+            $type = isset(self::TEMPLATES[$type]) ? $type : self::TYPE_NEVER_LOGGED;
 
-            $action = $this->decideAction($row, $type, $options);
+            $action = $this->plannedAction($row, $type, $options);
 
             if ($action === 'send') {
                 if ($dryRun) {
                     $this->simulateSend($row, $type, $options);
                     $stats['dryRun'] = true;
                     $stats['simulated']++;
-                    continue;
-                }
-
-                if ($this->sendOne($row, $type, $options)) {
+                } elseif ($this->sendOne($row, $type, $options)) {
                     $this->upsertReminderRow($row->id, $type, $row->optoutcode ?? null);
                     $stats['sent']++;
 
@@ -249,130 +311,20 @@ final class SendService
                 } else {
                     $stats['errors']++;
                 }
-            } elseif ($action === 'delete') {
+            } elseif ($action === 'delete' || $action === 'removegroups') {
                 if ($dryRun) {
+                    MailDebug::log(sprintf('DRY-RUN would %s user #%d (cycle complete, type %d)', $action === 'delete' ? 'delete' : 'remove from groups', $row->id, $type));
                     $stats['dryRun'] = true;
-
-                    MailDebug::log(sprintf('DRY-RUN would delete user #%d (cycle complete, type %d)', $row->id, $type));
-                    continue;
-                }
-
-                $this->maybeDelete($row->id, $type, $options);
-                $stats['deleted']++;
-            } else {
-                $stats['skipped']++;
-            }
-        }
-
-        $this->flushLog();
-
-        return $stats;
-    }
-
-    /**
-     * Send reminders to existing registered users who haven't visited in X days.
-     *
-     * @param   bool  $logToTable
-     * @param   int   $offset
-     * @param   int   $limit
-     *
-     * @return  array{processed:int, sent:int, deleted:int, skipped:int, removedGroups:int, errors:int, dryRun:bool}
-     *
-     * @since   4.0.0
-     */
-    public function processInactiveUserReminders(bool $logToTable = true, int $offset = 0, int $limit = 0): array
-    {
-        $this->ensureRequestContext();
-        $this->loadThirdPartyPlugins();
-        $options = ReminderOptions::fromComponent();
-        $limit   = $limit > 0 ? $limit : $options->batchSize();
-
-        // Switched off in Options: nothing to do.
-        if (!$options->typeEnabled(self::TYPE_INACTIVE_USER)) {
-            return ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'skipped' => 0, 'simulated' => 0, 'removedGroups' => 0, 'errors' => 0, 'dryRun' => false];
-        }
-
-        $days   = $options->inactivityDays();
-        $cutoff = ReminderOptions::utcNow('-' . $days . ' days');
-
-        $query = $this->db->getQuery(true)
-            ->select('a.id, a.email, a.block, a.registerDate, a.lastvisitDate, a.activation, a.username, a.name')
-            ->select('b.datesent, b.remindernumber, b.type as savedtype, b.optoutcode')
-            ->select('DATEDIFF(UTC_TIMESTAMP(), a.lastvisitDate) AS nodays')
-            ->from($this->db->quoteName('#__users', 'a'))
-            ->leftJoin($this->db->quoteName('#__userreminder', 'b') . ' ON ' . $this->db->quoteName('b.userid') . ' = ' . $this->db->quoteName('a.id'))
-            ->leftJoin($this->db->quoteName('#__userreminder_optout', 'o') . ' ON ' . $this->db->quoteName('o.user_id') . ' = ' . $this->db->quoteName('a.id'))
-            ->where($this->db->quoteName('o.user_id') . ' IS NULL')
-            ->where($this->db->quoteName('a.lastvisitDate') . ' IS NOT NULL')
-            ->where($this->db->quoteName('a.block') . ' = 0')
-            ->where($this->db->quoteName('a.lastvisitDate') . ' < :cutoff')
-            ->bind(':cutoff', $cutoff);
-
-        $this->applyGroupExclusion($query);
-
-        $query->order($this->db->quoteName('a.lastvisitDate') . ' ASC');
-
-        $this->db->setQuery($query, $offset, $limit);
-        $rows = $this->db->loadObjectList() ?: [];
-
-        $stats = ['processed' => 0, 'sent' => 0, 'deleted' => 0, 'skipped' => 0, 'simulated' => 0, 'removedGroups' => 0, 'errors' => 0, 'dryRun' => false];
-        $maxSends = $options->maxPerRun();
-        $dryRun   = $options->debug();
-        $maxReminders = $options->maxReminders();
-
-        foreach ($rows as $row) {
-            if (!$dryRun && $maxSends > 0 && $stats['sent'] >= $maxSends) {
-                break;
-            }
-
-            $stats['processed']++;
-            $row->type = self::TYPE_INACTIVE_USER;
-
-            $reminderNumber = (int) ($row->remindernumber ?? 0);
-
-            if ($reminderNumber >= $maxReminders) {
-                // Cycle is over, optionally delete / remove from groups.
-                if (!$dryRun && $options->deleteAtEndOfCycle(self::TYPE_INACTIVE_USER)) {
-                    $this->maybeDelete($row->id, self::TYPE_INACTIVE_USER, $options);
+                } elseif ($action === 'delete') {
+                    $this->deleteUser((int) $row->id);
                     $stats['deleted']++;
-                } elseif (!$dryRun) {
-                    $removedGroups = $this->maybeRemoveFromGroups($row->id, $options);
-
-                    if ($removedGroups > 0) {
-                        $stats['removedGroups']++;
-                    } else {
-                        $stats['skipped']++;
-                    }
+                } elseif ($this->removeFromGroups((int) $row->id, $options) > 0) {
+                    $stats['removedGroups']++;
                 } else {
-                    MailDebug::log(sprintf('DRY-RUN cycle ended for user #%d (type 3): would delete/remove-groups', $row->id));
-                    $stats['dryRun'] = true;
-                }
-
-                continue;
-            }
-
-            // Eligible to send? (Cool-down in UTC, matching what we store.)
-            if ($this->isWithinCoolDown($row->datesent, $options->cooldownDays())) {
-                $stats['skipped']++;
-                continue;
-            }
-
-            if ($dryRun) {
-                $this->simulateSend($row, self::TYPE_INACTIVE_USER, $options);
-                $stats['dryRun'] = true;
-                $stats['simulated']++;
-                continue;
-            }
-
-            if ($this->sendOne($row, self::TYPE_INACTIVE_USER, $options)) {
-                $this->upsertReminderRow($row->id, self::TYPE_INACTIVE_USER, $row->optoutcode ?? null);
-                $stats['sent']++;
-
-                if ($logToTable) {
-                    $this->writeLog($row, self::TYPE_INACTIVE_USER);
+                    $stats['skipped']++;
                 }
             } else {
-                $stats['errors']++;
+                $stats['skipped']++;
             }
         }
 
@@ -398,7 +350,7 @@ final class SendService
         // The real path generates the stable opt-out code inside sendOne();
         // mirror that here so the recorded dry-run tags show a usable link.
         if (empty($row->optoutcode)) {
-            $row->optoutcode = ApplicationHelper::getHash(UserHelper::genRandomPassword());
+            $row->optoutcode = self::newOptOutCode();
         }
 
         $siteUrl = SiteUrl::root();
@@ -409,11 +361,7 @@ final class SendService
 
         MailDebug::log(sprintf(
             'DRY-RUN send: template=%s user=#%d "%s" <%s> tags=%s',
-            match ($type) {
-                self::TYPE_NOT_ACTIVATED => 'reminder_activation',
-                self::TYPE_NEVER_LOGGED  => 'reminder_login',
-                default                  => 'reminder_inactive',
-            },
+            self::TEMPLATES[$type] ?? self::TEMPLATES[self::TYPE_INACTIVE_USER],
             (int) $row->id,
             (string) ($row->name ?? $row->username ?? ''),
             (string) $row->email,
@@ -422,215 +370,54 @@ final class SendService
     }
 
     /**
-     * Load the ids of the opt-out user groups once per run.
+     * A new random opt-out code (stored once per user, then kept stable).
      *
-     * @return  int[]
+     * @return  string
      *
-     * @since   4.2.1
+     * @since  6.1.0
      */
-    private function getExcludedGroups(): array
+    private static function newOptOutCode(): string
     {
-        if ($this->excludedGroups === null) {
-            $query = $this->db->getQuery(true)
-                ->select($this->db->quoteName('group_id'))
-                ->from($this->db->quoteName('#__userreminder_optout_usergroups'));
-
-            $this->db->setQuery($query);
-
-            $this->excludedGroups = array_values(
-                array_filter(array_map('intval', (array) $this->db->loadColumn()))
-            );
-        }
-
-        return $this->excludedGroups;
+        return ApplicationHelper::getHash(UserHelper::genRandomPassword());
     }
 
     /**
-     * Add the opt-out group exclusion to a candidate query.
-     *
-     * Members of the configured groups (#__userreminder_optout_usergroups,
-     * managed under Opt-out → User Groups) never receive reminders.
-     *
-     * @param   \Joomla\Database\QueryInterface  $query  Query on #__users aliased as "a".
-     *
-     * @return  void
-     *
-     * @since   4.2.1
-     */
-    private function applyGroupExclusion(\Joomla\Database\QueryInterface $query): void
-    {
-        $groups = $this->getExcludedGroups();
-
-        if (empty($groups)) {
-            return;
-        }
-
-        $sub = $this->db->getQuery(true)
-            ->select($this->db->quoteName('gm.user_id'))
-            ->from($this->db->quoteName('#__user_usergroup_map', 'gm'))
-            ->where($this->db->quoteName('gm.group_id') . ' IN (' . implode(',', $groups) . ')');
-
-        $query->where($this->db->quoteName('a.id') . ' NOT IN (' . $sub . ')');
-    }
-
-    /**
-     * Build the SQL that selects users needing activation or "never logged in" reminders.
-     *
-     * All date comparisons are computed in PHP/UTC — the fifteen岁月 of SQL
-     * NOW()/DATE_SUB() mixing server and PHP time zones is over: the same
-     * cutoff value is used by every consumer of the options object.
+     * Users needing an activation or "never logged in" reminder: one UNION
+     * half per type, so each row carries its type.
      *
      * @param   ReminderOptions  $options
      *
-     * @return  \Joomla\Database\QueryInterface
+     * @return  QueryInterface
      *
      * @since   4.0.0
      */
-    private function buildRegistrationCandidateQuery(ReminderOptions $options): \Joomla\Database\QueryInterface
+    private function buildRegistrationCandidateQuery(ReminderOptions $options): QueryInterface
     {
-        $db = $this->db;
+        $half = fn(int $type) => Audience::query($this->db, $options, $type)
+            ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate, a.username, a.name')
+            ->select('b.datesent, b.remindernumber, b.optoutcode')
+            ->select($type . ' AS type');
 
-        $days   = $options->cooldownDays();
-        $cutoff = ReminderOptions::utcNow('-' . $days . ' days');
-
-        // Without "send first reminder immediately", a user's first reminder
-        // waits until the account is at least `$days` old.
-        // The two halves are joined with UNION, and union() does not carry the second query's
-        // bound values into the statement ("number of variables must match the number of
-        // parameters" on every run with the default options). The cutoff is a date we build
-        // ourselves, so it is quoted inline instead of bound.
-        $firstSendAgeFilter = $options->firstImmediate()
-            ? null
-            : fn() => $db->quoteName('a.registerDate') . ' < ' . $db->quote($cutoff);
-
-        $addAgeFilter = static function (\Joomla\Database\QueryInterface $query) use ($firstSendAgeFilter) {
-            if ($firstSendAgeFilter === null) {
-                return $query;
-            }
-
-            return $query->where($firstSendAgeFilter());
-        };
-
-        $notActivated = $addAgeFilter(
-            $db->getQuery(true)
-                ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate, a.username, a.name')
-                ->select('b.datesent, b.remindernumber, b.optoutcode')
-                ->select((string) self::TYPE_NOT_ACTIVATED . ' AS type')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON ' . $db->quoteName('b.userid') . ' = ' . $db->quoteName('a.id'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON ' . $db->quoteName('o.user_id') . ' = ' . $db->quoteName('a.id'))
-                ->where($db->quoteName('o.user_id') . ' IS NULL')
-                ->where($db->quoteName('a.activation') . ' <> ' . $db->quote(''))
-                ->where($db->quoteName('a.block') . ' >= 1')
-                ->where($db->quoteName('a.lastvisitDate') . ' IS NULL')
-        );
-
-        $this->applyGroupExclusion($notActivated);
-
-        $neverLogged = $addAgeFilter(
-            $db->getQuery(true)
-                ->select('a.id, a.email, a.activation, a.block, a.registerDate, a.lastvisitDate, a.username, a.name')
-                ->select('b.datesent, b.remindernumber, b.optoutcode')
-                ->select((string) self::TYPE_NEVER_LOGGED . ' AS type')
-                ->from($db->quoteName('#__users', 'a'))
-                ->leftJoin($db->quoteName('#__userreminder', 'b') . ' ON ' . $db->quoteName('b.userid') . ' = ' . $db->quoteName('a.id'))
-                ->leftJoin($db->quoteName('#__userreminder_optout', 'o') . ' ON ' . $db->quoteName('o.user_id') . ' = ' . $db->quoteName('a.id'))
-                ->where($db->quoteName('o.user_id') . ' IS NULL')
-                ->where($db->quoteName('a.block') . ' = 0')
-                ->where($db->quoteName('a.lastvisitDate') . ' IS NULL')
-                ->where($db->quoteName('a.activation') . ' = ' . $db->quote(''))
-        );
-
-        $this->applyGroupExclusion($neverLogged);
-
-        return $notActivated->union($neverLogged);
+        return $half(self::TYPE_NOT_ACTIVATED)->union($half(self::TYPE_NEVER_LOGGED));
     }
 
-    /**
-     * Decide whether to send / skip / delete the user.
-     *
-     * Rules, per reminder type (types 1 and 2):
-     *   1. Type disabled → skip.
-     *   2. No reminder sent yet → send (after the account-age gate unless
-     *      "send first reminder immediately").
-     *   3. Cycle done (maxReminders reached) → delete if the type has "auto
-     *      delete" on, otherwise skip.
-     *   4. Still inside the cool-down window → skip.
-     *   5. Otherwise → send.
-     *
-     * @param   object           $row
-     * @param   int              $type
-     * @param   ReminderOptions  $options
-     *
-     * @return  string  'send'|'skip'|'delete'
-     *
-     * @since   4.0.0
-     */
-    private function decideAction(object $row, int $type, ReminderOptions $options): string
-    {
-        if (!$options->typeEnabled($type)) {
-            return 'skip';
-        }
-
-        $reminderNumber = (int) ($row->remindernumber ?? 0);
-
-        if ($reminderNumber === 0) {
-            // Defensive: mirrors the SQL age filter in the candidate query in
-            // case the row reaches this method through another path.
-            if (!$options->firstImmediate()
-                && $this->isWithinCoolDown($row->registerDate, $options->cooldownDays())) {
-                return 'skip';
-            }
-
-            return 'send';
-        }
-
-        if ($reminderNumber >= $options->maxReminders()) {
-            return $options->deleteAtEndOfCycle($type) ? 'delete' : 'skip';
-        }
-
-        if ($this->isWithinCoolDown($row->datesent, $options->cooldownDays())) {
-            return 'skip';
-        }
-
-        return 'send';
-    }
-
-    /**
-     * Are we still inside the cool-down window? If the user received a reminder
-     * less than `$days` ago, skip.
-     *
-     * datesent is a datetime stored in DB-local server time by previous
-     * versions; since 6.1 all timestamps are written in UTC. The comparison
-     * therefore treats the stored value as UTC — values written by 6.0.0 were
-     * UTC whenever the server clock was UTC (com_scheduler runs in PHP TZ);
-     * the residual skew for legacy rows is at most the server UTC offset and
-     * always errs on the *safe* side (delays the next reminder, never sends one
-     * early). New rows are exact.
-     *
-     * @param   string|null  $datesent
-     * @param   int          $days
-     *
-     * @return  bool  true = still in cool-down (skip)
-     *
-     * @since   4.0.0
-     */
     /**
      * What the next run will do for a user, for the admin lists' "Action to Perform"
-     * column. Same rules as the run (decideAction() for types 1/2, the inactive-user
-     * branch of sendInactiveReminders() for type 3).
+     * column, and the decision the run itself acts on (processRows()), so the two can
+     * never disagree.
      *
-     * @param   object  $row   User row with remindernumber, datesent, registerDate.
-     * @param   int     $type  One of the TYPE_* constants.
+     * @param   object                $row      User row with remindernumber, datesent, registerDate.
+     * @param   int                   $type     One of the TYPE_* constants.
+     * @param   ReminderOptions|null  $options  The run's options (the admin lists pass none).
      *
      * @return  string  send|wait|done|delete|removegroups|off
      *
      * @since   6.0.1
      */
-    public function plannedAction(object $row, int $type): string
+    public function plannedAction(object $row, int $type, ?ReminderOptions $options = null): string
     {
-        static $options = null;
-        $options ??= ReminderOptions::fromComponent();
+        static $listOptions = null;
+        $options ??= $listOptions ??= ReminderOptions::fromComponent();
 
         if (!$options->typeEnabled($type)) {
             return 'off';
@@ -657,6 +444,25 @@ final class SendService
         return $this->isWithinCoolDown($row->datesent ?? null, $options->cooldownDays()) ? 'wait' : 'send';
     }
 
+    /**
+     * Are we still inside the cool-down window? If the user received a reminder
+     * less than `$days` ago, skip.
+     *
+     * datesent is a datetime stored in DB-local server time by previous
+     * versions; since 6.1 all timestamps are written in UTC. The comparison
+     * therefore treats the stored value as UTC — values written by 6.0.0 were
+     * UTC whenever the server clock was UTC (com_scheduler runs in PHP TZ);
+     * the residual skew for legacy rows is at most the server UTC offset and
+     * always errs on the *safe* side (delays the next reminder, never sends one
+     * early). New rows are exact.
+     *
+     * @param   string|null  $datesent
+     * @param   int          $days
+     *
+     * @return  bool  true = still in cool-down (skip)
+     *
+     * @since   4.0.0
+     */
     private function isWithinCoolDown(?string $datesent, int $days): bool
     {
         if (empty($datesent)) {
@@ -690,11 +496,7 @@ final class SendService
         $mailfrom = $app->get('mailfrom');
         $fromname = $app->get('fromname');
 
-        $templateId = match ($type) {
-            self::TYPE_NOT_ACTIVATED => 'com_userreminder.userreminder.reminder_activation',
-            self::TYPE_NEVER_LOGGED  => 'com_userreminder.userreminder.reminder_login',
-            default                  => 'com_userreminder.userreminder.reminder_inactive',
-        };
+        $templateId = 'com_userreminder.userreminder.' . (self::TEMPLATES[$type] ?? self::TEMPLATES[self::TYPE_INACTIVE_USER]);
 
         // The site root is mandatory: every link in the email derives from it.
         // Refusing to send beats inventing http://localhost links.
@@ -733,7 +535,7 @@ final class SendService
         // The opt-out code is generated once and then stays stable per user so
         // links in previously delivered emails keep working.
         if (empty($row->optoutcode)) {
-            $row->optoutcode = ApplicationHelper::getHash(UserHelper::genRandomPassword());
+            $row->optoutcode = self::newOptOutCode();
         }
 
         $tags = $this->buildTags($row, $type, $options, $siteUrl);
@@ -769,6 +571,13 @@ final class SendService
             }
 
             $mailTemplate->addRecipient((string) ($row->email ?? ''));
+
+            // Options → Delivery → BCC: a copy of every reminder to the admin address.
+            $bcc = $options->bccAddress();
+
+            if ($bcc !== null) {
+                $mailTemplate->addRecipient($bcc, null, 'bcc');
+            }
 
             $sent = $mailTemplate->send() === true;
         } catch (\Throwable $e) {
@@ -807,7 +616,7 @@ final class SendService
 
         $optOutCode   = (string) ($row->optoutcode ?? '');
         $optOutUrl    = $this->optOutUrl($siteUrl, $optOutCode);
-        $activateUrl  = ActivationUrlHelper::get($row, $siteUrl, $options->raw());
+        $activateUrl  = ActivationUrlHelper::get($row, $siteUrl, $options);
 
         return [
             'NAME'               => $name ?: $username,
@@ -815,15 +624,14 @@ final class SendService
             'SITELINK'           => $siteUrl,
             'USERNAME'           => $username,
             'EMAIL'              => $email,
-            'PASSWORD_RESET_URL' => $siteUrl . $options->passwordResetPath(),
+            'PASSWORD_RESET_URL' => $this->sitePath($siteUrl, $options->passwordResetPath()),
             'OPTOUT_URL'         => $optOutUrl,
             'ACTIVATE_URL'       => $activateUrl,
         ];
     }
 
     /**
-     * Absolute opt-out URL for a code. SEF when the site router can build one,
-     * plain non-SEF URL otherwise (both are functionally equivalent).
+     * Absolute opt-out URL for a code (SEF when the site router can build one).
      *
      * @param   string  $siteUrl
      * @param   string  $code
@@ -834,23 +642,29 @@ final class SendService
      */
     private function optOutUrl(string $siteUrl, string $code): string
     {
-        $path = 'index.php?option=com_userreminder&view=optout&uid=' . $code;
+        return SiteUrl::route($siteUrl, 'index.php?option=com_userreminder&view=optout&uid=' . rawurlencode($code));
+    }
 
-        try {
-            // Route::link('site') is safe from admin/CLI: it only needs the
-            // site router, not the current request.
-            $sef = \Joomla\CMS\Router\Route::link('site', $path, false, \Joomla\CMS\Router\Route::TLS_IGNORE, true);
-
-            // $absolute = true: the router already returns the full URL (scheme, host and
-            // any subfolder). Prefixing $siteUrl again doubled it ("http://x/http://x/...").
-            if (preg_match('#^https?://#i', $sef) && !str_contains($sef, '/index.php?')) {
-                return $sef;
-            }
-
-            return $siteUrl . $path;
-        } catch (\Throwable) {
-            return $siteUrl . $path;
+    /**
+     * Absolute URL for a configured path: Joomla paths (index.php?...) go
+     * through the site router, anything else is appended to the site root.
+     *
+     * @param   string  $siteUrl
+     * @param   string  $path
+     *
+     * @return  string
+     *
+     * @since  6.1.0
+     */
+    private function sitePath(string $siteUrl, string $path): string
+    {
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
         }
+
+        return str_starts_with(ltrim($path, '/'), 'index.php?')
+            ? SiteUrl::route($siteUrl, ltrim($path, '/'))
+            : $siteUrl . ltrim($path, '/');
     }
 
     /**
@@ -889,7 +703,7 @@ final class SendService
             'remindernumber' => 0,
             'datesent'       => null,
             // A generated code so the test email's opt-out link is usable too.
-            'optoutcode'     => ApplicationHelper::getHash(UserHelper::genRandomPassword()),
+            'optoutcode'     => self::newOptOutCode(),
         ];
 
         $ok = true;
@@ -1002,7 +816,7 @@ final class SendService
     private function upsertReminderRow(int $userId, int $type, ?string $optOutCode = null): void
     {
         $now = ReminderOptions::utcNow();
-        $code = $optOutCode ?: ApplicationHelper::getHash(UserHelper::genRandomPassword());
+        $code = $optOutCode ?: self::newOptOutCode();
 
         // Single-statement upsert — one round trip instead of
         // UPDATE-then-INSERT per user. Values are escaped inline: the raw SQL
@@ -1053,7 +867,7 @@ final class SendService
         $this->logBuffer[] = implode(',', [
             (int) $row->id,
             $this->db->quote($row->username ?? ''),
-            $this->db->quote(\Joomla\CMS\Language\Text::_($key)),
+            $this->db->quote(Text::_($key)),
             $this->db->quote($key),
             $this->db->quote(ReminderOptions::utcNow()),
         ]);
@@ -1178,22 +992,16 @@ final class SendService
     }
 
     /**
-     * Maybe delete the user (depends on the type's "auto delete" option).
+     * Delete a user whose reminder cycle ended with auto-delete on.
      *
-     * @param   int              $userId
-     * @param   int              $type
-     * @param   ReminderOptions  $options
+     * @param   int  $userId
      *
      * @return  void
      *
      * @since   4.0.0
      */
-    private function maybeDelete(int $userId, int $type, ReminderOptions $options): void
+    private function deleteUser(int $userId): void
     {
-        if (!$options->deleteAtEndOfCycle($type)) {
-            return;
-        }
-
         try {
             $user = Factory::getUser($userId);
 
@@ -1206,7 +1014,7 @@ final class SendService
     }
 
     /**
-     * Remove the user from configured opt-out-from-reminder groups.
+     * Remove the user from the groups set in Options (end of the inactive cycle).
      *
      * @param   int              $userId
      * @param   ReminderOptions  $options
@@ -1215,7 +1023,7 @@ final class SendService
      *
      * @since   4.0.0
      */
-    private function maybeRemoveFromGroups(int $userId, ReminderOptions $options): int
+    private function removeFromGroups(int $userId, ReminderOptions $options): int
     {
         $groups = $options->removeFromGroups();
 
@@ -1252,18 +1060,18 @@ final class SendService
     /**
      * Resolve the configured mailer through the container's mailer factory.
      *
-     * @return  \Joomla\CMS\Mail\Mail
+     * @return  Mail
      *
      * @since  6.1.0
      */
-    private function resolveMailer(): \Joomla\CMS\Mail\Mail
+    private function resolveMailer(): Mail
     {
         $mailerFactory = $this->mailerFactory
             ?? Factory::getContainer()->get(MailerFactoryInterface::class);
 
         $mailer = $mailerFactory->createMailer();
 
-        if (!$mailer instanceof \Joomla\CMS\Mail\Mail) {
+        if (!$mailer instanceof Mail) {
             throw new \RuntimeException('The configured mailer does not extend Joomla\CMS\Mail\Mail.');
         }
 

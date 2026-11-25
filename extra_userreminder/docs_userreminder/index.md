@@ -1,8 +1,10 @@
 # User Reminder
 
-User Reminder emails your Joomla users who never finished registering, never logged in, or haven't visited for a while, and can clean up the accounts that never respond.
+**User Reminder** is a Joomla extension that emails users who never activated their account, never logged in, or stopped visiting, and can clean up the accounts that never respond.
 
-## What It Does
+![The User Reminder dashboard](images/dashboard@2x.png)
+
+## What it does
 
 User Reminder looks at your Joomla users and finds three kinds of quiet accounts:
 
@@ -12,41 +14,24 @@ User Reminder looks at your Joomla users and finds three kinds of quiet accounts
 
 Each group gets its own email, repeated as often as you set. When the last reminder goes unanswered, User Reminder can delete the account or, for inactive users, remove it from chosen user groups.
 
-It runs on Joomla's own building blocks: the reminders are **Joomla Mail Templates**, sending runs as a **Joomla Scheduled Task**, and everything stays on your site. No outside service sees your users.
+It uses Joomla's own parts: the emails are **Joomla Mail Templates**, sending runs as a **Joomla Scheduled Task**, and all data stays in your site's database. No outside service sees your users.
 
-## What's Included
+## What's included
 
-- **com_userreminder**: the component with the dashboard, reminder lists, opt-out lists, action log and options
-- **plg_task_userreminder**: the "Task - UserReminder" plugin that sends reminders from **System > Scheduled Tasks**
+| Part | What it does |
+|---|---|
+| **com_userreminder** | Dashboard, reminder lists, opt-out lists, action log, options and the unsubscribe page |
+| **plg_task_userreminder** | The "Send User Reminder emails" task in **System > Scheduled Tasks** |
+| **plg_installer_userreminderupdate** | Lets Joomla download updates with your download key |
 
-## Key Features
+## Where to start
 
-- **Three reminder types**: incomplete registrations, never logged in and inactive users, each turned on separately
-- **Joomla Mail Templates**: edit subject and body per type and language in **System > Mail Templates**
-- **Branded HTML container**: logo, header title and footer colours around every email
-- **Scheduled Tasks**: a daily task is created on install; change the interval like any Joomla task
-- **Repeat and stop**: days between reminders and the number of reminders per user
-- **Account cleanup**: delete unanswered accounts, or remove inactive users from groups
-- **Opt-out**: one-click unsubscribe page, opt-out users and opt-out user groups
-- **Dashboard**: what's pending, due now and sent, a 30-day chart, backlog aging and health checks
-- **Action log**: every reminder, opt-out and resubscribe, searchable, with pruning
-- **Safe testing**: send a test email, or use debug mode to simulate a run without sending
-- **Sending limits**: emails per batch and a hard cap per run, plus an optional admin BCC
-- **Community Builder**: CB activation links for CB registrations
-
-## Requirements
-
-| Requirement | Version |
-|-------------|---------|
-| Joomla | 4.4, 5.x or 6.x |
-| PHP | 8.1 or higher |
-| Database | MySQL or MariaDB |
-| Mail | A working Joomla mail configuration |
-| Scheduler | Joomla Scheduled Tasks (lazy scheduler or a server cron job) |
+- New here: [Installation](installation.md), then the [Quick Start](getting-started.md)
+- Everything it can do: [Features](features.md)
+- Is it right for your site: [Why Choose It](product-overview/why-choose-it.md) and [Compatibility](product-overview/compatibility.md)
 
 ## Support
 
 - **Website:** [joomcoder.com](https://www.joomcoder.com/)
-- **Documentation:** [joomcoder.com/docs/user-reminder](https://www.joomcoder.com/docs/user-reminder)
 - **Email:** support@joomcoder.com
-- **License:** GNU General Public License v2 or later
+- **Licence:** GNU General Public License v2 or later

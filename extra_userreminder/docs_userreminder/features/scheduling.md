@@ -2,52 +2,49 @@
 
 User Reminder sends automatically through Joomla's **Scheduled Tasks**.
 
-## The Task
+## The task
 
-![The User Reminder emails task in Scheduled Tasks](../images/scheduled-task.png)
+![The User Reminder emails task in Scheduled Tasks](../images/scheduled-task@2x.png)
 
-The installer creates a task called **User Reminder emails** of type **Send User Reminder emails**, running every 24 hours. Find it in **System > Scheduled Tasks**.
+The installer creates a task called **User Reminder emails** of type **Send User Reminder emails**, running every 24 hours. Find it in **System > Scheduled Tasks**. Open it to change:
 
-Open it to change:
+- **Execution rule**: every few minutes, hours, days, or a cron expression
+- **Run registration reminders**: activation and never-logged-in reminders
+- **Run inactivity reminders**: inactive-user reminders
 
-- **Execution rule**: every few minutes, hours, days or a cron expression
-- **Run registration reminders**: include incomplete registrations and never-logged-in users
-- **Run inactivity reminders**: include inactive users
+![The task's options](../images/task-edit@2x.png)
 
-You can make two tasks, for example registration reminders every day and inactivity reminders once a week.
+You can make two tasks, for example registration reminders every day and inactivity reminders once a week. A reminder type that is off in the options is never sent, whatever the task says.
 
-If the task is missing or disabled, the dashboard shows **Automatic reminders are not scheduled** with a button to Scheduled Tasks. Create a new task of type **Send User Reminder emails** there.
+If the task is missing or disabled, the [dashboard](dashboard.md) shows **Automatic reminders are not scheduled**. Create a new task of type **Send User Reminder emails** in **System > Scheduled Tasks**.
 
-## How Joomla Runs Tasks
+## How Joomla starts tasks
 
-Joomla starts due tasks in one of two ways:
-
-- **Lazy scheduler** (default): a site visit triggers due tasks. Fine for sites with daily traffic.
-- **Server cron**: more reliable. Turn off the lazy scheduler in **System > Scheduled Tasks > Options** and add a cron job on your server:
+- **Lazy scheduler** (Joomla's default): a visit to the site starts due tasks. Fine for sites with daily visitors.
+- **Server cron** (more reliable): turn off the lazy scheduler in **System > Scheduled Tasks > Options** and add a cron job, for example every 15 minutes:
 
 ```
 php /path/to/your/site/cli/joomla.php scheduler:run --all
 ```
 
-## Cadence
+## What is due
 
-These options on the **General** tab decide what is due:
+These options on the **General** tab decide when a user gets the next reminder:
 
 | Option | Effect |
 |---|---|
 | Days before next reminder | Wait between two reminders to the same user |
-| Number of reminders before deleting | Reminders per user; after the last one the cycle ends |
-| Send first reminder immediately | Yes: first reminder as soon as the user qualifies. No: wait the number of days first |
+| Number of reminders | Reminders per user; after the last one the cycle ends |
+| Send first reminder immediately | Yes: activation and never-logged-in reminders start as soon as the user qualifies. No: they wait until the account is as old as the days above |
 
-## Limits
+## Limits per run
 
-On the **Email Delivery** tab:
+On the **Email Delivery** tab, **Maximum emails per run** caps the emails one run sends (`0` = no limit). Users that don't fit go out in the next runs. See [Email Delivery](../configuration/email-delivery.md).
 
-- **Emails per batch**: users read per database query (lower uses less memory)
-- **Maximum emails per run**: a hard cap per run; `0` means no limit
+## Send by hand
 
-If more users are due than one run sends, the rest go out in the next runs. The dashboard warns about backlog pressure.
+**Send Reminders** on **Registration Reminders** or **Active User Reminders**, or the send buttons on the dashboard, send what is due right now, with the same rules and limits. The message after the run says how many users were checked, emailed and deleted.
 
-## Send by Hand
+## The task log
 
-**Send Reminders** in the toolbar of **Registration Reminders** or **Active User Reminders** sends what is due right now, with the same rules.
+Each run writes one line to the task's log in **System > Scheduled Tasks**, for example `Processed 12, sent 5, deleted 0, skipped 7, mail errors 0`.

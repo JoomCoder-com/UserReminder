@@ -11,13 +11,9 @@ namespace JoomCoder\Component\UserReminder\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Application\AdministratorApplication;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
+use JoomCoder\Component\UserReminder\Administrator\Helper\SiteUrl;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
-use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderComponent;
 
 /**
  * Base controller for com_userreminder. Default task = display.
@@ -26,25 +22,14 @@ use JoomCoder\Component\UserReminder\Administrator\Extension\UserReminderCompone
  */
 class DisplayController extends BaseController
 {
-    use AclTrait;
+    use RunTrait;
 
     /**
-     * @param   array                     $config
-     * @param   MVCFactoryInterface|null  $factory
-     * @param   AdministratorApplication|null $app
-     * @param   \Joomla\Input\Input|null $input
+     * Default landing page.
+     *
+     * @var  string
      */
-    public function __construct(
-        $config = [],
-        ?MVCFactoryInterface $factory = null,
-        ?AdministratorApplication $app = null,
-        ?\Joomla\Input\Input $input = null
-    ) {
-        parent::__construct($config, $factory, $app, $input);
-
-        // Default landing page.
-        $this->default_view = 'cpanel';
-    }
+    protected $default_view = 'cpanel';
 
     /**
      * Show the cpanel/dashboard view.
@@ -63,6 +48,9 @@ class DisplayController extends BaseController
     public function display($cachable = false, $urlparams = []): void
     {
         $this->requireAuthorised('core.manage');
+
+        // Command-line runs (server cron) have no site address of their own.
+        SiteUrl::remember();
 
         parent::display($cachable, $urlparams);
     }
@@ -99,9 +87,7 @@ class DisplayController extends BaseController
         $model = $this->getModel('Cpanel', 'Administrator');
         $model->clearDashboardCache();
 
-        $this->setRedirect(
-            \Joomla\CMS\Router\Route::_('index.php?option=com_userreminder&view=cpanel', false)
-        );
+        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=cpanel', false));
     }
 
     /**
@@ -113,17 +99,11 @@ class DisplayController extends BaseController
      */
     public function sendReminders(): void
     {
-        $this->checkToken();
-        $this->requireAuthorised('core.manage');
-
-        $stats = $this->getSendService()->processRegistrationReminders(true, 0, 0);
-
-        $this->enqueueRunMessage($stats);
-        $this->redirectToCpanel();
+        $this->runNow(false, 'cpanel');
     }
 
     /**
-     * Send active user (inactivity) reminders from the dashboard toolbar.
+     * Send inactive-user reminders from the dashboard toolbar.
      *
      * @return  void
      *
@@ -131,68 +111,6 @@ class DisplayController extends BaseController
      */
     public function sendInactiveReminders(): void
     {
-        $this->checkToken();
-        $this->requireAuthorised('core.manage');
-
-        // Inactive-user reminders are switched off in Options: say so instead of "Processed 0".
-        if (!\JoomCoder\Component\UserReminder\Administrator\Service\ReminderOptions::fromComponent()->typeEnabled(\JoomCoder\Component\UserReminder\Administrator\Service\SendService::TYPE_INACTIVE_USER)) {
-            Factory::getApplication()->enqueueMessage(Text::_('COM_USERREMINDER_INACTIVE_OFF'), 'warning');
-            $this->redirectToCpanel();
-
-            return;
-        }
-
-        $stats = $this->getSendService()->processInactiveUserReminders(true, 0, 0);
-
-        $this->enqueueRunMessage($stats);
-        $this->redirectToCpanel();
-    }
-
-    /**
-     * @return  \JoomCoder\Component\UserReminder\Administrator\Service\SendService
-     */
-    private function getSendService(): \JoomCoder\Component\UserReminder\Administrator\Service\SendService
-    {
-        return UserReminderComponent::service();
-    }
-
-    /**
-     * @param   array  $stats  processed/sent/deleted counts (+ dryRun flag)
-     *
-     * @return  void
-     */
-    private function enqueueRunMessage(array $stats): void
-    {
-        $app = Factory::getApplication();
-
-        if (!empty($stats['dryRun'])) {
-            $app->enqueueMessage(
-                Text::sprintf(
-                    'COM_USERREMINDER_RUN_SIMULATED',
-                    $stats['processed'],
-                    $stats['simulated'] ?? 0
-                ),
-                'info'
-            );
-
-            return;
-        }
-
-        $app->enqueueMessage(
-            Text::sprintf(
-                'COM_USERREMINDER_RUN_COMPLETE',
-                $stats['processed'],
-                $stats['sent'],
-                $stats['deleted']
-            ) . (!empty($stats['errors'])
-                ? ' ' . Text::sprintf('COM_USERREMINDER_RUN_ERRORS', (int) $stats['errors'])
-                : ''),
-            'info'
-        );
-    }
-
-    private function redirectToCpanel(): void
-    {
-        $this->setRedirect(Route::_('index.php?option=com_userreminder&view=cpanel', false));
+        $this->runNow(true, 'cpanel');
     }
 }

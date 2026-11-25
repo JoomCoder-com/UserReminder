@@ -7,12 +7,13 @@
         <template>
             <subject><![CDATA[USERREMINDER_LOGINREMINDER_DETAILS_FOR]]></subject>
             <body><![CDATA[USERREMINDER_SEND_MSG_LOGINREMINDER]]></body>
-            <htmlbody><![CDATA[Hello {NAME},<br /><br />We have noticed that you have successfully registered your account at {SITENAME}.<br /><br />However you have not logged in since activating your account.<br /><br />To access the website click on the following link or copy-paste it in your browser:<br /><a href="{SITELINK}">{SITELINK}</a><br /><br />You may login using the following username and password:<br /><br />Username: {USERNAME}<br />Forgot your Password? : <a href="{PASSWORD_RESET_URL}">{PASSWORD_RESET_URL}</a><br /><br />If you no longer wish to receive these reminders then unsubscribe here <a href="{OPTOUT_URL}">{OPTOUT_URL}</a>]]></htmlbody>
+            <htmlbody><![CDATA[<p>Hello {NAME},</p><p>Your account at {SITENAME} is active, but you have never logged in.</p><p>Log in now: <a href="{SITELINK}">{SITELINK}</a><br />Your username: <strong>{USERNAME}</strong></p><p>Forgot your password? <a href="{PASSWORD_RESET_URL}">Reset it here</a>.</p><p>Regards,<br />{SITENAME}<br /><a href="{SITELINK}">{SITELINK}</a></p><p style="font-size:12px;color:#666666;">Do not want to receive these reminders? <a href="{OPTOUT_URL}">Unsubscribe</a>.</p>]]></htmlbody>
             <tags>
                 <tag>NAME</tag>
                 <tag>SITENAME</tag>
                 <tag>SITELINK</tag>
                 <tag>USERNAME</tag>
+                <tag>EMAIL</tag>
                 <tag>PASSWORD_RESET_URL</tag>
                 <tag>OPTOUT_URL</tag>
             </tags>

@@ -11,6 +11,8 @@ namespace JoomCoder\Component\UserReminder\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use JoomCoder\Component\UserReminder\Administrator\Helper\UserReminderHelper;
+use Joomla\CMS\Helper\UserGroupsHelper;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\QueryInterface;
 use JoomCoder\Component\UserReminder\Administrator\Table\OptOutTable;
@@ -118,28 +120,20 @@ class OptoutusersModel extends ListModel
     }
 
     /**
-     * Return the list of opt-out user groups (configured in the component params).
+     * Ids of the opt-out user groups.
      *
-     * @return  array
+     * @return  int[]
      *
      * @since   4.0.0
      */
     public function getOptGroups(): array
     {
-        $db    = $this->getDbo();
-        $query = $db->getQuery(true)
-            ->select('group_id')
-            ->from($db->quoteName('#__userreminder_optout_usergroups'));
-
-        $db->setQuery($query);
-
-        return array_map(static fn($r) => (int) $r, (array) $db->loadColumn());
+        return UserReminderHelper::getOptOutGroups();
     }
 
     /**
-     * All user groups with a computed nesting level, for the group picker layout.
-     *
-     * Level is computed via the parent hierarchy rather than a DB column.
+     * All user groups in tree order, each with its nesting level, for the
+     * group picker layout.
      *
      * @return  object[]
      *
@@ -147,42 +141,7 @@ class OptoutusersModel extends ListModel
      */
     public function getUserGroups(): array
     {
-        $db    = $this->getDbo();
-        $query = $db->getQuery(true)
-            ->select($db->quoteName(['id', 'parent_id', 'title', 'lft', 'rgt']))
-            ->from($db->quoteName('#__usergroups'))
-            ->order('lft ASC');
-
-        $db->setQuery($query);
-
-        $groups = $db->loadObjectList() ?: [];
-
-        $byId = [];
-        foreach ($groups as $g) {
-            $byId[(int) $g->id] = $g;
-            $g->level = 0;
-        }
-
-        foreach ($groups as $g) {
-            $level   = 0;
-            $pid     = (int) $g->parent_id;
-            $visited = [];
-
-            while ($pid !== 0 && isset($byId[$pid]) && !isset($visited[$pid])) {
-                $visited[$pid] = true;
-                $level++;
-                $pid = (int) $byId[$pid]->parent_id;
-
-                // Safety cap for malformed trees.
-                if ($level > 20) {
-                    break;
-                }
-            }
-
-            $g->level = $level;
-        }
-
-        return $groups;
+        return array_values(UserGroupsHelper::getInstance()->getAll());
     }
 
     /**

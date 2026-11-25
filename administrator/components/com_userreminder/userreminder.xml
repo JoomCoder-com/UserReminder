@@ -81,7 +81,6 @@
             <menu link="option=com_userreminder&amp;view=optoutusers">COM_USERREMINDER_SUBMENU_OPTOUT</menu>
             <menu link="option=com_userreminder&amp;view=log">COM_USERREMINDER_SUBMENU_LOG</menu>
             <menu link="option=com_mails&amp;view=templates&amp;filter[extension]=com_userreminder">COM_USERREMINDER_SUBMENU_MAILTEMPLATES</menu>
-            <menu link="option=com_userreminder&amp;view=help">COM_USERREMINDER_SUBMENU_HELP</menu>
         </submenu>
     </administration>
 </extension>

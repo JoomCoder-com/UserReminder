@@ -27,7 +27,8 @@ pass: system123zz@@
      with Vite (IIFE, same filenames). Vendored libs (e.g. `chart.umd.min.js`) are copied verbatim.
   3. Replaces `##VERSION##` in all staged XML/JSON files.
   4. Zips inner extension zips, then `releases/pkg_userreminder_v<version>.zip`, and cleans the staging dir.
-- Output: `releases/pkg_userreminder_v<version>.zip` (never commit it).
+- Output: `releases/pkg_userreminder_v<version>.zip` (never commit it). The build then copies it to
+  the archive folder `E:\JoomCoder\UserReminder\releases` (skipped with a message if that folder is missing).
 
 # E2E testing (Docker: Joomla 4 / 5 / 6)
 - Testbed: `.testbed/docker-compose.yml` (project name `urtest`) — J4.4+MySQL on :8811, J5+MySQL on :8812,

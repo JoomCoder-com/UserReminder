@@ -16,6 +16,7 @@ import { build as viteBuild } from 'vite';
 import {
   copyFileSync,
   cpSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   readdirSync,
@@ -29,6 +30,8 @@ import { createWriteStream } from 'node:fs';
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const RELEASES = path.join(ROOT, 'releases');
 const STAGING = path.join(RELEASES, 'build');
+// Archive folder that keeps every shipped zip. Skipped when it doesn't exist (other machines).
+const ARCHIVE = 'E:/JoomCoder/UserReminder/releases';
 const PKG_INNER = path.join(STAGING, 'packages', 'pkg_userreminder');
 const COMP_DIR = path.join(PKG_INNER, 'com_userreminder');
 const PLUGIN_DIR = path.join(PKG_INNER, 'plg_task_userreminder');
@@ -125,7 +128,28 @@ async function bundleJs(srcDir, outDir) {
   }
 }
 
+// Every language line must be KEY="value": a missing line break once glued two
+// keys together (Joomla still loaded the file, but the second key was lost).
+function checkLanguageFiles(dirs) {
+  const line = /^[A-Z0-9_.]+="(?:[^"\\]|\\.)*"$/;
+  const errors = [];
+
+  for (const file of dirs.flatMap((dir) => collectFiles(dir, '.ini'))) {
+    readFileSync(file, 'utf8').split(/\r?\n/).forEach((text, i) => {
+      if (text.trim() !== '' && !text.startsWith(';') && !line.test(text)) {
+        errors.push(`${path.relative(ROOT, file)}:${i + 1}: ${text.slice(0, 80)}`);
+      }
+    });
+  }
+
+  if (errors.length) {
+    throw new Error(`Broken language lines:\n${errors.join('\n')}`);
+  }
+}
+
 const version = resolveVersion();
+
+checkLanguageFiles([ADMIN, SITE, PLUGIN, UPDATE_PLUGIN].map((dir) => path.join(dir, 'language')));
 
 rmSync(STAGING, { recursive: true, force: true });
 mkdirSync(COMP_DIR, { recursive: true });
@@ -172,3 +196,11 @@ await zipDir(STAGING, outFile);
 rmSync(STAGING, { recursive: true, force: true });
 
 console.log(`Built ${path.relative(ROOT, outFile)} (v${version})`);
+
+if (existsSync(ARCHIVE)) {
+  const archived = path.join(ARCHIVE, path.basename(outFile));
+  copyFileSync(outFile, archived);
+  console.log(`Copied to ${archived}`);
+} else {
+  console.log(`Archive folder ${ARCHIVE} not found, skipped the copy.`);
+}

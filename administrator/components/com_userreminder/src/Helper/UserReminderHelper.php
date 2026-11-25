@@ -35,6 +35,15 @@ final class UserReminderHelper
     public const SCHEDULER_TASK_TYPE = 'userreminder.run';
 
     /**
+     * Online documentation, opened by the toolbar Help button.
+     *
+     * @var  string
+     *
+     * @since  6.1.0
+     */
+    public const DOCS_URL = 'https://www.joomcoder.com/docs/user-reminder';
+
+    /**
      * Whether the Task - UserReminder plugin is installed and enabled.
      *
      * @return  bool

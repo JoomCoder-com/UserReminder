@@ -1,0 +1,5 @@
+-- User Reminder 6.1.0: no table changes in SQL.
+-- The #__userreminder_log.message_key column and the removal of the old
+-- #__userreminder_sch table are done in script.php::migrateSchema61(),
+-- guarded through information_schema (MySQL has no ADD COLUMN IF NOT EXISTS).
+-- This file moves the #__schemas version to 6.1.0.

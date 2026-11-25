@@ -63,8 +63,11 @@ const SHOTS = [
   { file: '13-unsubscribe', url: '/index.php?option=com_userreminder&view=optout&uid=' + createHash('md5').update('Yuki Tanakaopt').digest('hex'), site: true, kind: 'element', selector: '.card' },
 ];
 
-// Docs pictures: one area per screen, narrower viewport so they suit the docs column.
+// Docs pictures: one area per screen at 2x, saved as name@2x.png (NEM shows them at half width).
+const OPTIONS = A('com_config&view=component&component=com_userreminder');
+const fieldset = (legend) => `fieldset:has(> legend:text-is("${legend}"))`;
 const DOCS = [
+  { file: 'dashboard', url: A('com_userreminder&view=cpanel'), refresh: true, selector: '#content' },
   { file: 'dashboard-counters', url: A('com_userreminder&view=cpanel'), selector: '.row.g-3.mb-4' },
   { file: 'dashboard-analytics', url: A('com_userreminder&view=cpanel'), selector: '.card:has(#ur-trend-canvas)', wait: 1200 },
   { file: 'dashboard-health', url: A('com_userreminder&view=cpanel'), selector: '.card:has-text("System health") >> nth=-1' },
@@ -72,10 +75,24 @@ const DOCS = [
   { file: 'inactive-users', url: A('com_userreminder&view=activeusers' + L), selector: '#adminForm' },
   { file: 'opt-out-users', url: A('com_userreminder&view=optoutusers'), selector: '#adminForm' },
   { file: 'opt-out-groups', url: A('com_userreminder&view=optoutusers'), before: tab('Opt-out User Groups'), selector: '#adminForm' },
-  { file: 'action-log', url: A('com_userreminder&view=log'), selector: '#adminForm' },
+  { file: 'action-log', url: A('com_userreminder&view=log' + L), selector: '#adminForm' },
   { file: 'email-templates', url: A('com_mails&view=templates&filter[extension]=com_userreminder&filter[language]='), selector: '#adminForm table' },
+  { file: 'email-template-edit', url: A('com_mails&task=template.edit&template_id=com_userreminder.userreminder.reminder_inactive&language=en-GB'), selector: '#adminForm, form[name=adminForm]', wait: 2000, close: true },
   { file: 'scheduled-task', url: A('com_scheduler&view=tasks&filter[search]=User Reminder'), selector: '#adminForm table' },
-  { file: 'options-reminders', url: A('com_config&view=component&component=com_userreminder'), before: tab('Reminders'), selector: 'joomla-tab' },
+  { file: 'task-edit', url: A('com_scheduler&task=task.edit&id=4'), selector: 'fieldset:has(#jform_params_runRegistrationReminders0), fieldset:has([name*=runRegistrationReminders])', close: true },
+  { file: 'options-general', url: OPTIONS, before: tab('General'), selector: 'joomla-tab' },
+  { file: 'options-delivery', url: OPTIONS, before: tab('Email Delivery'), selector: 'joomla-tab' },
+  { file: 'options-reminders', url: OPTIONS, before: tab('Reminders'), selector: 'joomla-tab' },
+  { file: 'options-inactive', url: OPTIONS, before: tab('Reminders'), selector: fieldset('Inactive Users') },
+  { file: 'options-container', url: OPTIONS, before: tab('Email Container (HTML)'), selector: 'joomla-tab' },
+  { file: 'unsubscribe-page', url: '/index.php?option=com_userreminder&view=optout&uid=' + createHash('md5').update('Yuki Tanakaopt').digest('hex'), site: true, selector: '.card' },
+];
+
+// The three reminder emails, from real "Send Test Email" sends read back from Mailpit.
+const EMAILS = [
+  { file: 'email-activation', view: 'reminders', subject: 'activate your account' },
+  { file: 'email-login', view: 'reminders', subject: 'your account is waiting' },
+  { file: 'email-inactive', view: 'activeusers', subject: 'we miss you' },
 ];
 
 async function open(page, s) {
@@ -97,17 +114,35 @@ async function open(page, s) {
   await page.waitForTimeout(s.wait ?? 800);
 }
 
-/** Send a real test email and return the newest Mailpit message id. */
-async function testEmail(page) {
-  const before = await (await fetch(`${MAILPIT}/api/v1/messages?limit=1`)).json();
-  await page.goto(BASE + A('com_userreminder&view=activeusers'), { waitUntil: 'networkidle' });
+/** Send a real test email from a list screen and return the Mailpit id of the message whose subject matches. */
+async function testEmail(page, view = 'activeusers', subject = 'we miss you') {
+  const started = new Date(Date.now() - 2000).toISOString();
+  await page.goto(BASE + A('com_userreminder&view=' + view), { waitUntil: 'networkidle' });
   await Promise.all([page.waitForLoadState('networkidle'), page.getByRole('button', { name: 'Send Test Email' }).click()]);
   for (let i = 0; i < 20; i++) {
-    const now = await (await fetch(`${MAILPIT}/api/v1/messages?limit=1`)).json();
-    if (now.messages[0] && now.messages[0].ID !== before.messages[0]?.ID) return now.messages[0].ID;
+    const list = await (await fetch(`${MAILPIT}/api/v1/messages?limit=10`)).json();
+    const hit = list.messages.find((m) => m.Created >= started && m.Subject.toLowerCase().includes(subject));
+    if (hit) return hit.ID;
     await page.waitForTimeout(500);
   }
-  throw new Error('test email did not arrive in Mailpit');
+  throw new Error(`test email "${subject}" did not arrive in Mailpit`);
+}
+
+/** Screenshot one Mailpit message down to the end of the email footer. */
+async function shootEmail(ctx, id, path) {
+  const mail = await ctx.newPage();
+  await mail.setViewportSize({ width: 760, height: 900 });
+  await mail.goto(`${MAILPIT}/view/${id}.html`, { waitUntil: 'networkidle' });
+  const html = await mail.content();
+  if (/https?:\/\/[^\s"<]+https?:\/\//.test(html)) throw new Error('email contains a doubled URL');
+  if (/\{[A-Z_]{3,}\}/.test(html)) throw new Error('email contains an unreplaced tag');
+  if (/joomla\.invalid/.test(html)) throw new Error('email contains a placeholder link');
+  const bottom = await mail.evaluate(() => {
+    const el = document.querySelector('.ur-footer') || document.body;
+    return Math.ceil((el.closest('table') || el).getBoundingClientRect().bottom) + 30;
+  });
+  await mail.screenshot({ path, clip: { x: 0, y: 0, width: 760, height: Math.min(bottom, 1400) } });
+  await mail.close();
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -121,19 +156,7 @@ for (const s of SHOTS) {
   if (ONLY && !s.file.includes(ONLY)) continue;
   const path = join(OUT, `${s.file}.png`);
   if (s.kind === 'email') {
-    const id = await testEmail(page);
-    const mail = await ctx.newPage();
-    await mail.setViewportSize({ width: 760, height: 900 });
-    await mail.goto(`${MAILPIT}/view/${id}.html`, { waitUntil: 'networkidle' });
-    const html = await mail.content();
-    if (/https?:\/\/[^\s"<]+https?:\/\//.test(html)) throw new Error('email contains a doubled URL');
-    // Stop under the footer band instead of showing the empty grey page below it.
-    const bottom = await mail.evaluate(() => {
-      const el = [...document.querySelectorAll('td, div, p')].filter((e) => /Sent by/.test(e.textContent)).pop();
-      return Math.ceil((el.closest('table') || el).getBoundingClientRect().bottom) + 30;
-    });
-    await mail.screenshot({ path, clip: { x: 0, y: 0, width: 760, height: bottom } });
-    await mail.close();
+    await shootEmail(ctx, await testEmail(page), path);
     console.log('ok', s.file);
     continue;
   }
@@ -152,13 +175,19 @@ for (const s of SHOTS) {
   console.log('ok', s.file);
 }
 
-const docsCtx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1.5, reducedMotion: 'reduce', locale: 'en-GB', timezoneId: 'UTC', colorScheme: 'light' });
+const docsCtx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce', locale: 'en-GB', timezoneId: 'UTC', colorScheme: 'light' });
 const docsPage = await docsCtx.newPage();
 await adminLogin(docsPage, BASE);
 for (const s of DOCS) {
   if (ONLY && !('docs-' + s.file).includes(ONLY)) continue;
   await open(docsPage, s);
-  await docsPage.locator(s.selector).first().screenshot({ path: join(DOCS_OUT, `${s.file}.png`) });
+  await docsPage.locator(s.selector).first().screenshot({ path: join(DOCS_OUT, `${s.file}@2x.png`) });
+  if (s.close) await docsPage.getByRole('button', { name: 'Close' }).first().click().catch(() => {});
   console.log('ok docs', s.file);
+}
+for (const e of EMAILS) {
+  if (ONLY && !('docs-' + e.file).includes(ONLY)) continue;
+  await shootEmail(docsCtx, await testEmail(docsPage, e.view, e.subject), join(DOCS_OUT, `${e.file}@2x.png`));
+  console.log('ok docs', e.file);
 }
 await browser.close();

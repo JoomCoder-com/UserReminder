@@ -69,7 +69,7 @@
 
         <fieldset name="delivery_bcc" label="COM_USERREMINDER_FIELDSET_BCC"
                   description="COM_USERREMINDER_FIELDSET_BCC_DESC">
-            <field name="enabledBccToAdmin" type="radio" default="1"
+            <field name="enabledBccToAdmin" type="radio" default="0"
                    layout="joomla.form.field.radio.switcher"
                    label="COM_USERREMINDER_EMAIL_ADMIN"
                    description="COM_USERREMINDER_EMAIL_ADMIN_TEXT">
