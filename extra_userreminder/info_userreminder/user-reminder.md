@@ -1,77 +1,83 @@
 # Short Description
 
-Automatically send customisable email reminders to your Joomla users — recover abandoned registrations, re-engage inactive members, and clean up stale accounts, all from your own site.
+User Reminder emails Joomla users who never activated, never logged in or stopped visiting, and can clean up the accounts that never respond.
 
 # Description
 
-**User Reminder** is a Joomla extension that brings inactive accounts back. It automatically emails the right message to each group — a fresh activation link for incomplete sign-ups, a friendly nudge for users who never logged in, and a "we've missed you" note for members who haven't visited in a while — then optionally removes accounts that never respond.
+**User Reminder** is a Joomla extension that sends reminder emails to three groups of users: people who registered but never activated their account, people who activated but never logged in, and members who have not visited for a number of days you choose. After the last reminder it can delete the account, or remove an inactive member from chosen user groups.
 
-Everything is driven from your Joomla administrator: write branded HTML emails with personalised merge fields, decide how many reminders to send and how far apart, send on an automatic schedule, and stay anti-spam compliant with built-in opt-out. No external service and no per-user fees — your users and your data never leave your site.
+It runs on Joomla's own tools: the emails are Joomla mail templates, sending runs as a Joomla scheduled task, and access follows Joomla permissions. A dashboard shows who is waiting, what is due and what was sent, and every list tells you what the next run will do for each user. Every email carries an unsubscribe link. Nothing leaves your site: no outside service, no per-user fees.
+
+Works on Joomla 4.4, 5 and 6, with MySQL or MariaDB.
 
 # Features
 
 ## Reminder Types | groups
-Target users at every stage of their lifecycle with the right message.
+Three groups of users, each switched on separately.
 - Incomplete Registrations
-  Remind users who signed up but never activated, and resend their activation link.
-- Never-Logged-In Users
-  Nudge users who activated their account but have never actually logged in.
+  Remind users who registered but never activated, with their activation link in the email.
+- Never Logged In
+  Nudge users whose account is active but who never signed in.
 - Inactive Members
-  Re-engage existing users who have not visited your site for a set number of days.
+  Bring back members who have not visited for the number of days you set.
+- Your Cadence
+  Choose the days between reminders, how many to send, and whether the first goes out at once.
 
-## Personalised Emails | mail
-Send branded, relevant emails with built-in personalisation.
-- Custom Subject & Body
-  Write the subject line and a full HTML message for each reminder type.
-- Merge Fields
-  Personalise with the user's name, username, site details, activation and password-reset links.
-- Independent Templates
-  Keep separate wording for incomplete, never-logged-in, and inactive users.
+## Emails | mail
+Joomla mail templates you edit like any other site email.
+- One Template per Type
+  Subject, plain text and HTML body for each reminder type, per site language.
+- Personal Tags
+  {NAME}, {USERNAME}, {EMAIL}, {SITENAME}, {SITELINK}, {ACTIVATE_URL}, {PASSWORD_RESET_URL} and {OPTOUT_URL}.
+- Branded HTML Container
+  Wrap each email with your logo or title, footer text and colours (Joomla 5 and 6).
+- Admin Copy
+  Optionally send a BCC copy of every reminder to an address you choose.
 
-## Automation & Scheduling | schedule
-Send reminders automatically on the schedule you choose.
-- Built-in Scheduler
-  A bundled system plugin sends reminders automatically — daily, weekly, or monthly.
-- Send First Reminder Immediately
-  Optionally fire the first reminder on the next run instead of waiting.
-- Multiple Reminders
-  Send a set number of follow-ups, spaced by a configurable number of days.
+## Scheduling | schedule
+Sending runs on Joomla Scheduled Tasks.
+- Ready-Made Task
+  Install creates the "Send User Reminder emails" task, set to run every 24 hours.
+- Lazy Scheduler or Cron
+  Works with Joomla's lazy scheduler or a real server cron job.
+- Send Now
+  Buttons on each list send what is due right away.
+- Sending Limits
+  Cap the emails per run to stay inside your host's limits.
 
-## User Cleanup | group_remove
-Keep your user base tidy when reminders go unanswered.
-- Auto-Delete Stale Accounts
-  Remove users automatically after the final reminder, per reminder type.
-- Remove From User Groups
-  Instead of deleting, move inactive users out of selected user groups.
-- Safe Thresholds
-  Actions run only once the configured days and reminder count are reached.
+## Account Cleanup | group_remove
+Tidy up accounts that never answer.
+- Delete After the Last Reminder
+  Delete the account on the next run after the final reminder, per reminder type.
+- Remove From Groups
+  Or take inactive members out of chosen user groups and keep the account.
+- Clear Warnings
+  The dashboard shows an alert while deletion is switched on.
 
-## Compliance & Opt-Out | unsubscribe
-Stay on the right side of anti-spam rules.
-- One-Click Opt-Out
-  Add an unsubscribe link to every email with the opt-out merge field.
-- CAN-SPAM Friendly
-  Users who opt out are automatically excluded from future reminders.
-- Opt-Out List
-  Review and manage everyone who has opted out from the administrator.
+## Opt-Out | unsubscribe
+Respect the people who do not want reminders.
+- Unsubscribe Link
+  Every email links to a confirmation page, with a button to subscribe again.
+- Opt-out Users
+  Add or remove people by hand.
+- Opt-out Groups
+  Members of the groups you pick never get reminders.
 
-## Delivery Controls | tune
-Work comfortably within your host's sending limits.
-- Email Throttling
-  Cap the maximum number of emails sent in a single run.
-- Recordset Limits
-  Limit how many users are processed per query for better performance.
-- BCC the Admin
-  Optionally blind-copy an address on every reminder for oversight.
+## Dashboard and Log | dashboard
+See what is happening and what will happen.
+- Dashboard
+  Pending, due now, sent, a 30-day chart, backlog aging and health checks.
+- Next Action per User
+  Every list shows what the next run will do for each user.
+- Action Log
+  Every reminder, opt-out and resubscribe, with pruning of old entries.
 
-## Testing & Targeting | science
-Preview and verify before anything reaches real users.
-- Test Emails
-  Send a sample reminder to yourself or a chosen test user.
-- Specific Test User
-  Pick exactly which user receives test emails.
-- Preview Before Sending
-  Review the affected users and the action for each before you send.
+## Safe Testing | science
+Check everything before real users get an email.
+- Test Email
+  Send a reminder to one user you choose.
+- Debug Mode
+  A full run that sends nothing and changes nothing, so you can see what would happen.
 
 # FAQs
 
@@ -79,70 +85,70 @@ Preview and verify before anything reaches real users.
 
 ### What is User Reminder?
 
-User Reminder is a Joomla extension that automatically sends customisable email reminders to your registered users — and can clean up accounts that stay inactive. It targets three groups: users who never finished registering, users who activated but never logged in, and members who have not visited for a while.
+User Reminder is a Joomla extension that emails users who never activated, never logged in or stopped visiting your site. After the last reminder it can delete the account or remove the user from chosen groups.
 
-### Who is User Reminder for?
+### Who is it for?
 
-Any Joomla site with user registration — membership sites, communities, shops, and intranets — that wants to recover abandoned sign-ups, re-engage dormant members, and keep its user list clean.
+Any Joomla site with user registration: membership sites, communities, shops and intranets that want sign-ups finished, quiet members back and a clean user list.
 
-### Do I need any coding skills to use it?
+### Do I need coding skills?
 
-No. User Reminder installs like any Joomla package and is configured entirely from the administrator, with point-and-click options and a built-in HTML email editor.
+No. You install one package and set everything in the Joomla administrator. The emails are edited in Joomla's Mail Templates screen.
 
-### How do I send reminders automatically?
+### How do reminders go out automatically?
 
-Enable Scheduled Execution in the options and make sure the bundled "System - UserReminder Scheduler" plugin is enabled. You can also send reminders manually at any time from the component.
+Through Joomla Scheduled Tasks. Installing User Reminder creates the "Send User Reminder emails" task, which runs every 24 hours with Joomla's lazy scheduler or a server cron job. Each reminder type sends only after you switch it on in Options > Reminders.
 
 ## Features & Use
 
 ### Which users get reminded?
 
-Three independent groups, each enabled separately: Incomplete Registrations (signed up, never activated), Never Logged In (activated, never logged in), and Inactive Members (no visit for a configurable number of days).
+Three groups, each switched on separately: users who registered but never activated, users who activated but never logged in, and users who have not visited for the number of days you set.
 
-### Can I customise the emails?
+### Can I change the emails?
 
-Yes. Each reminder type has its own subject and full HTML body, with merge fields such as [NAME], [USERNAME], [SITE_NAME], [SITE_URL], [ACTIVATE_URL], [PASSWORD_RESET] and [OPTOUT].
+Yes. Each type has its own Joomla mail template with subject, plain text and HTML body, per language. Tags such as {NAME}, {SITENAME}, {ACTIVATE_URL} and {OPTOUT_URL} are filled in for each user.
 
-### Can User Reminder delete inactive users?
+### Can it delete inactive users?
 
-Yes, optionally. After the configured number of reminders and days have passed, User Reminder can delete the account — or, for existing members, simply remove them from selected user groups instead.
+Yes, if you switch it on. Deletion happens on the next run after the user got the last reminder, and you choose it per reminder type. For inactive members you can instead remove them from chosen user groups.
 
-### How does the opt-out / unsubscribe work?
+### How does unsubscribing work?
 
-Include the [OPTOUT] merge field in your emails to add an unsubscribe link. Users who opt out are excluded from future reminders, helping you stay CAN-SPAM compliant, and you can review the opt-out list in the administrator.
+Every email has an unsubscribe link. The user confirms on a page of your site and gets no more reminders. They can subscribe again from the same page. You can also manage the opt-out list and opt out whole user groups in the administrator.
 
 ### Can I test before sending to real users?
 
-Yes. Use the Test Email button to send a sample to yourself or a specific test user, and preview the list of affected users and the action for each before sending.
+Yes. Send Test Email sends one reminder to a user you choose. Debug mode runs everything without sending or changing anything, and every list shows what the next run will do.
 
 ### Will it overload my mail server?
 
-No. You can cap the maximum number of emails sent per run and limit how many users are processed per query, so sending stays within your host's limits.
+No. You set the maximum number of emails per run, and the rest go out on the next runs.
 
 ## Licensing & Updates
 
 ### How is User Reminder licensed?
 
-User Reminder is a commercial extension distributed under the GNU General Public License v2 or later. An active subscription gives you downloads, automatic updates, and support.
+It is a commercial extension under the GNU General Public License v2 or later. An active subscription gives you downloads, updates and support.
 
 ### How do updates work?
 
-Updates are delivered through Joomla's built-in updater. Add your download key once under System > Update > Update Sites, then update in one click from Components > Update while your settings are preserved.
+Enter your download key once under System > Update > Update Sites. Updates then appear under System > Update > Extensions. Your settings, opt-outs and log are kept.
 
-### What is included in the package?
+### I use version 5.x. Can I update?
 
-A single install package sets up the User Reminder component (com_userreminder) and its system plugin (System - UserReminder Scheduler), which runs reminders automatically.
+Yes. Install 6.x over 5.2.3. Your settings, opt-out list and log are moved over, and the old scheduler plugin is switched off in favour of the scheduled task.
 
 ## Technical
 
 ### Which Joomla and PHP versions are supported?
 
-User Reminder runs on Joomla 4 and 5 and requires PHP 7.4 or higher.
+Joomla 4.4, 5 and 6 on PHP 8.1 or newer, with MySQL 8 or MariaDB 10.4 or newer. Each release is tested on all three Joomla versions with both databases.
 
 ### Does it work with Community Builder?
 
-Yes. If you use Community Builder to manage registrations, enable the "Use Community Builder Activation" option so reminder emails contain a valid Community Builder activation link instead of the default Joomla one.
+Yes. Switch on "Use Community Builder activation" and activation reminders carry the Community Builder activation link.
 
-### How does the automatic scheduler work?
+### Can other extensions react to reminders?
 
-The system plugin uses Joomla's onAfterRoute event, which fires on site visits, and checks whether reminders are due for your chosen schedule (for example, weekly on Tuesdays). Because it relies on site traffic, a day with no visitors simply skips that run.
+Yes. Plugins in the userreminder group get onUserReminderBeforeSend, which can stop a send, and onUserReminderAfterSend.

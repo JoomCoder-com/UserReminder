@@ -150,6 +150,18 @@ mkdirSync(DOCS_OUT, { recursive: true });
 // Joomla's toolbar is sticky: in a tall element shot it floats over the top of the element.
 const unstick = (pg) => pg.addStyleTag({ content: '#subhead-container,.subhead{position:static!important}' });
 
+// Joomla's options tab panel has a fixed minimum height: stop the shot under the last visible fieldset.
+async function shootEl(pg, selector, path) {
+  if (selector !== 'joomla-tab') return pg.locator(selector).first().screenshot({ path });
+  const clip = await pg.evaluate(() => {
+    const tab = document.querySelector('joomla-tab').getBoundingClientRect();
+    const sets = [...document.querySelectorAll('joomla-tab-element[active] fieldset')].filter((e) => e.offsetParent);
+    const bottom = Math.max(...sets.map((e) => e.getBoundingClientRect().bottom)) + 24;
+    return { x: tab.left + scrollX, y: tab.top + scrollY, width: tab.width, height: Math.min(tab.bottom, bottom) - tab.top };
+  });
+  return pg.screenshot({ path, fullPage: true, clip });
+}
+
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, reducedMotion: 'reduce', locale: 'en-GB', timezoneId: 'UTC', colorScheme: 'light' });
 const page = await ctx.newPage();
@@ -166,7 +178,7 @@ for (const s of SHOTS) {
   await open(page, s);
   if (s.kind === 'element') {
     await unstick(page);
-    await page.locator(s.selector).first().screenshot({ path });
+    await shootEl(page, s.selector, path);
   } else {
     // Short pages: stop under the content instead of showing an empty band.
     const bottom = await page.evaluate(() => {
@@ -186,7 +198,7 @@ for (const s of DOCS) {
   if (ONLY && !('docs-' + s.file).includes(ONLY)) continue;
   await open(docsPage, s);
   await unstick(docsPage);
-  await docsPage.locator(s.selector).first().screenshot({ path: join(DOCS_OUT, `${s.file}@2x.png`) });
+  await shootEl(docsPage, s.selector, join(DOCS_OUT, `${s.file}@2x.png`));
   if (s.close) await docsPage.getByRole('button', { name: 'Close' }).first().click().catch(() => {});
   console.log('ok docs', s.file);
 }
