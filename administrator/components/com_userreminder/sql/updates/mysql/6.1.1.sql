@@ -1,0 +1,2 @@
+-- User Reminder 6.1.1: no table changes.
+-- This file moves the #__schemas version to 6.1.1.
