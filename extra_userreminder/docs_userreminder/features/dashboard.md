@@ -4,7 +4,7 @@
 
 ## Counters
 
-![Dashboard counters](../images/dashboard-counters@2x.png)
+![User Reminder dashboard counters: pending activation, never logged in, inactive, due now, sent total and opted-out](../images/dashboard-counters@2x.png)
 
 | Counter | Counts |
 |---|---|
@@ -27,7 +27,7 @@ The counters use the same rules as the sending run, so they match the lists and 
 
 ## Health and alerts
 
-![System health and alerts](../images/dashboard-health@2x.png)
+![User Reminder System health panel: scheduled task, scheduler, debug mode, auto-delete, mail and queue status](../images/dashboard-health@2x.png)
 
 The dashboard checks your setup and shows an alert when something needs attention:
 

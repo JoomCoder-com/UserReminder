@@ -1,6 +1,6 @@
 # Permissions
 
-**Components > User Reminder > Options > Permissions** uses Joomla's standard permissions.
+**Components > User Reminder > Options > Permissions** uses Joomla's standard access control (ACL). Set each permission per user group, like in any other Joomla component.
 
 | Permission | Allows |
 |---|---|

@@ -12,7 +12,7 @@ The installer creates a task called **User Reminder emails** of type **Send User
 - **Run registration reminders**: activation and never-logged-in reminders
 - **Run inactivity reminders**: inactive-user reminders
 
-![The task's options](../images/task-edit@2x.png)
+![The Send User Reminder emails scheduled task in Joomla, with its options for which reminder types to run](../images/task-edit@2x.png)
 
 You can make two tasks, for example registration reminders every day and inactivity reminders once a week. A reminder type that is off in the options is never sent, whatever the task says.
 

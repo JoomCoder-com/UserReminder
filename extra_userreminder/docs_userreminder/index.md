@@ -2,7 +2,7 @@
 
 **User Reminder** is a Joomla extension that emails users who never activated their account, never logged in, or stopped visiting, and can clean up the accounts that never respond.
 
-![The User Reminder dashboard](images/dashboard@2x.png)
+![The User Reminder dashboard in Joomla: reminder counters, a 30-day sent chart, system health and configuration snapshot](images/dashboard@2x.png)
 
 ## What it does
 
@@ -28,7 +28,9 @@ It uses Joomla's own parts: the emails are **Joomla Mail Templates**, sending ru
 
 - New here: [Installation](installation.md), then the [Quick Start](getting-started.md)
 - Everything it can do: [Features](features.md)
-- Is it right for your site: [Why Choose It](product-overview/why-choose-it.md) and [Compatibility](product-overview/compatibility.md)
+- Is it right for your site: [Use Cases](product-overview/use-cases.md), [Benefits](product-overview/benefits.md), [Why Choose It](product-overview/why-choose-it.md) and [Compatibility](product-overview/compatibility.md)
+- Something not working: [Troubleshooting](troubleshooting.md) and the [FAQ](faq.md)
+- Who may use it: [Permissions](configuration/permissions.md)
 
 ## Support
 

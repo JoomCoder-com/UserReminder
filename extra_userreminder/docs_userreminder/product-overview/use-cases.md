@@ -36,3 +36,7 @@ These are the situations we had in mind when building User Reminder. They are su
 - **How it can help:**
   - [Maximum emails per run](../configuration/email-delivery.md) caps each run; the rest go out in the next runs
   - The [dashboard](../features/dashboard.md) shows how many users are due and warns when the backlog grows
+
+## Next
+
+See the [Benefits](benefits.md) for what these situations gain, or [Why Choose It](why-choose-it.md) to check the fit for your site.

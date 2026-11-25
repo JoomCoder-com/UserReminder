@@ -57,3 +57,7 @@ Check the **Action to Perform** column on **Registration Reminders** or **Active
 1. **Download key**: paste it in **System > Update > Update Sites > UserReminder Update**
 2. **Subscription**: updates need an active subscription at joomcoder.com
 3. **Cache**: in **System > Update > Extensions** click **Clear Cache**, then **Check for Updates**
+
+## More help
+
+For questions about how User Reminder works, see the [FAQ](faq.md). Still stuck? Email support@joomcoder.com with the error from the log.

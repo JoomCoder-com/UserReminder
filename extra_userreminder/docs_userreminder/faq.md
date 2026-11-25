@@ -75,3 +75,7 @@ Yes. Add their user groups under **Opt-out > User Groups**, or single users unde
 ### Does it work with Community Builder?
 
 Yes. See [Community Builder](integrations/community-builder.md).
+
+## More help
+
+If something does not work as described, see [Troubleshooting](troubleshooting.md).

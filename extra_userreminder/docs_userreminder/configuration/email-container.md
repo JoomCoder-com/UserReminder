@@ -4,7 +4,7 @@
 
 The container is the frame around the HTML body of each reminder: a header with your logo or a title, and a footer. It applies to User Reminder's emails only; Joomla's other emails keep their usual look.
 
-![The Email Container tab](../images/options-container@2x.png)
+![User Reminder Options, Email Container (HTML) tab: custom container switch, logo, header title, footer text and footer colours](../images/options-container@2x.png)
 
 | Option | Default | What it does |
 |---|---|---|

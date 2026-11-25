@@ -2,6 +2,8 @@
 
 **Components > User Reminder > Options > Links & URLs**
 
+This tab decides where the links in the reminder emails point: the registration and password-reset pages, and the site address used to build every link.
+
 Leave both fields empty to use Joomla's own pages. Change them only if another component handles registration or password resets.
 
 | Option | Default | Used for |

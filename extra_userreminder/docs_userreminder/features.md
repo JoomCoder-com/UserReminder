@@ -49,5 +49,5 @@ Three groups of users, each switched on separately in **Options > Reminders**. A
 ## Built for Joomla
 
 - Joomla 4.4, 5 and 6, MySQL and MariaDB ([Compatibility](product-overview/compatibility.md))
-- Joomla mail templates, scheduled tasks, user groups, ACL and update system
+- Joomla mail templates, scheduled tasks, user groups, [ACL](configuration/permissions.md) and update system
 - [Community Builder](integrations/community-builder.md) activation links

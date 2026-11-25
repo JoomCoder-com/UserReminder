@@ -2,7 +2,9 @@
 
 **Components > User Reminder > Options > Email Delivery**
 
-![The Email Delivery tab](../images/options-delivery@2x.png)
+These settings control how many reminder emails go out per run, so you stay inside your host's sending limits, and whether an admin gets a copy of each one.
+
+![User Reminder Options, Email Delivery tab: emails per batch, maximum emails per run and the admin BCC copy switch](../images/options-delivery@2x.png)
 
 ## Batching & limits
 

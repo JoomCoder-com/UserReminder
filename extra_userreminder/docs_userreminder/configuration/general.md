@@ -2,7 +2,9 @@
 
 **Components > User Reminder > Options > General**
 
-![The General tab](../images/options-general@2x.png)
+The General tab sets the reminder cadence for all three reminder types (how many reminders, how far apart, when the first one goes out) and the tools for testing.
+
+![User Reminder Options, General tab: test user, debug mode, days between reminders and number of reminders](../images/options-general@2x.png)
 
 ## Testing & diagnostics
 

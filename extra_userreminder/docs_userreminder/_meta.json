@@ -1,40 +1,143 @@
 {
   "defaults": {
-    "description": "User Reminder emails Joomla users who never activated, never logged in or stopped visiting, and cleans up accounts that never respond.",
+    "description": "User Reminder for Joomla emails users who never activated, never logged in or stopped visiting, and can clean up the accounts that never respond.",
     "keywords": "joomla user reminder, inactive users, activation reminder, joomla email reminder, user cleanup, joomla 5, joomla 6"
   },
   "pages": {
     "index": {
-      "description": "User Reminder for Joomla 4.4, 5 and 6: reminder emails for incomplete registrations, never-logged-in and inactive users.",
-      "keywords": "user reminder, joomla user reminder, inactive users, activation reminder, joomla mail templates, scheduled tasks"
-    },
-    "installation": {
-      "description": "Install User Reminder, enable updates with your download key, and upgrade from 5.x to 6.x.",
-      "keywords": "install user reminder, joomla package, download key, upgrade user reminder, joomla 6, scheduled task"
-    },
-    "getting-started": {
-      "description": "Send your first User Reminder emails in three steps: cadence, reminder types and mail templates, test and schedule.",
-      "keywords": "user reminder quick start, joomla reminder setup, activation email, inactive user email, test email, joomla scheduler"
+      "title": "Joomla User Reminder Extension",
+      "description": "User Reminder for Joomla 4.4, 5 and 6 emails users who never activated, never logged in or stopped visiting, and can clean up accounts that never respond.",
+      "keywords": "joomla user reminder, joomla reminder email, inactive users joomla, activation reminder, joomla extension, user cleanup"
     },
     "features": {
-      "description": "All User Reminder features: three reminder types, mail templates, scheduling, account cleanup, opt-out, dashboard and log.",
-      "keywords": "user reminder features, joomla account cleanup, opt-out, reminder dashboard, action log, joomla email"
+      "title": "Features: Reminders, Opt-out, Cleanup",
+      "description": "Every User Reminder feature on one page: three reminder types, Joomla mail templates, scheduled sending, account cleanup, opt-out, dashboard and action log.",
+      "keywords": "user reminder features, joomla reminder types, joomla account cleanup, joomla opt-out, reminder dashboard, joomla action log"
     },
-    "scheduling": {
-      "description": "How User Reminder sends through Joomla Scheduled Tasks: the task, cron, cadence options and sending limits.",
-      "keywords": "joomla scheduled tasks, user reminder task, joomla cron, scheduler run, reminder cadence, email limits"
+    "product-overview/use-cases": {
+      "title": "Use Cases for Joomla User Reminders",
+      "description": "Where User Reminder helps: sign-ups that never activated, members who never logged in, a community that went quiet, a cluttered user table, sending limits.",
+      "keywords": "joomla user reminder use cases, unactivated joomla users, re-engage joomla members, joomla membership site, clean joomla users"
     },
-    "email-templates": {
-      "description": "Edit User Reminder emails in Joomla Mail Templates: the three templates, tags, HTML container and links.",
-      "keywords": "joomla mail templates, reminder email, email tags, html email joomla, optout url, activation link"
+    "product-overview/benefits": {
+      "title": "Benefits of Automated User Reminders",
+      "description": "More finished sign-ups, members who come back and a user list you can trust, without outside services: the benefits of User Reminder for Joomla sites.",
+      "keywords": "joomla user reminder benefits, finish joomla registrations, re-engage inactive users, joomla email automation, self-hosted reminders"
+    },
+    "product-overview/why-choose-it": {
+      "title": "Why Choose User Reminder for Joomla",
+      "description": "Is User Reminder right for your Joomla site? When it is a good fit, when it may not be yet, how to try it before you commit, and who builds and supports it.",
+      "keywords": "why user reminder, joomla reminder extension, joomla extension fit, joomcoder, joomla user engagement"
+    },
+    "product-overview/compatibility": {
+      "title": "Requirements: Joomla 4.4, 5, 6 and PHP",
+      "description": "User Reminder requirements: Joomla 4.4, 5 or 6, PHP 8.1+, MySQL 8 or MariaDB 10.4+, plus Joomla 4 differences, other extensions, updates and licence.",
+      "keywords": "user reminder requirements, joomla 6 compatible, joomla 5 extension, php 8.1, mysql mariadb joomla, joomla 4.4"
+    },
+    "installation": {
+      "title": "Install and Update User Reminder",
+      "description": "Install the User Reminder package in Joomla, add your download key for updates, update from 6.x, upgrade from 5.x with your data kept, or uninstall it cleanly.",
+      "keywords": "install user reminder, joomla package install, joomla download key, upgrade user reminder 5 to 6, joomla extension update"
+    },
+    "getting-started": {
+      "title": "Quick Start: First Reminder Emails",
+      "description": "Send your first Joomla reminder emails in four steps: set the cadence, switch on reminder types, check the mail templates, then see who is next and let it run.",
+      "keywords": "user reminder quick start, joomla reminder setup, send reminder emails joomla, joomla activation email, joomla scheduler setup"
+    },
+    "features/activation-reminders": {
+      "title": "Activation Reminder Emails in Joomla",
+      "description": "Remind Joomla users who registered but never clicked their activation link: who gets one, how to switch it on, the email, the list and what happens at the end.",
+      "keywords": "joomla activation reminder, resend activation link joomla, unactivated users joomla, joomla registration reminder, activation email"
+    },
+    "features/login-reminders": {
+      "title": "Remind Users Who Never Logged In",
+      "description": "Email Joomla users whose account is active but who never signed in, with their username and a password-reset link. Who qualifies, the settings and the list.",
+      "keywords": "joomla never logged in users, joomla login reminder, password reset link email, joomla inactive accounts, user reminder"
+    },
+    "features/inactive-users": {
+      "title": "Inactive User Reminders for Joomla",
+      "description": "Win back Joomla members who stopped visiting: set the inactivity threshold in days, switch the reminder on, edit the email and choose what happens afterwards.",
+      "keywords": "joomla inactive users, inactive user email joomla, re-engage joomla members, joomla last visit, inactivity threshold"
+    },
+    "features/email-templates": {
+      "title": "Reminder Email Templates and Tags",
+      "description": "Edit User Reminder emails in Joomla Mail Templates: the three templates, every tag such as {NAME} and {OPTOUT_URL}, HTML or plain text, and the container.",
+      "keywords": "joomla mail templates, reminder email template, joomla email tags, optout_url, html email joomla, joomla 5 mail templates"
+    },
+    "features/scheduling": {
+      "title": "Schedule Reminders with Joomla Tasks",
+      "description": "How User Reminder sends through Joomla Scheduled Tasks: the ready-made task, lazy scheduler or cron, what is due on each run, per-run limits and the task log.",
+      "keywords": "joomla scheduled tasks, joomla cron reminders, joomla lazy scheduler, scheduler run joomla, automatic reminder emails"
+    },
+    "features/account-cleanup": {
+      "title": "Delete Unresponsive Joomla Accounts",
+      "description": "Clean up Joomla accounts that ignored every reminder: delete them after the last email, or remove inactive members from chosen user groups and keep the account.",
+      "keywords": "delete inactive users joomla, joomla account cleanup, remove users from groups, joomla spam accounts, delete unactivated users"
+    },
+    "features/opt-out": {
+      "title": "Unsubscribe Link and Opt-out Lists",
+      "description": "Let people stop reminder emails through a one-click unsubscribe page, and leave out single users or whole Joomla user groups from every reminder you send.",
+      "keywords": "joomla unsubscribe link, email opt-out joomla, exclude user groups, gdpr email opt-out, user reminder opt-out"
+    },
+    "features/dashboard": {
+      "title": "Reminder Dashboard and Health Checks",
+      "description": "The User Reminder dashboard in Joomla: counters for pending, due and sent reminders, a 30-day chart, backlog aging, health checks and recent activity.",
+      "keywords": "user reminder dashboard, joomla email statistics, reminder health check, joomla admin dashboard, email backlog"
+    },
+    "features/action-log": {
+      "title": "Action Log of Sent Reminders",
+      "description": "Every reminder sent and every unsubscribe and resubscribe, with user and date: how to read, search and prune the User Reminder action log in Joomla.",
+      "keywords": "user reminder log, joomla email log, sent reminders history, unsubscribe log, prune log joomla"
+    },
+    "features/testing": {
+      "title": "Test Reminders Safely: Dry Runs",
+      "description": "Check your setup without emailing real users: send a test email to one user, or run debug mode, which goes through every step but sends and changes nothing.",
+      "keywords": "test reminder email joomla, joomla dry run, debug mode email, send test email, safe first run"
+    },
+    "configuration/general": {
+      "title": "General Settings: Cadence and Testing",
+      "description": "User Reminder General options explained: days between reminders, the number of reminders, when the first one goes out, the test user and developer debug mode.",
+      "keywords": "user reminder settings, reminder cadence, days between reminders, number of reminders, joomla debug mode"
+    },
+    "configuration/email-delivery": {
+      "title": "Email Delivery Settings and Limits",
+      "description": "Set emails per batch and the maximum emails per run to stay inside your host's limits, and send an optional BCC copy of every reminder to an admin address.",
+      "keywords": "joomla email limits, emails per run, bcc admin joomla, mail throttling joomla, batch email settings"
+    },
+    "configuration/links": {
+      "title": "Links and Site URL in Reminder Emails",
+      "description": "Where User Reminder takes the site address for email links, and how to set it so unsubscribe, activation and reset links work from cron and from the browser.",
+      "keywords": "joomla site url cron, live site joomla, email links wrong joomla, joomla sef links email, reminder links"
+    },
+    "configuration/reminders": {
+      "title": "Reminder Type Settings in Joomla",
+      "description": "Switch each reminder type on or off and set its rules: incomplete registrations, activated users who never logged in, and inactive users with their threshold.",
+      "keywords": "user reminder options, enable reminder types, inactivity threshold setting, delete users setting, community builder activation"
+    },
+    "configuration/email-container": {
+      "title": "Branded HTML Email Container",
+      "description": "Wrap reminder emails in a branded HTML container with your logo or title, footer text and colours on Joomla 5 and 6. Requirements and every setting explained.",
+      "keywords": "html email container joomla, branded email joomla, email logo footer, joomla 5 mail layout, reminder email design"
+    },
+    "configuration/permissions": {
+      "title": "Permissions for User Reminder",
+      "description": "Which Joomla permissions control User Reminder: who can open it, change its options, send reminders and delete log entries, all through Joomla's standard ACL.",
+      "keywords": "joomla acl, user reminder permissions, joomla access control, component permissions, joomla user groups"
+    },
+    "integrations/community-builder": {
+      "title": "Community Builder Activation Links",
+      "description": "Send Community Builder activation links in User Reminder emails: how to set it up, how to check that the link works, and what happens without CB activation.",
+      "keywords": "community builder joomla, cb activation link, joomlapolis, community builder registration, activation reminder cb"
     },
     "troubleshooting": {
-      "description": "Fix User Reminder issues: reminders not sent, no emails, skipped or deleted users, wrong links, plain emails, updates.",
-      "keywords": "user reminder not working, joomla emails not sent, scheduled task, reminder links, joomla mail, troubleshooting"
+      "title": "Troubleshooting Reminder Emails",
+      "description": "Fix User Reminder problems: reminders not sent automatically, no emails arriving, users skipped or deleted, wrong links in the emails, plain emails and updates.",
+      "keywords": "user reminder not working, joomla emails not sent, joomla scheduled task not running, joomla email links wrong, troubleshooting"
     },
     "faq": {
-      "description": "Answers about User Reminder: emails, mail templates, sending, testing, deletion, opt-out and Community Builder.",
-      "keywords": "user reminder faq, joomla reminder questions, delete inactive users, unsubscribe, community builder, mail templates"
+      "title": "User Reminder FAQ: Common Questions",
+      "description": "Answers to common User Reminder questions about emails and templates, sending and scheduling, testing, deleting accounts, opt-out and Community Builder.",
+      "keywords": "user reminder faq, joomla reminder questions, delete inactive users joomla, unsubscribe joomla, community builder reminders"
     }
   }
 }

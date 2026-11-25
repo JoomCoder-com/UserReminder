@@ -4,7 +4,7 @@ Two ways to check your setup without emailing real users.
 
 ## Send Test Email
 
-**Send Test Email** on **Registration Reminders** sends the activation and never-logged-in emails, and on **Active User Reminders** the inactivity email, to the **Test User** set in **Options > General** (you, when empty).
+**Send Test Email** on **Registration Reminders** sends the activation and never-logged-in emails, and on **Active User Reminders** the inactivity email, to the **Test User** set in [Options > General](../configuration/general.md) (you, when empty).
 
 The test email is a real email, built exactly like a reminder: your template, the email container, a working unsubscribe link. It does not count as a reminder and is not logged.
 

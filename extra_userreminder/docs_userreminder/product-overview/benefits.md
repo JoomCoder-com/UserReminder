@@ -26,3 +26,7 @@ Emails go through your own Joomla mail settings. User data stays in your databas
 ## Respectful by default
 
 Every email carries an unsubscribe link. The link opens a confirmation page, so a mail scanner that follows links does not unsubscribe anyone. Staff groups can be left out completely.
+
+## Next
+
+See the [Use Cases](use-cases.md) for concrete situations, or [Compatibility](compatibility.md) for what your site needs.

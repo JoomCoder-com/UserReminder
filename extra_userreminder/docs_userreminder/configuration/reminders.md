@@ -1,8 +1,10 @@
 # Reminders
 
-**Components > User Reminder > Options > Reminders**. All reminder types are off on a new install.
+**Components > User Reminder > Options > Reminders**
 
-![The Reminders tab](../images/options-reminders@2x.png)
+The Reminders tab switches each of the three reminder types on or off and sets its own rules, such as account deletion and the inactivity threshold. All reminder types are off on a new install.
+
+![User Reminder Options, Reminders tab: Enabled and Delete users switches for incomplete registrations and never-logged-in users](../images/options-reminders@2x.png)
 
 ## Incomplete Registrations
 
@@ -21,7 +23,7 @@
 
 ## Inactive Users
 
-![The Inactive Users options](../images/options-inactive@2x.png)
+![The Inactive Users settings: Enabled switch, inactivity threshold in days, Delete users and Remove from user groups](../images/options-inactive@2x.png)
 
 | Option | Default | What it does |
 |---|---|---|

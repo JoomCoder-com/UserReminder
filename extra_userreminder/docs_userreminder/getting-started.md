@@ -4,14 +4,14 @@ Send your first reminders in four steps. See [Installation](installation.md) if 
 
 ## Step 1: Set the cadence
 
-Go to **Components > User Reminder** and click **Options**. On the **General** tab:
+Go to **Components > User Reminder** and click **Options**. On the [General](configuration/general.md) tab:
 
 1. **Days before next reminder**: the wait between two reminders to the same user
 2. **Number of reminders**: how many reminders each user gets in total
 3. **Send first reminder immediately**: send the first one as soon as a user qualifies, or wait the number of days first
 4. **Test User**: who gets the test emails (empty = you)
 
-![The General tab of the options](images/options-general@2x.png)
+![User Reminder Options, General tab, where you set the days between reminders and the number of reminders](images/options-general@2x.png)
 
 ## Step 2: Switch on the reminder types you want
 
